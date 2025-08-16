@@ -1,40 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { useFinancialData } from './hooks/useFinancialData';
+import FinancialDashboard from './components/FinancialDashboard';
 
 const ExpenseTracker = () => {
-  // Estados principales
-  const [activeTab, setActiveTab] = useState('gastos');
-  const [expenses, setExpenses] = useState([]);
-  const [incomes, setIncomes] = useState([]);
+  // Estados para UI
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   // Estados para mensajes informativos
   const [expenseError, setExpenseError] = useState('');
   const [incomeError, setIncomeError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
-  // Configuraciones
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Comida', color: '#FF6B6B' },
-    { id: 2, name: 'Transporte', color: '#4ECDC4' },
-    { id: 3, name: 'Entretenimiento', color: '#45B7D1' },
-    { id: 4, name: 'Servicios', color: '#96CEB4' },
-    { id: 5, name: 'Compras', color: '#FFEAA7' }
-  ]);
-  
-  const [paymentMethods, setPaymentMethods] = useState([
-    { id: 1, name: 'Efectivo', color: '#74B9FF' },
-    { id: 2, name: 'Tarjeta de Débito', color: '#0984E3' },
-    { id: 3, name: 'Tarjeta de Crédito', color: '#6C5CE7' },
-    { id: 4, name: 'Transferencia', color: '#A29BFE' }
-  ]);
-  
-  const [incomeTypes, setIncomeTypes] = useState([
-    { id: 1, name: 'Mi Salario', color: '#00B894' },
-    { id: 2, name: 'Salario Esposa', color: '#00CEC9' },
-    { id: 3, name: 'Ingresos Adicionales', color: '#55A3FF' }
-  ]);
-
   // Estados para formularios
   const [newExpense, setNewExpense] = useState({
     amount: '',
@@ -60,13 +38,54 @@ const ExpenseTracker = () => {
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [trendPeriod, setTrendPeriod] = useState('3'); // 3, 6 o 12 meses
+  const [trendPeriod, setTrendPeriod] = useState('3');
 
   // Estados para configuración
   const [showConfig, setShowConfig] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
+
+  // Hook personalizado para datos financieros
+  const {
+    // Estados
+    loading,
+    error: dataError,
+    lastSaved,
+    isOnline,
+    
+    // Datos
+    expenses,
+    incomes,
+    categories,
+    paymentMethods,
+    incomeTypes,
+    
+    // Funciones
+    addExpense: addExpenseToData,
+    addIncome: addIncomeToData,
+    deleteExpense: deleteExpenseFromData,
+    deleteIncome: deleteIncomeFromData,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addPaymentMethod,
+    updatePaymentMethod,
+    deletePaymentMethod,
+    addIncomeType,
+    updateIncomeType,
+    deleteIncomeType,
+    
+    // Funciones de análisis
+    getFinancialSummary,
+    getExpensesByCategory,
+    getStorageStats,
+    
+    // Funciones de backup
+    createBackup,
+    exportData,
+    importData
+  } = useFinancialData();
 
   // Función para limpiar mensajes
   const clearMessages = () => {
@@ -118,164 +137,83 @@ const ExpenseTracker = () => {
   const addExpense = () => {
     if (!validateExpenseForm()) return;
     
-    const expense = {
-      id: Date.now(),
-      ...newExpense,
-      amount: parseFloat(newExpense.amount),
-      timestamp: new Date().toISOString()
-    };
-    setExpenses([...expenses, expense]);
-    setNewExpense({
-      amount: '',
-      description: '',
-      category: '',
-      paymentMethod: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-    setSuccessMessage('¡Gasto agregado exitosamente!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+    const expense = addExpenseToData(newExpense);
+    if (expense) {
+      setNewExpense({
+        amount: '',
+        description: '',
+        category: '',
+        paymentMethod: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setSuccessMessage('¡Gasto agregado exitosamente!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
   };
 
   // Funciones para agregar ingresos
   const addIncome = () => {
     if (!validateIncomeForm()) return;
     
-    const income = {
-      id: Date.now(),
-      ...newIncome,
-      amount: parseFloat(newIncome.amount),
-      timestamp: new Date().toISOString()
-    };
-    setIncomes([...incomes, income]);
-    setNewIncome({
-      amount: '',
-      description: '',
-      type: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-    setSuccessMessage('¡Ingreso agregado exitosamente!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+    const income = addIncomeToData(newIncome);
+    if (income) {
+      setNewIncome({
+        amount: '',
+        description: '',
+        type: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setSuccessMessage('¡Ingreso agregado exitosamente!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
   };
 
   // Funciones para eliminar
   const deleteExpense = (id) => {
-    setExpenses(expenses.filter(expense => expense.id !== id));
+    deleteExpenseFromData(id);
     setSuccessMessage('Gasto eliminado exitosamente');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
   const deleteIncome = (id) => {
-    setIncomes(incomes.filter(income => income.id !== id));
+    deleteIncomeFromData(id);
     setSuccessMessage('Ingreso eliminado exitosamente');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
-  // Funciones para exportar/importar Excel
-  const exportToExcel = () => {
-    const expensesData = expenses.map(expense => ({
-      Fecha: expense.date,
-      Descripción: expense.description,
-      Categoría: categories.find(c => c.id === parseInt(expense.category))?.name || '',
-      'Método de Pago': paymentMethods.find(p => p.id === parseInt(expense.paymentMethod))?.name || '',
-      Monto: expense.amount,
-      Tipo: 'Gasto'
-    }));
-
-    const incomesData = incomes.map(income => ({
-      Fecha: income.date,
-      Descripción: income.description,
-      Categoría: '',
-      'Método de Pago': '',
-      Monto: income.amount,
-      Tipo: incomeTypes.find(t => t.id === parseInt(income.type))?.name || ''
-    }));
-
-    const allData = [...expensesData, ...incomesData].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
-
-    // Crear CSV manualmente
-    const headers = ['Fecha', 'Descripción', 'Categoría', 'Método de Pago', 'Monto', 'Tipo'];
-    const csvContent = [
-      headers.join(','),
-      ...allData.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    const date = new Date().toISOString().split('T')[0];
-    link.setAttribute('download', `movimientos_${date}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setSuccessMessage('Datos exportados exitosamente');
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  const importFromExcel = (event) => {
+  // Función para importar archivo
+  const handleImportFile = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target.result;
-        const lines = text.split('\n');
-        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-        
-        const importedExpenses = [];
-        const importedIncomes = [];
-
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          
-          const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
-          const row = {};
-          headers.forEach((header, index) => {
-            row[header] = values[index] || '';
-          });
-
-          if (row.Tipo === 'Gasto' && row.Monto && row.Descripción && row.Fecha) {
-            const categoryId = categories.find(c => c.name === row.Categoría)?.id || categories[0].id;
-            const paymentId = paymentMethods.find(p => p.name === row['Método de Pago'])?.id || paymentMethods[0].id;
-            
-            importedExpenses.push({
-              id: Date.now() + Math.random(),
-              amount: parseFloat(row.Monto),
-              description: row.Descripción,
-              category: categoryId.toString(),
-              paymentMethod: paymentId.toString(),
-              date: row.Fecha,
-              timestamp: new Date().toISOString()
-            });
-          } else if (row.Tipo && row.Tipo !== 'Gasto' && row.Monto && row.Descripción && row.Fecha) {
-            const typeId = incomeTypes.find(t => t.name === row.Tipo)?.id || incomeTypes[0].id;
-            
-            importedIncomes.push({
-              id: Date.now() + Math.random(),
-              amount: parseFloat(row.Monto),
-              description: row.Descripción,
-              type: typeId.toString(),
-              date: row.Fecha,
-              timestamp: new Date().toISOString()
-            });
-          }
-        }
-
-        setExpenses([...expenses, ...importedExpenses]);
-        setIncomes([...incomes, ...importedIncomes]);
-        
-        setSuccessMessage(`Importados ${importedExpenses.length} gastos y ${importedIncomes.length} ingresos`);
-        setTimeout(() => setSuccessMessage(''), 5000);
-      } catch (error) {
-        setExpenseError('Error al importar el archivo. Verifique el formato.');
-        setTimeout(() => setExpenseError(''), 5000);
+    try {
+      const result = await importData(file);
+      if (result.success) {
+        setSuccessMessage('Datos importados exitosamente');
+      } else {
+        setExpenseError(result.error || 'Error importando datos');
       }
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      setExpenseError('Error procesando archivo');
+    }
+    
     event.target.value = '';
+    setTimeout(() => {
+      setSuccessMessage('');
+      setExpenseError('');
+    }, 5000);
+  };
+
+  // Función para exportar datos
+  const handleExportData = () => {
+    const success = exportData();
+    if (success) {
+      setSuccessMessage('Datos exportados exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setExpenseError('Error exportando datos');
+      setTimeout(() => setExpenseError(''), 3000);
+    }
   };
 
   // Función para filtrar gastos
@@ -426,6 +364,44 @@ const ExpenseTracker = () => {
   // Componente de configuración
   const ConfigSection = () => (
     <div className="space-y-6">
+      {/* Información del sistema */}
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Estado del Sistema</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2">
+            {isOnline ? (
+              <Wifi className="w-5 h-5 text-green-600" />
+            ) : (
+              <WifiOff className="w-5 h-5 text-red-600" />
+            )}
+            <span className="text-sm">
+              {isOnline ? 'Conectado' : 'Sin conexión'}
+            </span>
+          </div>
+          <div className="text-sm">
+            <span className="text-gray-600">Último guardado: </span>
+            <span className="font-medium">
+              {lastSaved ? new Date(lastSaved).toLocaleString() : 'Nunca'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="mt-4 flex space-x-2">
+          <button
+            onClick={createBackup}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+          >
+            Crear Backup
+          </button>
+          <button
+            onClick={handleExportData}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+          >
+            Exportar Datos
+          </button>
+        </div>
+      </div>
+
       {/* Categorías */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Categorías de Gastos</h3>
@@ -437,17 +413,13 @@ const ExpenseTracker = () => {
                   <input
                     type="text"
                     value={category.name}
-                    onChange={(e) => setCategories(categories.map(c => 
-                      c.id === category.id ? {...c, name: e.target.value} : c
-                    ))}
+                    onChange={(e) => updateCategory(category.id, { name: e.target.value })}
                     className="flex-1 px-2 py-1 border rounded text-sm"
                   />
                   <input
                     type="color"
                     value={category.color}
-                    onChange={(e) => setCategories(categories.map(c => 
-                      c.id === category.id ? {...c, color: e.target.value} : c
-                    ))}
+                    onChange={(e) => updateCategory(category.id, { color: e.target.value })}
                     className="w-8 h-8"
                   />
                   <button onClick={() => setEditingCategory(null)} className="text-green-600">
@@ -471,7 +443,7 @@ const ExpenseTracker = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => setCategories(categories.filter(c => c.id !== category.id))}
+                      onClick={() => deleteCategory(category.id)}
                       className="text-red-600"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -483,9 +455,8 @@ const ExpenseTracker = () => {
           ))}
           <button
             onClick={() => {
-              const newId = Math.max(...categories.map(c => c.id)) + 1;
-              setCategories([...categories, { id: newId, name: 'Nueva Categoría', color: '#FF6B6B' }]);
-              setEditingCategory(newId);
+              const newCategory = addCategory({ name: 'Nueva Categoría', color: '#FF6B6B' });
+              setEditingCategory(newCategory.id);
             }}
             className="w-full p-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 text-sm"
           >
@@ -505,17 +476,13 @@ const ExpenseTracker = () => {
                   <input
                     type="text"
                     value={method.name}
-                    onChange={(e) => setPaymentMethods(paymentMethods.map(m => 
-                      m.id === method.id ? {...m, name: e.target.value} : m
-                    ))}
+                    onChange={(e) => updatePaymentMethod(method.id, { name: e.target.value })}
                     className="flex-1 px-2 py-1 border rounded text-sm"
                   />
                   <input
                     type="color"
                     value={method.color}
-                    onChange={(e) => setPaymentMethods(paymentMethods.map(m => 
-                      m.id === method.id ? {...m, color: e.target.value} : m
-                    ))}
+                    onChange={(e) => updatePaymentMethod(method.id, { color: e.target.value })}
                     className="w-8 h-8"
                   />
                   <button onClick={() => setEditingPayment(null)} className="text-green-600">
@@ -539,7 +506,7 @@ const ExpenseTracker = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => setPaymentMethods(paymentMethods.filter(m => m.id !== method.id))}
+                      onClick={() => deletePaymentMethod(method.id)}
                       className="text-red-600"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -551,9 +518,8 @@ const ExpenseTracker = () => {
           ))}
           <button
             onClick={() => {
-              const newId = Math.max(...paymentMethods.map(m => m.id)) + 1;
-              setPaymentMethods([...paymentMethods, { id: newId, name: 'Nuevo Método', color: '#74B9FF' }]);
-              setEditingPayment(newId);
+              const newMethod = addPaymentMethod({ name: 'Nuevo Método', color: '#74B9FF' });
+              setEditingPayment(newMethod.id);
             }}
             className="w-full p-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 text-sm"
           >
@@ -573,17 +539,13 @@ const ExpenseTracker = () => {
                   <input
                     type="text"
                     value={type.name}
-                    onChange={(e) => setIncomeTypes(incomeTypes.map(t => 
-                      t.id === type.id ? {...t, name: e.target.value} : t
-                    ))}
+                    onChange={(e) => updateIncomeType(type.id, { name: e.target.value })}
                     className="flex-1 px-2 py-1 border rounded text-sm"
                   />
                   <input
                     type="color"
                     value={type.color}
-                    onChange={(e) => setIncomeTypes(incomeTypes.map(t => 
-                      t.id === type.id ? {...t, color: e.target.value} : t
-                    ))}
+                    onChange={(e) => updateIncomeType(type.id, { color: e.target.value })}
                     className="w-8 h-8"
                   />
                   <button onClick={() => setEditingIncome(null)} className="text-green-600">
@@ -607,7 +569,7 @@ const ExpenseTracker = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => setIncomeTypes(incomeTypes.filter(t => t.id !== type.id))}
+                      onClick={() => deleteIncomeType(type.id)}
                       className="text-red-600"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -619,9 +581,8 @@ const ExpenseTracker = () => {
           ))}
           <button
             onClick={() => {
-              const newId = Math.max(...incomeTypes.map(t => t.id)) + 1;
-              setIncomeTypes([...incomeTypes, { id: newId, name: 'Nuevo Tipo', color: '#00B894' }]);
-              setEditingIncome(newId);
+              const newType = addIncomeType({ name: 'Nuevo Tipo', color: '#00B894' });
+              setEditingIncome(newType.id);
             }}
             className="w-full p-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 text-sm"
           >
@@ -632,6 +593,17 @@ const ExpenseTracker = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando datos financieros...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -640,10 +612,20 @@ const ExpenseTracker = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 space-y-2 sm:space-y-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 text-center sm:text-left">💰 Gestor Financiero</h1>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              {/* Indicador de estado */}
+              <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg text-sm">
+                {isOnline ? (
+                  <Wifi className="w-4 h-4 text-green-600" />
+                ) : (
+                  <WifiOff className="w-4 h-4 text-red-600" />
+                )}
+                <span className="text-xs">{isOnline ? 'Online' : 'Offline'}</span>
+              </div>
+              
               {/* Botones de importar/exportar */}
               <div className="flex space-x-2">
                 <button
-                  onClick={exportToExcel}
+                  onClick={handleExportData}
                   className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm"
                 >
                   <Download className="w-4 h-4" />
@@ -654,8 +636,8 @@ const ExpenseTracker = () => {
                   <span className="hidden sm:inline">Importar</span>
                   <input
                     type="file"
-                    accept=".csv"
-                    onChange={importFromExcel}
+                    accept=".json,.csv"
+                    onChange={handleImportFile}
                     className="hidden"
                   />
                 </label>
@@ -675,6 +657,12 @@ const ExpenseTracker = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Mensajes */}
         {successMessage && <MessageAlert message={successMessage} type="success" />}
+        {(dataError || expenseError || incomeError) && (
+          <MessageAlert 
+            message={dataError || expenseError || incomeError} 
+            type="error" 
+          />
+        )}
         
         {showConfig ? (
           <div>
@@ -695,6 +683,7 @@ const ExpenseTracker = () => {
             {/* Navigation */}
             <nav className="flex flex-wrap bg-white p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto">
               {[
+                { id: 'dashboard', label: 'Dashboard', icon: Activity },
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
                 { id: 'reportes', label: 'Reportes', icon: BarChart3 },
@@ -715,6 +704,18 @@ const ExpenseTracker = () => {
                 </button>
               ))}
             </nav>
+
+            {/* Dashboard */}
+            {activeTab === 'dashboard' && (
+              <FinancialDashboard
+                expenses={expenses}
+                incomes={incomes}
+                categories={categories}
+                paymentMethods={paymentMethods}
+                getFinancialSummary={getFinancialSummary}
+                getExpensesByCategory={getExpensesByCategory}
+              />
+            )}
 
             {/* Gastos */}
             {activeTab === 'gastos' && (
