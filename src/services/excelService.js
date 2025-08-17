@@ -7,84 +7,103 @@ class ExcelService {
   }
 
   // Exportar datos a Excel
-  exportToExcel(data) {
+  exportToExcel(data, selections = null) {
     try {
+      // Si no se proporcionan selecciones, exportar todo
+      const defaultSelections = {
+        expenses: true,
+        incomes: true,
+        categories: true,
+        paymentMethods: true,
+        incomeTypes: true,
+        metadata: true
+      };
+      
+      const exportSelections = selections || defaultSelections;
       // Crear un nuevo workbook
       const workbook = XLSX.utils.book_new();
 
-      // Preparar datos de gastos con cabeceras sin tildes
-      const expensesData = data.expenses.map(expense => {
-        const category = data.categories.find(c => c.id.toString() === expense.category);
-        const paymentMethod = data.paymentMethods.find(p => p.id.toString() === expense.paymentMethod);
-        
-        return {
-          'Fecha': expense.date,
-          'Descripcion': expense.description,
-          'Monto': expense.amount,
-          'Categoria': category ? category.name : 'Sin categoria',
-          'Metodo_Pago': paymentMethod ? paymentMethod.name : 'Sin metodo',
-          'Timestamp': expense.timestamp
-        };
-      });
+      // Preparar y agregar hoja de gastos si está seleccionada
+      if (exportSelections.expenses && data.expenses && data.expenses.length > 0) {
+        const expensesData = data.expenses.map(expense => {
+          const category = data.categories.find(c => c.id.toString() === expense.category);
+          const paymentMethod = data.paymentMethods.find(p => p.id.toString() === expense.paymentMethod);
+          
+          return {
+            'Fecha': expense.date,
+            'Descripcion': expense.description,
+            'Monto': expense.amount,
+            'Categoria': category ? category.name : 'Sin categoria',
+            'Metodo_Pago': paymentMethod ? paymentMethod.name : 'Sin metodo',
+            'Timestamp': expense.timestamp
+          };
+        });
+        const expensesSheet = XLSX.utils.json_to_sheet(expensesData);
+        XLSX.utils.book_append_sheet(workbook, expensesSheet, 'Gastos');
+      }
 
-      // Preparar datos de ingresos con cabeceras sin tildes
-      const incomesData = data.incomes.map(income => {
-        const incomeType = data.incomeTypes.find(t => t.id.toString() === income.type);
-        
-        return {
-          'Fecha': income.date,
-          'Descripcion': income.description,
-          'Monto': income.amount,
-          'Tipo_Ingreso': incomeType ? incomeType.name : 'Sin tipo',
-          'Timestamp': income.timestamp
-        };
-      });
+      // Preparar y agregar hoja de ingresos si está seleccionada
+      if (exportSelections.incomes && data.incomes && data.incomes.length > 0) {
+        const incomesData = data.incomes.map(income => {
+          const incomeType = data.incomeTypes.find(t => t.id.toString() === income.type);
+          
+          return {
+            'Fecha': income.date,
+            'Descripcion': income.description,
+            'Monto': income.amount,
+            'Tipo_Ingreso': incomeType ? incomeType.name : 'Sin tipo',
+            'Timestamp': income.timestamp
+          };
+        });
+        const incomesSheet = XLSX.utils.json_to_sheet(incomesData);
+        XLSX.utils.book_append_sheet(workbook, incomesSheet, 'Ingresos');
+      }
 
-      // Preparar datos de categorias
-      const categoriesData = data.categories.map(category => ({
-        'ID': category.id,
-        'Nombre': category.name,
-        'Color': category.color
-      }));
+      // Preparar y agregar hoja de categorías si está seleccionada
+      if (exportSelections.categories && data.categories && data.categories.length > 0) {
+        const categoriesData = data.categories.map(category => ({
+          'ID': category.id,
+          'Nombre': category.name,
+          'Color': category.color
+        }));
+        const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
+        XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'Categorias');
+      }
 
-      // Preparar datos de metodos de pago
-      const paymentMethodsData = data.paymentMethods.map(method => ({
-        'ID': method.id,
-        'Nombre': method.name,
-        'Color': method.color
-      }));
+      // Preparar y agregar hoja de métodos de pago si está seleccionada
+      if (exportSelections.paymentMethods && data.paymentMethods && data.paymentMethods.length > 0) {
+        const paymentMethodsData = data.paymentMethods.map(method => ({
+          'ID': method.id,
+          'Nombre': method.name,
+          'Color': method.color
+        }));
+        const paymentMethodsSheet = XLSX.utils.json_to_sheet(paymentMethodsData);
+        XLSX.utils.book_append_sheet(workbook, paymentMethodsSheet, 'Metodos_Pago');
+      }
 
-      // Preparar datos de tipos de ingreso
-      const incomeTypesData = data.incomeTypes.map(type => ({
-        'ID': type.id,
-        'Nombre': type.name,
-        'Color': type.color
-      }));
+      // Preparar y agregar hoja de tipos de ingreso si está seleccionada
+      if (exportSelections.incomeTypes && data.incomeTypes && data.incomeTypes.length > 0) {
+        const incomeTypesData = data.incomeTypes.map(type => ({
+          'ID': type.id,
+          'Nombre': type.name,
+          'Color': type.color
+        }));
+        const incomeTypesSheet = XLSX.utils.json_to_sheet(incomeTypesData);
+        XLSX.utils.book_append_sheet(workbook, incomeTypesSheet, 'Tipos_Ingreso');
+      }
 
-      // Crear hojas de trabajo
-      const expensesSheet = XLSX.utils.json_to_sheet(expensesData);
-      const incomesSheet = XLSX.utils.json_to_sheet(incomesData);
-      const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
-      const paymentMethodsSheet = XLSX.utils.json_to_sheet(paymentMethodsData);
-      const incomeTypesSheet = XLSX.utils.json_to_sheet(incomeTypesData);
-
-      // Crear hoja de metadatos
-      const metadataSheet = XLSX.utils.json_to_sheet([{
-        'Version': data.version || this.version,
-        'Fecha_Exportacion': new Date().toISOString(),
-        'Total_Gastos': data.expenses.length,
-        'Total_Ingresos': data.incomes.length,
-        'Fecha_Creacion': data.createdAt,
-        'Ultima_Modificacion': data.lastModified
-      }]);
-
-      // Agregar hojas al workbook
-      XLSX.utils.book_append_sheet(workbook, expensesSheet, 'Gastos');
-      XLSX.utils.book_append_sheet(workbook, incomesSheet, 'Ingresos');
-      XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'Categorias');
-      XLSX.utils.book_append_sheet(workbook, paymentMethodsSheet, 'Metodos_Pago');
-      XLSX.utils.book_append_sheet(workbook, incomeTypesSheet, 'Tipos_Ingreso');
-      XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
+      // Preparar y agregar hoja de metadatos si está seleccionada
+      if (exportSelections.metadata) {
+        const metadataSheet = XLSX.utils.json_to_sheet([{
+          'Version': data.version || this.version,
+          'Fecha_Exportacion': new Date().toISOString(),
+          'Total_Gastos': (data.expenses || []).length,
+          'Total_Ingresos': (data.incomes || []).length,
+          'Fecha_Creacion': data.createdAt,
+          'Ultima_Modificacion': data.lastModified
+        }]);
+        XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
+      }
 
       // Generar archivo y descargarlo
       const fileName = `mis-finanzas-${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -109,20 +128,20 @@ class ExcelService {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
 
-            // Verificar que existan las hojas requeridas
-            const requiredSheets = ['Gastos', 'Ingresos', 'Categorias', 'Metodos_Pago', 'Tipos_Ingreso'];
-            const missingSheets = requiredSheets.filter(sheet => !workbook.SheetNames.includes(sheet));
+            // Verificar que existan al menos algunas hojas válidas
+            const validSheets = ['Gastos', 'Ingresos', 'Categorias', 'Metodos_Pago', 'Tipos_Ingreso'];
+            const availableSheets = validSheets.filter(sheet => workbook.SheetNames.includes(sheet));
             
-            if (missingSheets.length > 0) {
-              throw new Error(`Hojas faltantes en el archivo: ${missingSheets.join(', ')}`);
+            if (availableSheets.length === 0) {
+              throw new Error(`El archivo debe contener al menos una de estas hojas: ${validSheets.join(', ')}`);
             }
 
-            // Leer datos de cada hoja
-            const expenses = this.parseExpensesSheet(workbook.Sheets['Gastos']);
-            const incomes = this.parseIncomesSheet(workbook.Sheets['Ingresos']);
-            const categories = this.parseCategoriesSheet(workbook.Sheets['Categorias']);
-            const paymentMethods = this.parsePaymentMethodsSheet(workbook.Sheets['Metodos_Pago']);
-            const incomeTypes = this.parseIncomeTypesSheet(workbook.Sheets['Tipos_Ingreso']);
+            // Leer datos de cada hoja disponible
+            const expenses = workbook.Sheets['Gastos'] ? this.parseExpensesSheet(workbook.Sheets['Gastos']) : [];
+            const incomes = workbook.Sheets['Ingresos'] ? this.parseIncomesSheet(workbook.Sheets['Ingresos']) : [];
+            const categories = workbook.Sheets['Categorias'] ? this.parseCategoriesSheet(workbook.Sheets['Categorias']) : this.getDefaultCategories();
+            const paymentMethods = workbook.Sheets['Metodos_Pago'] ? this.parsePaymentMethodsSheet(workbook.Sheets['Metodos_Pago']) : this.getDefaultPaymentMethods();
+            const incomeTypes = workbook.Sheets['Tipos_Ingreso'] ? this.parseIncomeTypesSheet(workbook.Sheets['Tipos_Ingreso']) : this.getDefaultIncomeTypes();
 
             // Leer metadata si existe
             let metadata = {};
@@ -263,6 +282,36 @@ class ExcelService {
   parseIncomeTypeReference(typeName) {
     // Por defecto retorna "1" si no se puede parsear
     return "1";
+  }
+
+  // Obtener categorías por defecto
+  getDefaultCategories() {
+    return [
+      { id: 1, name: 'Comida', color: '#FF6B6B' },
+      { id: 2, name: 'Transporte', color: '#4ECDC4' },
+      { id: 3, name: 'Entretenimiento', color: '#45B7D1' },
+      { id: 4, name: 'Servicios', color: '#96CEB4' },
+      { id: 5, name: 'Compras', color: '#FFEAA7' }
+    ];
+  }
+
+  // Obtener métodos de pago por defecto
+  getDefaultPaymentMethods() {
+    return [
+      { id: 1, name: 'Efectivo', color: '#74B9FF' },
+      { id: 2, name: 'Tarjeta de Débito', color: '#0984E3' },
+      { id: 3, name: 'Tarjeta de Crédito', color: '#6C5CE7' },
+      { id: 4, name: 'Transferencia', color: '#A29BFE' }
+    ];
+  }
+
+  // Obtener tipos de ingreso por defecto
+  getDefaultIncomeTypes() {
+    return [
+      { id: 1, name: 'Mi Salario', color: '#00B894' },
+      { id: 2, name: 'Salario Esposa', color: '#00CEC9' },
+      { id: 3, name: 'Ingresos Adicionales', color: '#55A3FF' }
+    ];
   }
 
   // Validar datos importados

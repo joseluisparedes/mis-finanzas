@@ -268,8 +268,8 @@ export const useFinancialData = () => {
     }
   }, []);
 
-  const exportToExcel = useCallback(() => {
-    return storage.exportToExcel();
+  const exportToExcel = useCallback((selections = null) => {
+    return storage.exportToExcel(selections);
   }, []);
 
   const importFromExcel = useCallback(async (file) => {
@@ -284,6 +284,13 @@ export const useFinancialData = () => {
       return { success: false, error: error.message };
     }
   }, []);
+
+  // FUNCIONES PARA CONFIGURACIÓN
+  const updateSettings = useCallback((newSettings) => {
+    updateData({
+      settings: { ...data?.settings, ...newSettings }
+    });
+  }, [data?.settings, updateData]);
 
   // FUNCIONES DE ANÁLISIS
   const getStorageStats = useCallback(() => {
@@ -352,6 +359,7 @@ export const useFinancialData = () => {
     categories,
     paymentMethods,
     incomeTypes,
+    settings: data?.settings,
 
     // Funciones de gastos
     addExpense,
@@ -384,6 +392,9 @@ export const useFinancialData = () => {
     importData,
     exportToExcel,
     importFromExcel,
+
+    // Funciones de configuración
+    updateSettings,
 
     // Funciones de análisis
     getStorageStats,

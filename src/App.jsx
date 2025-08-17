@@ -45,6 +45,17 @@ const ExpenseTracker = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
+  
+  // Estados para modal de exportación
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportSelections, setExportSelections] = useState({
+    expenses: true,
+    incomes: true,
+    categories: true,
+    paymentMethods: true,
+    incomeTypes: true,
+    metadata: true
+  });
 
   // Hook personalizado para datos financieros
   const {
@@ -60,6 +71,7 @@ const ExpenseTracker = () => {
     categories,
     paymentMethods,
     incomeTypes,
+    settings,
     
     // Funciones
     addExpense: addExpenseToData,
@@ -86,7 +98,10 @@ const ExpenseTracker = () => {
     exportData,
     importData,
     exportToExcel,
-    importFromExcel
+    importFromExcel,
+    
+    // Funciones de configuración
+    updateSettings
   } = useFinancialData();
 
   // Función para limpiar mensajes
@@ -217,9 +232,14 @@ const ExpenseTracker = () => {
     }, 5000);
   };
 
-  // Función para exportar datos a Excel
+  // Función para abrir modal de exportación
   const handleExportData = () => {
-    const success = exportToExcel();
+    setShowExportModal(true);
+  };
+
+  // Función para exportar datos a Excel con selecciones
+  const handleConfirmExport = () => {
+    const success = exportToExcel(exportSelections);
     if (success) {
       setSuccessMessage('Datos exportados a Excel exitosamente');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -227,6 +247,7 @@ const ExpenseTracker = () => {
       setExpenseError('Error exportando datos a Excel');
       setTimeout(() => setExpenseError(''), 3000);
     }
+    setShowExportModal(false);
   };
 
   // Función para exportar datos a JSON (backup)
@@ -237,6 +258,31 @@ const ExpenseTracker = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
       setExpenseError('Error exportando backup JSON');
+      setTimeout(() => setExpenseError(''), 3000);
+    }
+  };
+
+  // Función para descargar plantilla Excel
+  const handleDownloadTemplate = () => {
+    // Crear datos de ejemplo vacíos
+    const templateData = {
+      version: '1.0',
+      createdAt: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      expenses: [],
+      incomes: [],
+      categories: categories || [],
+      paymentMethods: paymentMethods || [],
+      incomeTypes: incomeTypes || [],
+      settings: settings || {}
+    };
+
+    const success = exportToExcel();
+    if (success) {
+      setSuccessMessage('Plantilla Excel descargada exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setExpenseError('Error descargando plantilla');
       setTimeout(() => setExpenseError(''), 3000);
     }
   };
@@ -411,7 +457,23 @@ const ExpenseTracker = () => {
           </div>
         </div>
         
-        <div className="mt-4 flex space-x-2">
+        {/* Configuraciones de interfaz */}
+        <div className="mb-4 p-4 border rounded-lg">
+          <h4 className="text-md font-semibold mb-3">Opciones de Interfaz</h4>
+          <div className="flex items-center space-x-3">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings?.showJsonExport || false}
+                onChange={(e) => updateSettings({ showJsonExport: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm">Mostrar botón JSON</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             onClick={createBackup}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -419,17 +481,25 @@ const ExpenseTracker = () => {
             Crear Backup
           </button>
           <button
+            onClick={handleDownloadTemplate}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+          >
+            Plantilla Excel
+          </button>
+          <button
             onClick={handleExportData}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
           >
             Exportar Excel
           </button>
-          <button
-            onClick={handleExportJSON}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
-          >
-            Backup JSON
-          </button>
+          {settings?.showJsonExport && (
+            <button
+              onClick={handleExportJSON}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
+            >
+              Backup JSON
+            </button>
+          )}
         </div>
       </div>
 
@@ -663,14 +733,16 @@ const ExpenseTracker = () => {
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Excel</span>
                 </button>
-                <button
-                  onClick={handleExportJSON}
-                  className="flex items-center space-x-1 px-3 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm"
-                  title="Exportar backup JSON"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">JSON</span>
-                </button>
+                {settings?.showJsonExport && (
+                  <button
+                    onClick={handleExportJSON}
+                    className="flex items-center space-x-1 px-3 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm"
+                    title="Exportar backup JSON"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">JSON</span>
+                  </button>
+                )}
                 <label className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors cursor-pointer text-sm">
                   <Upload className="w-4 h-4" />
                   <span className="hidden sm:inline">Importar</span>
@@ -1787,6 +1859,103 @@ const ExpenseTracker = () => {
           </>
         )}
       </div>
+
+      {/* Modal de selección de exportación */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Seleccionar datos a exportar</h3>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.expenses}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, expenses: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Gastos ({expenses.length} registros)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.incomes}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, incomes: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Ingresos ({incomes.length} registros)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.categories}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, categories: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Categorías ({categories.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.paymentMethods}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, paymentMethods: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Métodos de Pago ({paymentMethods.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.incomeTypes}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, incomeTypes: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Tipos de Ingreso ({incomeTypes.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.metadata}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, metadata: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Metadatos del sistema</span>
+                </label>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmExport}
+                  disabled={!Object.values(exportSelections).some(Boolean)}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Exportar Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

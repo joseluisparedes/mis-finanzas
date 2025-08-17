@@ -74,7 +74,8 @@ class FinancialDataStorage {
         autoBackup: true,
         backupFrequency: 'daily', // daily, weekly, manual
         currency: 'USD',
-        dateFormat: 'YYYY-MM-DD'
+        dateFormat: 'YYYY-MM-DD',
+        showJsonExport: false // Controla visibilidad del botón JSON
       }
     };
   }
@@ -289,10 +290,10 @@ class FinancialDataStorage {
   }
 
   // Exportar datos a Excel
-  exportToExcel() {
+  exportToExcel(selections = null) {
     try {
       const data = this.loadData();
-      const result = excelService.exportToExcel(data);
+      const result = excelService.exportToExcel(data, selections);
       
       if (result.success) {
         console.log('Datos exportados a Excel exitosamente:', result.fileName);
