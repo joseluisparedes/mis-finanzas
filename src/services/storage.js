@@ -1,3 +1,5 @@
+import excelService from './excelService.js';
+
 // Sistema de almacenamiento robusto para uso diario crítico
 class FinancialDataStorage {
   constructor() {
@@ -284,6 +286,46 @@ class FinancialDataStorage {
       reader.onerror = () => reject(new Error('Error leyendo archivo'));
       reader.readAsText(file);
     });
+  }
+
+  // Exportar datos a Excel
+  exportToExcel() {
+    try {
+      const data = this.loadData();
+      const result = excelService.exportToExcel(data);
+      
+      if (result.success) {
+        console.log('Datos exportados a Excel exitosamente:', result.fileName);
+        return true;
+      } else {
+        console.error('Error exportando a Excel:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error exportando a Excel:', error);
+      return false;
+    }
+  }
+
+  // Importar datos desde Excel
+  async importFromExcel(file) {
+    try {
+      // Crear backup antes de importar
+      this.createBackup();
+      
+      const importedData = await excelService.importFromExcel(file);
+      
+      if (this.validateData(importedData)) {
+        // Importar datos
+        this.saveData(importedData);
+        return importedData;
+      } else {
+        throw new Error('Datos importados desde Excel son inválidos');
+      }
+    } catch (error) {
+      console.error('Error importando desde Excel:', error);
+      throw error;
+    }
   }
 
   // Migrar datos si es necesario

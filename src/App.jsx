@@ -84,7 +84,9 @@ const ExpenseTracker = () => {
     // Funciones de backup
     createBackup,
     exportData,
-    importData
+    importData,
+    exportToExcel,
+    importFromExcel
   } = useFinancialData();
 
   // Función para limpiar mensajes
@@ -187,14 +189,25 @@ const ExpenseTracker = () => {
     if (!file) return;
 
     try {
-      const result = await importData(file);
-      if (result.success) {
-        setSuccessMessage('Datos importados exitosamente');
+      // Verificar si es archivo Excel
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        const result = await importFromExcel(file);
+        if (result.success) {
+          setSuccessMessage('Datos importados desde Excel exitosamente');
+        } else {
+          setExpenseError(result.error || 'Error importando datos de Excel');
+        }
       } else {
-        setExpenseError(result.error || 'Error importando datos');
+        // Mantener compatibilidad con JSON
+        const result = await importData(file);
+        if (result.success) {
+          setSuccessMessage('Datos importados exitosamente');
+        } else {
+          setExpenseError(result.error || 'Error importando datos');
+        }
       }
     } catch (error) {
-      setExpenseError('Error procesando archivo');
+      setExpenseError('Error procesando archivo: ' + error.message);
     }
     
     event.target.value = '';
@@ -204,14 +217,26 @@ const ExpenseTracker = () => {
     }, 5000);
   };
 
-  // Función para exportar datos
+  // Función para exportar datos a Excel
   const handleExportData = () => {
-    const success = exportData();
+    const success = exportToExcel();
     if (success) {
-      setSuccessMessage('Datos exportados exitosamente');
+      setSuccessMessage('Datos exportados a Excel exitosamente');
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
-      setExpenseError('Error exportando datos');
+      setExpenseError('Error exportando datos a Excel');
+      setTimeout(() => setExpenseError(''), 3000);
+    }
+  };
+
+  // Función para exportar datos a JSON (backup)
+  const handleExportJSON = () => {
+    const success = exportData();
+    if (success) {
+      setSuccessMessage('Backup JSON exportado exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setExpenseError('Error exportando backup JSON');
       setTimeout(() => setExpenseError(''), 3000);
     }
   };
@@ -397,7 +422,13 @@ const ExpenseTracker = () => {
             onClick={handleExportData}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
           >
-            Exportar Datos
+            Exportar Excel
+          </button>
+          <button
+            onClick={handleExportJSON}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm"
+          >
+            Backup JSON
           </button>
         </div>
       </div>
@@ -627,16 +658,25 @@ const ExpenseTracker = () => {
                 <button
                   onClick={handleExportData}
                   className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm"
+                  title="Exportar a Excel"
                 >
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="hidden sm:inline">Excel</span>
+                </button>
+                <button
+                  onClick={handleExportJSON}
+                  className="flex items-center space-x-1 px-3 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm"
+                  title="Exportar backup JSON"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">JSON</span>
                 </button>
                 <label className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors cursor-pointer text-sm">
                   <Upload className="w-4 h-4" />
                   <span className="hidden sm:inline">Importar</span>
                   <input
                     type="file"
-                    accept=".json,.csv"
+                    accept=".xlsx,.xls,.json"
                     onChange={handleImportFile}
                     className="hidden"
                   />

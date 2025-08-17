@@ -268,6 +268,23 @@ export const useFinancialData = () => {
     }
   }, []);
 
+  const exportToExcel = useCallback(() => {
+    return storage.exportToExcel();
+  }, []);
+
+  const importFromExcel = useCallback(async (file) => {
+    try {
+      const importedData = await storage.importFromExcel(file);
+      setData(importedData);
+      updateDerivedStates(importedData);
+      setLastSaved(importedData.lastModified);
+      return { success: true, data: importedData };
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
   // FUNCIONES DE ANÁLISIS
   const getStorageStats = useCallback(() => {
     return storage.getStorageStats();
@@ -365,6 +382,8 @@ export const useFinancialData = () => {
     createBackup,
     exportData,
     importData,
+    exportToExcel,
+    importFromExcel,
 
     // Funciones de análisis
     getStorageStats,
