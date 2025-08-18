@@ -67,9 +67,6 @@ const AppSupabase = () => {
   // Estados para migración
   const [migrationLoading, setMigrationLoading] = useState(false);
 
-  // Estados para Balance
-  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [trendPeriod, setTrendPeriod] = useState('3');
   const [migrationProgress, setMigrationProgress] = useState(null);
 
   // Hook personalizado para datos con Supabase
@@ -459,46 +456,6 @@ const AppSupabase = () => {
   const trendData = getTrendData();
 
 
-  // Función para obtener datos de tendencia financiera
-  const getFinancialTrendData = () => {
-    const months = parseInt(trendPeriod);
-    const trendData = [];
-    
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      
-      const monthExpenses = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
-      });
-      
-      const monthIncomes = incomes.filter(income => {
-        const incomeDate = new Date(income.date);
-        return incomeDate.getFullYear() === year && incomeDate.getMonth() === month;
-      });
-      
-      const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-      const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-      const balance = totalIncomes - totalExpenses;
-      const savingsRate = totalIncomes > 0 ? ((balance / totalIncomes) * 100) : 0;
-      
-      trendData.push({
-        month: date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
-        fullMonth: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-        ingresos: totalIncomes,
-        gastos: totalExpenses,
-        balance: balance,
-        ahorro: savingsRate
-      });
-    }
-    
-    return trendData;
-  };
-
   // Datos para gráficos
   const getChartData = () => {
     const filteredExpenses = getFilteredExpenses();
@@ -541,8 +498,6 @@ const AppSupabase = () => {
   };
 
   const { categoryData, paymentData, last7Days } = getChartData();
-  const { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance } = getMonthData();
-  const trendData = getFinancialTrendData();
 
   // Componente para mensajes
   const MessageAlert = ({ message, type = 'success' }) => {
