@@ -41,7 +41,7 @@ const AppSupabase = () => {
     category: '',
     currency: 'PEN',
     frequency: 'monthly',
-    nextDate: new Date().toISOString().split('T')[0],
+    nextDate: getTodayLocalDateString(),
     isActive: true
   });
   
@@ -70,6 +70,18 @@ const AppSupabase = () => {
   // Estados para UX móvil
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
+  // Funciones auxiliares para manejar fechas sin problemas de zona horaria
+  const formatDateToLocalString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getTodayLocalDateString = () => {
+    return formatDateToLocalString(new Date());
+  };
+
   // Estados para mensajes informativos
   const [error, setError] = useState('');
   const [expenseError, setExpenseError] = useState('');
@@ -91,7 +103,7 @@ const AppSupabase = () => {
     category: '',
     paymentMethod: '',
     currency: 'PEN', // Soles por defecto
-    date: new Date().toISOString().split('T')[0]
+    date: getTodayLocalDateString()
   });
 
   const [newIncome, setNewIncome] = useState({
@@ -99,7 +111,7 @@ const AppSupabase = () => {
     description: '',
     type: '',
     currency: 'PEN', // Soles por defecto
-    date: new Date().toISOString().split('T')[0]
+    date: getTodayLocalDateString()
   });
 
   // Estados para filtros
@@ -276,7 +288,7 @@ const AppSupabase = () => {
         category: '',
         paymentMethod: '',
         currency: 'PEN',
-        date: new Date().toISOString().split('T')[0]
+        date: getTodayLocalDateString()
       });
       setSuccessMessage('¡Gasto agregado exitosamente!');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -296,7 +308,7 @@ const AppSupabase = () => {
         description: '',
         type: '',
         currency: 'PEN',
-        date: new Date().toISOString().split('T')[0]
+        date: getTodayLocalDateString()
       });
       setSuccessMessage('¡Ingreso agregado exitosamente!');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -591,7 +603,7 @@ const AppSupabase = () => {
     const endDate = new Date(parseInt(year), parseInt(month), 0);
     
     // Obtener resumen financiero que incluye gastos recurrentes
-    const summary = getFinancialSummary(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+    const summary = getFinancialSummary(formatDateToLocalString(startDate), formatDateToLocalString(endDate));
     
     // Filtrar gastos e ingresos regulares del mes
     const monthExpenses = expenses.filter(expense => {
@@ -692,7 +704,7 @@ const AppSupabase = () => {
         category: '',
         currency: 'PEN',
         frequency: 'monthly',
-        nextDate: new Date().toISOString().split('T')[0],
+        nextDate: getTodayLocalDateString(),
         isActive: true
       });
       setSuccessMessage('Gasto recurrente agregado exitosamente');
@@ -822,7 +834,7 @@ const AppSupabase = () => {
       default:
         date.setMonth(date.getMonth() + 1);
     }
-    return date.toISOString().split('T')[0];
+    return formatDateToLocalString(date);
   };
 
   // Función para obtener datos de tendencia
@@ -840,8 +852,8 @@ const AppSupabase = () => {
       
       // Obtener resumen financiero que incluye gastos recurrentes
       const summary = getFinancialSummary(
-        startDate.toISOString().split('T')[0], 
-        endDate.toISOString().split('T')[0]
+        formatDateToLocalString(startDate), 
+        formatDateToLocalString(endDate)
       );
       
       data.push({
@@ -2501,8 +2513,8 @@ const AppSupabase = () => {
                         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
                         setFilters({
                           ...filters,
-                          startDate: firstDay.toISOString().split('T')[0],
-                          endDate: today.toISOString().split('T')[0]
+                          startDate: formatDateToLocalString(firstDay),
+                          endDate: formatDateToLocalString(today)
                         });
                       }}
                       className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
