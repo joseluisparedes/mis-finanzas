@@ -11,7 +11,7 @@ import supabaseExcelService from './services/supabaseExcelService';
 
 const AppSupabase = () => {
   // Estados para UI
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('gastos');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   
@@ -66,6 +66,10 @@ const AppSupabase = () => {
 
   // Estados para migración
   const [migrationLoading, setMigrationLoading] = useState(false);
+
+  // Estados para Balance
+  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [trendPeriod, setTrendPeriod] = useState('3');
   const [migrationProgress, setMigrationProgress] = useState(null);
 
   // Hook personalizado para datos con Supabase
@@ -378,6 +382,20 @@ const AppSupabase = () => {
     });
   };
 
+  const getFilteredIncomes = () => {
+    return incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      const startDate = filters.startDate ? new Date(filters.startDate) : null;
+      const endDate = filters.endDate ? new Date(filters.endDate) : null;
+      
+      if (startDate && incomeDate < startDate) return false;
+      if (endDate && incomeDate > endDate) return false;
+      
+      return true;
+    });
+  };
+
+
   // Función para obtener datos del mes seleccionado
   const getMonthData = () => {
     const [year, month] = reportMonth.split('-');
@@ -399,6 +417,47 @@ const AppSupabase = () => {
 
     return { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance };
   };
+
+  // Función para obtener datos de tendencia
+  const getTrendData = () => {
+    const months = parseInt(trendPeriod);
+    const data = [];
+    
+    for (let i = months - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      const monthExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+      });
+      
+      const monthIncomes = incomes.filter(income => {
+        const incomeDate = new Date(income.date);
+        return incomeDate.getFullYear() === year && incomeDate.getMonth() === month;
+      });
+      
+      const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+      const balance = totalIncomes - totalExpenses;
+      
+      data.push({
+        month: date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
+        gastos: totalExpenses,
+        ingresos: totalIncomes,
+        balance: balance
+      });
+    }
+    
+    return data;
+  };
+
+  // Calcular datos del mes actual
+  const { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance } = getMonthData();
+  const trendData = getTrendData();
+
 
   // Función para obtener datos de tendencia financiera
   const getFinancialTrendData = () => {
@@ -1123,11 +1182,10 @@ const AppSupabase = () => {
             {/* Navigation */}
             <nav className="flex flex-wrap bg-white p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto">
               {[
-                { id: 'dashboard', label: 'Dashboard', icon: Activity },
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
-                { id: 'reportes', label: 'Reportes', icon: BarChart3 },
-                { id: 'balance', label: 'Balance', icon: Calendar }
+                { id: 'balance', label: 'Balance', icon: Calendar },
+                { id: 'reportes', label: 'Reportes', icon: BarChart3 }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -1145,17 +1203,6 @@ const AppSupabase = () => {
               ))}
             </nav>
 
-            {/* Dashboard */}
-            {activeTab === 'dashboard' && (
-              <FinancialDashboard
-                expenses={expenses}
-                incomes={incomes}
-                categories={categories}
-                paymentMethods={paymentMethods}
-                getFinancialSummary={getFinancialSummary}
-                getExpensesByCategory={getExpensesByCategory}
-              />
-            )}
 
             {/* Sección de Gastos */}
             {activeTab === 'gastos' && (
@@ -1471,36 +1518,84 @@ const AppSupabase = () => {
             {/* Sección de Reportes */}
             {activeTab === 'reportes' && (
               <div className="space-y-6">
-                {/* Selector de período */}
+                {/* Filtros de transacciones */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                    <h2 className="text-xl font-semibold flex items-center">
-                      <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
-                      Reportes Financieros
-                    </h2>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mes del Reporte</label>
-                        <input
-                          type="month"
-                          value={reportMonth}
-                          onChange={(e) => setReportMonth(e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
+                    Reportes y Filtros de Transacciones
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                      <input
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                      <input
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                      <select
+                        value={filters.category}
+                        onChange={(e) => setFilters({...filters, category: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todas las categorías</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                      <select
+                        value={filters.paymentMethod}
+                        onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todos los métodos</option>
+                        {paymentMethods.map(method => (
+                          <option key={method.id} value={method.id}>{method.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => setFilters({ startDate: '', endDate: '', category: '', paymentMethod: '' })}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Limpiar Filtros
+                    </button>
                   </div>
                 </div>
 
-                {/* Resumen del mes */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Resumen de datos filtrados */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <TrendingDown className="w-8 h-8 text-red-500" />
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Gastos</p>
-                        <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
+                        <p className="text-sm font-medium text-gray-600">Gastos Filtrados</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          ${getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">{getFilteredExpenses().length} transacciones</p>
                       </div>
                     </div>
                   </div>
@@ -1509,8 +1604,11 @@ const AppSupabase = () => {
                     <div className="flex items-center">
                       <TrendingUp className="w-8 h-8 text-green-500" />
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Ingresos</p>
-                        <p className="text-2xl font-bold text-green-600">${totalIncomes.toFixed(2)}</p>
+                        <p className="text-sm font-medium text-gray-600">Ingresos Filtrados</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          ${getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">{getFilteredIncomes().length} transacciones</p>
                       </div>
                     </div>
                   </div>
@@ -1519,24 +1617,112 @@ const AppSupabase = () => {
                     <div className="flex items-center">
                       <Calendar className="w-8 h-8 text-blue-500" />
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Balance</p>
-                        <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ${balance.toFixed(2)}
+                        <p className="text-sm font-medium text-gray-600">Balance Filtrado</p>
+                        <p className={`text-2xl font-bold ${
+                          (getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
+                           getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0)) >= 0 
+                          ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          ${(
+                            getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
+                            getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
+                          ).toFixed(2)}
                         </p>
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Transacciones filtradas */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">Historial de Transacciones Filtradas</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Mostrando {getFilteredExpenses().length} gastos y {getFilteredIncomes().length} ingresos
+                    </p>
+                  </div>
                   
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <PieChart className="w-8 h-8 text-purple-500" />
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Tasa de Ahorro</p>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {totalIncomes > 0 ? ((balance / totalIncomes) * 100).toFixed(1) : 0}%
-                        </p>
+                  <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    {[...getFilteredExpenses().map(expense => ({ ...expense, type: 'expense' })), 
+                      ...getFilteredIncomes().map(income => ({ ...income, type: 'income' }))]
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay transacciones que coincidan con los filtros</p>
+                        <p className="text-sm">Ajusta los filtros para ver más resultados</p>
                       </div>
-                    </div>
+                    ) : (
+                      [...getFilteredExpenses().map(expense => ({ ...expense, type: 'expense' })), 
+                       ...getFilteredIncomes().map(income => ({ ...income, type: 'income' }))]
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .map(transaction => {
+                          if (transaction.type === 'expense') {
+                            const category = categories.find(c => c.id === transaction.category_id);
+                            const paymentMethod = paymentMethods.find(p => p.id === transaction.payment_method_id);
+                            
+                            return (
+                              <div key={`expense-${transaction.id}`} className="p-4 hover:bg-gray-50">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: category?.color || '#6B7280' }}
+                                    ></div>
+                                    <div>
+                                      <p className="font-medium">{transaction.description}</p>
+                                      <p className="text-sm text-gray-500">
+                                        {category?.name} • {paymentMethod?.name} • {new Date(transaction.date).toLocaleDateString()}
+                                      </p>
+                                      {transaction.notes && (
+                                        <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <span className="text-lg font-semibold text-red-600">
+                                      -${Number(transaction.amount).toFixed(2)}
+                                    </span>
+                                    <p className="text-xs text-gray-500">Gasto</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            const incomeType = incomeTypes.find(t => t.id === transaction.income_type_id);
+                            
+                            return (
+                              <div key={`income-${transaction.id}`} className="p-4 hover:bg-gray-50">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: incomeType?.color || '#10B981' }}
+                                    ></div>
+                                    <div>
+                                      <p className="font-medium">{transaction.description}</p>
+                                      <p className="text-sm text-gray-500">
+                                        {incomeType?.name} • {new Date(transaction.date).toLocaleDateString()}
+                                      </p>
+                                      {transaction.notes && (
+                                        <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <span className="text-lg font-semibold text-green-600">
+                                      +${Number(transaction.amount).toFixed(2)}
+                                    </span>
+                                    <p className="text-xs text-gray-500">Ingreso</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                        })
+                    )}
                   </div>
                 </div>
 
@@ -1676,167 +1862,123 @@ const AppSupabase = () => {
             {/* Sección de Balance */}
             {activeTab === 'balance' && (
               <div className="space-y-6">
-                {/* Resumen general */}
+                {/* Selector de período */}
                 <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-semibold mb-6 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-500" />
-                    Balance Financiero Global
-                  </h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-600 mb-2">
-                        ${incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0).toFixed(2)}
-                      </div>
-                      <p className="text-gray-600">Total Ingresos</p>
-                      <p className="text-sm text-gray-500">{incomes.length} transacciones</p>
-                    </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                    <h2 className="text-xl font-semibold flex items-center">
+                      <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+                      Balance Mensual
+                    </h2>
                     
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-red-600 mb-2">
-                        ${expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0).toFixed(2)}
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mes del Balance</label>
+                        <input
+                          type="month"
+                          value={reportMonth}
+                          onChange={(e) => setReportMonth(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                       </div>
-                      <p className="text-gray-600">Total Gastos</p>
-                      <p className="text-sm text-gray-500">{expenses.length} transacciones</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className={`text-3xl font-bold mb-2 ${
-                        incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
-                        expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0) >= 0 
-                        ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        ${(
-                          incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
-                          expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
-                        ).toFixed(2)}
-                      </div>
-                      <p className="text-gray-600">Balance Neto</p>
-                      <p className="text-sm text-gray-500">
-                        {incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
-                         expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0) >= 0 
-                         ? 'Superávit' : 'Déficit'}
-                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Filtros */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <Filter className="w-5 h-5 mr-2 text-gray-500" />
-                    Filtros de Transacciones
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
-                      <input
-                        type="date"
-                        value={filters.startDate}
-                        onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                      <input
-                        type="date"
-                        value={filters.endDate}
-                        onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                      <select
-                        value={filters.category}
-                        onChange={(e) => setFilters({...filters, category: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Todas las categorías</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
-                      <select
-                        value={filters.paymentMethod}
-                        onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Todos los métodos</option>
-                        {paymentMethods.map(method => (
-                          <option key={method.id} value={method.id}>{method.name}</option>
-                        ))}
-                      </select>
+                {/* Resumen del mes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <TrendingUp className="w-8 h-8 text-green-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Ingresos del Mes</p>
+                        <p className="text-2xl font-bold text-green-600">${totalIncomes.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{monthIncomes.length} transacciones</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={() => setFilters({ startDate: '', endDate: '', category: '', paymentMethod: '' })}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <TrendingDown className="w-8 h-8 text-red-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Gastos del Mes</p>
+                        <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{monthExpenses.length} transacciones</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <Calendar className="w-8 h-8 text-blue-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Balance del Mes</p>
+                        <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ${balance.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {balance >= 0 ? 'Superávit' : 'Déficit'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gráficos comparativos */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Comparativo de Balance</h3>
+                    <select
+                      value={trendPeriod}
+                      onChange={(e) => setTrendPeriod(e.target.value)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1"
                     >
-                      Limpiar Filtros
-                    </button>
-                  </div>
-                </div>
-
-                {/* Transacciones filtradas */}
-                <div className="bg-white rounded-lg shadow">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold">Historial de Transacciones</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Mostrando {getFilteredExpenses().length} gastos filtrados
-                    </p>
+                      <option value="1">Último mes</option>
+                      <option value="3">Últimos 3 meses</option>
+                      <option value="6">Últimos 6 meses</option>
+                      <option value="12">Últimos 12 meses</option>
+                    </select>
                   </div>
                   
-                  <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                    {getFilteredExpenses().length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">
-                        <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No hay transacciones que coincidan con los filtros</p>
-                        <p className="text-sm">Ajusta los filtros para ver más resultados</p>
+                  {trendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={trendData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, '']} />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="ingresos" 
+                          stroke="#10B981" 
+                          strokeWidth={2}
+                          name="Ingresos"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="gastos" 
+                          stroke="#EF4444" 
+                          strokeWidth={2}
+                          name="Gastos"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="balance" 
+                          stroke="#3B82F6" 
+                          strokeWidth={3}
+                          name="Balance"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-64 flex items-center justify-center text-gray-500">
+                      <div className="text-center">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No hay datos para mostrar</p>
                       </div>
-                    ) : (
-                      getFilteredExpenses().map(expense => {
-                        const category = categories.find(c => c.id === expense.category_id);
-                        const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
-                        
-                        return (
-                          <div key={expense.id} className="p-4 hover:bg-gray-50">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center space-x-3">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: category?.color || '#6B7280' }}
-                                ></div>
-                                <div>
-                                  <p className="font-medium">{expense.description}</p>
-                                  <p className="text-sm text-gray-500">
-                                    {category?.name} • {paymentMethod?.name} • {new Date(expense.date).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="text-right">
-                                <span className="text-lg font-semibold text-red-600">
-                                  -${Number(expense.amount).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  )}
 
                 {/* Resumen de gastos por los últimos 7 días */}
                 <div className="bg-white rounded-lg shadow p-6">
