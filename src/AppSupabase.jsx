@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import AuthModal from './components/Auth/AuthModal';
@@ -36,9 +36,31 @@ const AppSupabase = () => {
   // Estados para gastos recurrentes
   const [showRecurring, setShowRecurring] = useState(false);
   const [recurringExpenses, setRecurringExpenses] = useState([]);
+  const [newRecurringExpense, setNewRecurringExpense] = useState({
+    description: '',
+    amount: '',
+    category: '',
+    currency: 'PEN',
+    frequency: 'monthly',
+    nextDate: new Date().toISOString().split('T')[0],
+    isActive: true
+  });
   
   // Estados para tipos de gráficos
   const [chartType, setChartType] = useState('pie');
+  
+  // Estados para monedas y tipo de cambio
+  const [exchangeRate, setExchangeRate] = useState(3.75); // Tipo de cambio USD a PEN
+  const [currencies] = useState([
+    { id: 'PEN', name: 'Soles (S/.)', symbol: 'S/.' },
+    { id: 'USD', name: 'Dólares ($)', symbol: '$' }
+  ]);
+  
+  // Estados para ordenamiento
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  
+  // Estados para UX móvil
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   // Estados para mensajes informativos
   const [expenseError, setExpenseError] = useState('');
@@ -51,6 +73,7 @@ const AppSupabase = () => {
     description: '',
     category: '',
     paymentMethod: '',
+    currency: 'PEN', // Soles por defecto
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -58,6 +81,7 @@ const AppSupabase = () => {
     amount: '',
     description: '',
     type: '',
+    currency: 'PEN', // Soles por defecto
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -228,6 +252,7 @@ const AppSupabase = () => {
         description: '',
         category: '',
         paymentMethod: '',
+        currency: 'PEN',
         date: new Date().toISOString().split('T')[0]
       });
       setSuccessMessage('¡Gasto agregado exitosamente!');
@@ -247,6 +272,7 @@ const AppSupabase = () => {
         amount: '',
         description: '',
         type: '',
+        currency: 'PEN',
         date: new Date().toISOString().split('T')[0]
       });
       setSuccessMessage('¡Ingreso agregado exitosamente!');
@@ -478,6 +504,58 @@ const AppSupabase = () => {
     });
   };
 
+  // Funciones utilitarias para monedas
+  const convertToSoles = (amount, currency) => {
+    if (currency === 'USD') {
+      return amount * exchangeRate;
+    }
+    return amount; // Ya está en soles
+  };
+
+  const formatCurrency = (amount, currency = 'PEN', showOriginal = false) => {
+    const solesAmount = convertToSoles(amount, currency);
+    if (showOriginal && currency === 'USD') {
+      return `S/. ${solesAmount.toFixed(2)} (US$ ${amount.toFixed(2)})`;
+    }
+    return `S/. ${solesAmount.toFixed(2)}`;
+  };
+
+  const getCurrencySymbol = (currencyId) => {
+    const currency = currencies.find(c => c.id === currencyId);
+    return currency ? currency.symbol : 'S/.';
+  };
+
+  // Funciones para ordenamiento
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedData = (data, config = sortConfig) => {
+    if (!config.key) return data;
+    
+    return [...data].sort((a, b) => {
+      let aValue = a[config.key];
+      let bValue = b[config.key];
+      
+      // Manejar casos especiales
+      if (config.key === 'amount') {
+        aValue = parseFloat(convertToSoles(aValue, a.currency || 'PEN'));
+        bValue = parseFloat(convertToSoles(bValue, b.currency || 'PEN'));
+      } else if (config.key === 'description') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (aValue < bValue) return config.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return config.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
   // Función para obtener datos del mes seleccionado
   const getMonthData = () => {
     const [year, month] = reportMonth.split('-');
@@ -552,6 +630,69 @@ const AppSupabase = () => {
     const percentage = (spent / budget.amount) * 100;
     
     return { spent, percentage, remaining: budget.amount - spent };
+  };
+
+  // Funciones para gastos recurrentes
+  const addRecurringExpense = () => {
+    if (!newRecurringExpense.description || !newRecurringExpense.amount || !newRecurringExpense.category) return;
+    
+    const recurringExpense = {
+      id: Date.now().toString(),
+      description: newRecurringExpense.description,
+      amount: parseFloat(newRecurringExpense.amount),
+      category: newRecurringExpense.category,
+      currency: newRecurringExpense.currency,
+      frequency: newRecurringExpense.frequency,
+      nextDate: newRecurringExpense.nextDate,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+    
+    setRecurringExpenses([...recurringExpenses, recurringExpense]);
+    setNewRecurringExpense({
+      description: '',
+      amount: '',
+      category: '',
+      currency: 'PEN',
+      frequency: 'monthly',
+      nextDate: new Date().toISOString().split('T')[0],
+      isActive: true
+    });
+    setSuccessMessage('Gasto recurrente agregado exitosamente');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const deleteRecurringExpense = (id) => {
+    setRecurringExpenses(recurringExpenses.filter(r => r.id !== id));
+    setSuccessMessage('Gasto recurrente eliminado');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const toggleRecurringExpense = (id) => {
+    setRecurringExpenses(recurringExpenses.map(r => 
+      r.id === id ? { ...r, isActive: !r.isActive } : r
+    ));
+  };
+
+  const getNextDueDate = (currentDate, frequency) => {
+    const date = new Date(currentDate);
+    switch (frequency) {
+      case 'weekly':
+        date.setDate(date.getDate() + 7);
+        break;
+      case 'monthly':
+        date.setMonth(date.getMonth() + 1);
+        break;
+      case 'quarterly':
+        date.setMonth(date.getMonth() + 3);
+        break;
+      case 'yearly':
+        date.setFullYear(date.getFullYear() + 1);
+        break;
+      default:
+        date.setMonth(date.getMonth() + 1);
+    }
+    return date.toISOString().split('T')[0];
   };
 
   // Función para obtener datos de tendencia
@@ -629,10 +770,13 @@ const AppSupabase = () => {
     <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <header className={`shadow-sm border-b transition-colors duration-200 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center py-4 space-y-2 sm:space-y-0">
-            <h1 className={`text-xl sm:text-2xl font-bold text-center sm:text-left transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-900'}`}>💰 Gestor Financiero</h1>
+          <div className="flex justify-between items-center py-4">
+            <h1 className={`text-xl sm:text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              💰 Gestor Financiero
+            </h1>
             
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-4">
               {/* Toggle de modo oscuro */}
               <button
                 onClick={() => setDarkMode(!darkMode)}
@@ -644,22 +788,20 @@ const AppSupabase = () => {
                 title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               >
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                <span className="hidden sm:inline">{darkMode ? 'Claro' : 'Oscuro'}</span>
+                <span>Tema</span>
               </button>
+              
               {isAuthenticated && (
                 <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-xs transition-colors duration-200 ${
                   darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
                 }`}>
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
                   <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
-                  {lastSync && (
-                    <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>• {new Date(lastSync).toLocaleTimeString()}</span>
-                  )}
                 </div>
               )}
               
               {isAuthenticated && (
-                <div className="flex space-x-2">
+                <>
                   <button
                     onClick={() => setShowExportModal(true)}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors text-sm ${
@@ -670,7 +812,7 @@ const AppSupabase = () => {
                     title="Exportar a Excel"
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Excel</span>
+                    <span>Excel</span>
                   </button>
                   
                   <label className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm ${
@@ -679,7 +821,7 @@ const AppSupabase = () => {
                       : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                   }`}>
                     <Upload className="w-4 h-4" />
-                    <span className="hidden sm:inline">Importar</span>
+                    <span>Importar</span>
                     <input
                       type="file"
                       accept=".xlsx,.xls"
@@ -687,11 +829,7 @@ const AppSupabase = () => {
                       className="hidden"
                     />
                   </label>
-                </div>
-              )}
-              
-              {isAuthenticated && (
-                <div className="flex space-x-2">
+                  
                   <button
                     onClick={() => setShowBudgets(!showBudgets)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
@@ -701,7 +839,7 @@ const AppSupabase = () => {
                     }`}
                   >
                     <Target className="w-4 h-4" />
-                    <span className="hidden sm:inline">Presupuestos</span>
+                    <span>Presupuestos</span>
                   </button>
                   
                   <button
@@ -715,7 +853,7 @@ const AppSupabase = () => {
                     <Settings className="w-4 h-4" />
                     <span>Config</span>
                   </button>
-                </div>
+                </>
               )}
               
               <AuthButton
@@ -726,7 +864,127 @@ const AppSupabase = () => {
                 loading={loading}
               />
             </div>
+            
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden flex items-center space-x-2">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode 
+                    ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </div>
           </div>
+          
+          {/* Mobile Menu */}
+          {showMobileMenu && (
+            <div className={`lg:hidden border-t py-4 space-y-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              {isAuthenticated && (
+                <div className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-xs ${
+                  darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+                  <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-2">
+                {isAuthenticated && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowExportModal(true);
+                        setShowMobileMenu(false);
+                      }}
+                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        darkMode 
+                          ? 'bg-green-900 text-green-300 hover:bg-green-800' 
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Exportar</span>
+                    </button>
+                    
+                    <label className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm ${
+                      darkMode 
+                        ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' 
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    }`}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Importar</span>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleImportFile}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    <button
+                      onClick={() => {
+                        setShowBudgets(!showBudgets);
+                        setShowMobileMenu(false);
+                      }}
+                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        darkMode 
+                          ? 'bg-purple-900 text-purple-300 hover:bg-purple-800' 
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                    >
+                      <Target className="w-4 h-4" />
+                      <span>Presupuestos</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setShowConfig(!showConfig);
+                        setShowMobileMenu(false);
+                      }}
+                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        darkMode 
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Configuración</span>
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <AuthButton
+                  isAuthenticated={isAuthenticated}
+                  user={user}
+                  onSignIn={() => {
+                    setShowAuthModal(true);
+                    setShowMobileMenu(false);
+                  }}
+                  onSignOut={handleSignOut}
+                  loading={loading}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -958,6 +1216,84 @@ const AppSupabase = () => {
                       disabled
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Configuración de Monedas */}
+              <div className={`rounded-lg shadow p-6 transition-colors duration-200 ${
+                darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  <CreditCard className="w-5 h-5 mr-2 text-yellow-500" />
+                  Configuración de Monedas
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Tipo de Cambio USD a PEN
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        US$ 1.00 =
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 3.75)}
+                        className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                        placeholder="3.75"
+                      />
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Soles
+                      </span>
+                    </div>
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Actualiza este valor cuando cambien las tasas de cambio
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Monedas Disponibles
+                    </label>
+                    <div className="space-y-2">
+                      {currencies.map(currency => (
+                        <div key={currency.id} className={`flex items-center justify-between p-3 rounded-lg border transition-colors duration-200 ${
+                          darkMode 
+                            ? 'border-gray-600 bg-gray-700' 
+                            : 'border-gray-200 bg-gray-50'
+                        }`}>
+                          <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {currency.name}
+                          </span>
+                          <span className={`text-sm px-2 py-1 rounded transition-colors duration-200 ${
+                            currency.id === 'PEN' 
+                              ? darkMode 
+                                ? 'bg-green-900 text-green-200' 
+                                : 'bg-green-100 text-green-800'
+                              : darkMode 
+                                ? 'bg-blue-900 text-blue-200' 
+                                : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {currency.id === 'PEN' ? 'Por defecto' : 'Secundaria'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1358,7 +1694,6 @@ const AppSupabase = () => {
               {[
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
-                { id: 'presupuestos', label: 'Presupuestos', icon: Target },
                 { id: 'recurrentes', label: 'Recurrentes', icon: Repeat },
                 { id: 'balance', label: 'Balance', icon: Calendar },
                 { id: 'reportes', label: 'Reportes', icon: BarChart3 }
@@ -1451,6 +1786,19 @@ const AppSupabase = () => {
                         onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                      <select
+                        value={newExpense.currency}
+                        onChange={(e) => setNewExpense({...newExpense, currency: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {currencies.map(currency => (
+                          <option key={currency.id} value={currency.id}>{currency.name}</option>
+                        ))}
+                      </select>
                     </div>
                     
                     <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
@@ -1710,6 +2058,19 @@ const AppSupabase = () => {
                         onChange={(e) => setNewIncome({...newIncome, date: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                      <select
+                        value={newIncome.currency}
+                        onChange={(e) => setNewIncome({...newIncome, currency: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {currencies.map(currency => (
+                          <option key={currency.id} value={currency.id}>{currency.name}</option>
+                        ))}
+                      </select>
                     </div>
                     
                     <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
@@ -2529,13 +2890,15 @@ const AppSupabase = () => {
                   </h2>
                   
                   {/* Formulario para nuevo gasto recurrente */}
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
                         darkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>Descripción:</label>
                       <input
                         type="text"
+                        value={newRecurringExpense.description}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, description: e.target.value})}
                         placeholder="ej. Netflix, Spotify..."
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
@@ -2551,6 +2914,10 @@ const AppSupabase = () => {
                       }`}>Monto:</label>
                       <input
                         type="number"
+                        step="0.01"
+                        min="0"
+                        value={newRecurringExpense.amount}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, amount: e.target.value})}
                         placeholder="0.00"
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
@@ -2565,13 +2932,15 @@ const AppSupabase = () => {
                         darkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>Categoría:</label>
                       <select
+                        value={newRecurringExpense.category}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, category: e.target.value})}
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white' 
                             : 'bg-white border-gray-300 text-gray-900'
                         }`}
                       >
-                        <option value="">Seleccionar</option>
+                        <option value="">Seleccionar categoría</option>
                         {categories.map(cat => (
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
@@ -2583,6 +2952,8 @@ const AppSupabase = () => {
                         darkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>Frecuencia:</label>
                       <select
+                        value={newRecurringExpense.frequency}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, frequency: e.target.value})}
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white' 
@@ -2596,10 +2967,46 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Moneda:</label>
+                      <select
+                        value={newRecurringExpense.currency}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, currency: e.target.value})}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        {currencies.map(currency => (
+                          <option key={currency.id} value={currency.id}>{currency.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Próximo Cobro:</label>
+                      <input
+                        type="date"
+                        value={newRecurringExpense.nextDate}
+                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, nextDate: e.target.value})}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      />
+                    </div>
+                    
                     <div className="flex items-end">
                       <button
-                        disabled
-                        className="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-md cursor-not-allowed"
+                        onClick={addRecurringExpense}
+                        disabled={!newRecurringExpense.description || !newRecurringExpense.amount || !newRecurringExpense.category}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
                         <PlusCircle className="w-4 h-4 inline mr-1" />
                         Agregar
@@ -2607,89 +3014,91 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  {/* Lista de gastos recurrentes simulados */}
+                  {/* Lista de gastos recurrentes */}
                   <div className="space-y-4">
-                    <div className={`p-4 rounded-lg border transition-colors duration-200 ${
-                      darkMode 
-                        ? 'bg-gray-700 border-gray-600' 
-                        : 'bg-gray-50 border-gray-200'
-                    }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Netflix
-                          </h3>
-                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            $15.99 - Mensual
-                          </p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            darkMode 
-                              ? 'bg-green-900 text-green-200' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            Activo
-                          </span>
-                        </div>
+                    {recurringExpenses.length === 0 ? (
+                      <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <Repeat className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">No hay gastos recurrentes</p>
+                        <p>Agrega tu primer gasto recurrente usando el formulario de arriba</p>
                       </div>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Próximo cargo: 15 de cada mes
-                      </p>
-                    </div>
-                    
-                    <div className={`p-4 rounded-lg border transition-colors duration-200 ${
-                      darkMode 
-                        ? 'bg-gray-700 border-gray-600' 
-                        : 'bg-gray-50 border-gray-200'
-                    }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Seguro de Auto
-                          </h3>
-                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            $120.00 - Mensual
-                          </p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
+                    ) : (
+                      recurringExpenses.map(recurring => {
+                        const category = categories.find(c => c.id === recurring.category);
+                        const nextDueDate = new Date(recurring.nextDate).toLocaleDateString();
+                        const frequencyLabel = {
+                          weekly: 'Semanal',
+                          monthly: 'Mensual',
+                          quarterly: 'Trimestral',
+                          yearly: 'Anual'
+                        }[recurring.frequency];
+                        
+                        return (
+                          <div key={recurring.id} className={`p-4 rounded-lg border transition-colors duration-200 ${
                             darkMode 
-                              ? 'bg-green-900 text-green-200' 
-                              : 'bg-green-100 text-green-800'
+                              ? 'bg-gray-700 border-gray-600' 
+                              : 'bg-gray-50 border-gray-200'
                           }`}>
-                            Activo
-                          </span>
-                        </div>
-                      </div>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Próximo cargo: 1 de cada mes
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Información sobre la funcionalidad */}
-                  <div className={`mt-6 p-4 rounded-lg border-2 border-dashed transition-colors duration-200 ${
-                    darkMode 
-                      ? 'border-gray-600 bg-gray-800' 
-                      : 'border-gray-300 bg-gray-50'
-                  }`}>
-                    <div className="text-center">
-                      <AlertCircle className={`w-8 h-8 mx-auto mb-2 ${
-                        darkMode ? 'text-blue-400' : 'text-blue-500'
-                      }`} />
-                      <h3 className={`font-medium mb-2 ${
-                        darkMode ? 'text-blue-400' : 'text-blue-600'
-                      }`}>
-                        Funcionalidad en Desarrollo
-                      </h3>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        El sistema de gastos recurrentes está en desarrollo. Los ejemplos mostrados son solo demostrativos.
-                      </p>
-                      <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Próximamente: automatización de gastos recurrentes, notificaciones, y más.
-                      </p>
-                    </div>
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center space-x-3">
+                                <div 
+                                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                                  style={{ backgroundColor: category?.color || '#6B7280' }}
+                                ></div>
+                                <div>
+                                  <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {recurring.description}
+                                  </h3>
+                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {formatCurrency(recurring.amount, recurring.currency, recurring.currency === 'USD')} - {frequencyLabel}
+                                  </p>
+                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {category?.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => toggleRecurringExpense(recurring.id)}
+                                  className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
+                                    recurring.isActive 
+                                      ? darkMode 
+                                        ? 'bg-green-900 text-green-200 hover:bg-green-800' 
+                                        : 'bg-green-100 text-green-800 hover:bg-green-200'
+                                      : darkMode 
+                                        ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' 
+                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  {recurring.isActive ? 'Activo' : 'Pausado'}
+                                </button>
+                                <button
+                                  onClick={() => deleteRecurringExpense(recurring.id)}
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                  title="Eliminar gasto recurrente"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Próximo cargo: {nextDueDate}
+                              </p>
+                              {recurring.currency === 'USD' && (
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  darkMode 
+                                    ? 'bg-blue-900 text-blue-200' 
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  USD → PEN
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>
