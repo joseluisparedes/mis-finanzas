@@ -2144,7 +2144,13 @@ const AppSupabase = () => {
                                   <div>
                                     <p className="font-medium text-gray-900">{expense.description}</p>
                                     <p className="text-sm text-gray-500">
-                                      {category?.name} • {paymentMethod?.name} • {new Date(expense.date).toLocaleDateString()}
+                                      {category?.name} • {paymentMethod?.name}
+                                      {paymentMethod?.payment_type === 'credit_card' && (
+                                        <span className="text-blue-600">
+                                          {' '}• Cierre: {new Date(getCreditCardAssignmentMonth(expense.date, paymentMethod)).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                                        </span>
+                                      )}
+                                      {' '}• {new Date(expense.date).toLocaleDateString()}
                                     </p>
                                     {expense.notes && (
                                       <p className="text-sm text-gray-400 mt-1">{expense.notes}</p>
@@ -2813,14 +2819,21 @@ const AppSupabase = () => {
                       const filteredIncomes = getFilteredIncomes();
                       
                       const allTransactions = [
-                        ...filteredExpenses.map(expense => ({
-                          ...expense,
-                          type: 'expense',
-                          amount: -parseFloat(expense.amount),
-                          categoryName: categories.find(c => c.id === expense.category_id)?.name || 'Sin categoría',
-                          categoryColor: categories.find(c => c.id === expense.category_id)?.color || '#6B7280',
-                          paymentMethodName: paymentMethods.find(p => p.id === expense.payment_method_id)?.name || 'Sin método'
-                        })),
+                        ...filteredExpenses.map(expense => {
+                          const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
+                          return {
+                            ...expense,
+                            type: 'expense',
+                            amount: -parseFloat(expense.amount),
+                            categoryName: categories.find(c => c.id === expense.category_id)?.name || 'Sin categoría',
+                            categoryColor: categories.find(c => c.id === expense.category_id)?.color || '#6B7280',
+                            paymentMethodName: paymentMethod?.name || 'Sin método',
+                            paymentMethod: paymentMethod,
+                            billingMonth: paymentMethod?.payment_type === 'credit_card' 
+                              ? getCreditCardAssignmentMonth(expense.date, paymentMethod)
+                              : null
+                          };
+                        }),
                         ...filteredIncomes.map(income => ({
                           ...income,
                           type: 'income',
@@ -2862,6 +2875,11 @@ const AppSupabase = () => {
                                   <p className="text-sm text-gray-500">
                                     {transaction.categoryName}
                                     {transaction.type === 'expense' && ` • ${transaction.paymentMethodName}`}
+                                    {transaction.billingMonth && (
+                                      <span className="text-blue-600">
+                                        {' '}• Cierre: {new Date(transaction.billingMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                                      </span>
+                                    )}
                                     {' • '}{new Date(transaction.date).toLocaleDateString()}
                                   </p>
                                   {transaction.notes && (

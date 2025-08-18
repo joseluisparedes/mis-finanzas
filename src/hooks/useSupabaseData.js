@@ -678,65 +678,34 @@ export const useSupabaseData = () => {
       return expenseDate; // Para métodos que no son TC, mantener fecha original
     }
 
-    const expDate = new Date(expenseDate);
+    // Crear fecha local para evitar problemas de zona horaria
+    const expDate = new Date(expenseDate + 'T00:00:00');
     const expDay = expDate.getDate();
     const expMonth = expDate.getMonth();
     const expYear = expDate.getFullYear();
     
     const closingDay = paymentMethod.cc_closing_day;
-    const paymentDay = paymentMethod.cc_payment_day;
 
-    // Determinar a qué ciclo de TC pertenece este gasto
-    let cycleMonth, cycleYear;
+    // Determinar el mes de cierre al que pertenece este gasto
+    let closingMonth, closingYear;
     
     if (expDay <= closingDay) {
-      // El gasto está dentro del ciclo actual
-      cycleMonth = expMonth;
-      cycleYear = expYear;
+      // El gasto está dentro del ciclo actual (cierra este mes)
+      closingMonth = expMonth;
+      closingYear = expYear;
     } else {
-      // El gasto está en el próximo ciclo
-      cycleMonth = expMonth + 1;
-      cycleYear = expYear;
-      if (cycleMonth > 11) {
-        cycleMonth = 0;
-        cycleYear++;
+      // El gasto está después del cierre, va al próximo ciclo
+      closingMonth = expMonth + 1;
+      closingYear = expYear;
+      if (closingMonth > 11) {
+        closingMonth = 0;
+        closingYear++;
       }
     }
 
-    // Calcular fecha de cierre del ciclo
-    const closingDate = new Date(cycleYear, cycleMonth, closingDay);
-    
-    // Calcular fecha de pago
-    let paymentDate = new Date(cycleYear, cycleMonth, paymentDay);
-    if (paymentDay < closingDay) {
-      // Si el día de pago es menor que el de cierre, está en el mes siguiente
-      paymentDate.setMonth(paymentDate.getMonth() + 1);
-    }
-
-    // Determinar qué mes tiene más días entre cierre y pago
-    const closingMonth = closingDate.getMonth();
-    const paymentMonth = paymentDate.getMonth();
-    
-    let assignmentMonth;
-    
-    if (closingMonth === paymentMonth) {
-      // Mismo mes
-      assignmentMonth = closingMonth;
-    } else {
-      // Diferentes meses - asignar al que tenga más días
-      const daysInClosingMonth = new Date(closingDate.getFullYear(), closingMonth + 1, 0).getDate();
-      const daysInPaymentMonth = new Date(paymentDate.getFullYear(), paymentMonth + 1, 0).getDate();
-      
-      if (daysInClosingMonth >= daysInPaymentMonth) {
-        assignmentMonth = closingMonth;
-      } else {
-        assignmentMonth = paymentMonth;
-      }
-    }
-
-    // Retornar fecha ajustada al mes de asignación
-    const assignmentYear = assignmentMonth < closingMonth ? paymentDate.getFullYear() : closingDate.getFullYear();
-    return new Date(assignmentYear, assignmentMonth, 1).toISOString().split('T')[0];
+    // El gasto se asigna al mes de cierre de la tarjeta
+    // Esto significa que aparecerá en el balance del mes cuando cierre la tarjeta
+    return new Date(closingYear, closingMonth, 1).toISOString().split('T')[0];
   }, []);
 
   // ==============================================
