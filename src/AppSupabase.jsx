@@ -10,6 +10,64 @@ import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
 
 const AppSupabase = () => {
+  // Funciones auxiliares para manejar fechas sin problemas de zona horaria
+  const formatDateToLocalString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getTodayLocalDateString = () => {
+    return formatDateToLocalString(new Date());
+  };
+
+  // Estados principales del hook
+  const {
+    isAuthenticated,
+    user,
+    loading,
+    signOut,
+    expenses,
+    incomes,
+    categories,
+    paymentMethods,
+    incomeTypes,
+    recurringExpenses,
+    totals,
+    settings,
+    addExpense: addExpenseToData,
+    addIncome: addIncomeToData,
+    deleteExpense: deleteExpenseFromData,
+    deleteIncome: deleteIncomeFromData,
+    refreshData,
+    syncing,
+    error: dataError,
+    addRecurringExpense: addRecurringExpenseToData,
+    getFinancialSummary,
+    getRecurringExpensesForPeriod,
+    updateRecurringExpense,
+    addPaymentMethod,
+    deleteRecurringExpense: deleteRecurringExpenseFromData,
+    generateRecurringExpenses,
+    getCreditCardAssignmentMonth,
+    updateSettings,
+    signIn,
+    signUp,
+    clearError,
+    updateExpense,
+    updateIncome,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    updatePaymentMethod,
+    deletePaymentMethod,
+    addIncomeType,
+    updateIncomeType,
+    deleteIncomeType,
+    lastSync
+  } = useSupabaseData();
+
   // Estados para UI
   const [activeTab, setActiveTab] = useState('gastos');
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -70,18 +128,6 @@ const AppSupabase = () => {
   // Estados para UX móvil
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
-  // Funciones auxiliares para manejar fechas sin problemas de zona horaria
-  const formatDateToLocalString = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const getTodayLocalDateString = () => {
-    return formatDateToLocalString(new Date());
-  };
-
   // Estados para mensajes informativos
   const [error, setError] = useState('');
   const [expenseError, setExpenseError] = useState('');
@@ -146,49 +192,6 @@ const AppSupabase = () => {
   const [migrationLoading, setMigrationLoading] = useState(false);
   const [migrationProgress, setMigrationProgress] = useState(null);
 
-  // Hook personalizado para datos con Supabase
-  const {
-    loading,
-    error: dataError,
-    user,
-    isAuthenticated,
-    syncing,
-    lastSync,
-    categories,
-    paymentMethods,
-    incomeTypes,
-    expenses,
-    incomes,
-    recurringExpenses,
-    settings,
-    addExpense: addExpenseToData,
-    updateExpense,
-    deleteExpense: deleteExpenseFromData,
-    addIncome: addIncomeToData,
-    updateIncome,
-    deleteIncome: deleteIncomeFromData,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    addPaymentMethod,
-    updatePaymentMethod,
-    deletePaymentMethod,
-    addIncomeType,
-    updateIncomeType,
-    deleteIncomeType,
-    addRecurringExpense: addRecurringExpenseToData,
-    updateRecurringExpense,
-    deleteRecurringExpense: deleteRecurringExpenseFromData,
-    generateRecurringExpenses,
-    getCreditCardAssignmentMonth,
-    updateSettings,
-    getFinancialSummary,
-    signIn,
-    signUp,
-    signOut,
-    refreshData,
-    clearError
-  } = useSupabaseData();
 
   // Verificar migración al cargar - DESACTIVADO (app 100% Supabase)
   useEffect(() => {
