@@ -315,6 +315,93 @@ const AppSupabase = () => {
     setShowExportModal(false);
   };
 
+  // Función para filtrar gastos
+  const getFilteredExpenses = () => {
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      const startDate = filters.startDate ? new Date(filters.startDate) : null;
+      const endDate = filters.endDate ? new Date(filters.endDate) : null;
+      
+      if (startDate && expenseDate < startDate) return false;
+      if (endDate && expenseDate > endDate) return false;
+      if (filters.paymentMethod && expense.payment_method_id !== filters.paymentMethod) return false;
+      if (filters.category && expense.category_id !== filters.category) return false;
+      
+      return true;
+    });
+  };
+
+  const getFilteredIncomes = () => {
+    return incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      const startDate = filters.startDate ? new Date(filters.startDate) : null;
+      const endDate = filters.endDate ? new Date(filters.endDate) : null;
+      
+      if (startDate && incomeDate < startDate) return false;
+      if (endDate && incomeDate > endDate) return false;
+      
+      return true;
+    });
+  };
+
+  // Función para obtener datos del mes seleccionado
+  const getMonthData = () => {
+    const [year, month] = reportMonth.split('-');
+    const monthExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getFullYear() === parseInt(year) && 
+             expenseDate.getMonth() === parseInt(month) - 1;
+    });
+    
+    const monthIncomes = incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      return incomeDate.getFullYear() === parseInt(year) && 
+             incomeDate.getMonth() === parseInt(month) - 1;
+    });
+
+    const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+    const balance = totalIncomes - totalExpenses;
+
+    return { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance };
+  };
+
+  // Función para obtener datos de tendencia
+  const getTrendData = () => {
+    const months = parseInt(trendPeriod);
+    const data = [];
+    
+    for (let i = months - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      const monthExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+      });
+      
+      const monthIncomes = incomes.filter(income => {
+        const incomeDate = new Date(income.date);
+        return incomeDate.getFullYear() === year && incomeDate.getMonth() === month;
+      });
+      
+      const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+      const balance = totalIncomes - totalExpenses;
+      
+      data.push({
+        month: date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
+        gastos: totalExpenses,
+        ingresos: totalIncomes,
+        balance: balance
+      });
+    }
+    
+    return data;
+  };
+
   // Componente para mensajes
   const MessageAlert = ({ message, type = 'success' }) => {
     if (!message) return null;
@@ -477,43 +564,336 @@ const AppSupabase = () => {
               ))}
             </nav>
 
+            {/* Sección de Gastos */}
             {activeTab === 'gastos' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center">
-                  <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
-                  Gestión de Gastos
-                </h2>
-                <p className="text-gray-600">Sección de gastos completamente funcional con Supabase</p>
+              <div>
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
+                    Agregar Nuevo Gasto
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newExpense.amount}
+                        onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                      <input
+                        type="text"
+                        value={newExpense.description}
+                        onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Descripción del gasto"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                      <select
+                        value={newExpense.category}
+                        onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Seleccionar categoría</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                      <select
+                        value={newExpense.paymentMethod}
+                        onChange={(e) => setNewExpense({...newExpense, paymentMethod: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Seleccionar método</option>
+                        {paymentMethods.map(method => (
+                          <option key={method.id} value={method.id}>{method.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <input
+                        type="date"
+                        value={newExpense.date}
+                        onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div className="md:col-span-2 lg:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                      <input
+                        type="text"
+                        value={newExpense.notes || ''}
+                        onChange={(e) => setNewExpense({...newExpense, notes: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Notas adicionales"
+                      />
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <button
+                        onClick={addExpense}
+                        disabled={loading}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Agregando...' : 'Agregar Gasto'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Lista de Gastos */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">Gastos Recientes</h3>
+                  </div>
+                  
+                  <div className="divide-y divide-gray-200">
+                    {expenses.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay gastos registrados</p>
+                        <p className="text-sm">Agrega tu primer gasto usando el formulario de arriba</p>
+                      </div>
+                    ) : (
+                      expenses.slice(0, 10).map(expense => {
+                        const category = categories.find(c => c.id === expense.category_id);
+                        const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
+                        
+                        return (
+                          <div key={expense.id} className="p-4 hover:bg-gray-50">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: category?.color || '#6B7280' }}
+                                  ></div>
+                                  <div>
+                                    <p className="font-medium text-gray-900">{expense.description}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {category?.name} • {paymentMethod?.name} • {new Date(expense.date).toLocaleDateString()}
+                                    </p>
+                                    {expense.notes && (
+                                      <p className="text-sm text-gray-400 mt-1">{expense.notes}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg font-semibold text-red-600">
+                                  -${Number(expense.amount).toFixed(2)}
+                                </span>
+                                <button
+                                  onClick={() => deleteExpense(expense.id)}
+                                  className="text-gray-400 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  
+                  {expenses.length > 10 && (
+                    <div className="p-4 text-center border-t border-gray-200">
+                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        Ver todos los gastos ({expenses.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
+            {/* Sección de Ingresos */}
             {activeTab === 'ingresos' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                  Gestión de Ingresos
-                </h2>
-                <p className="text-gray-600">Sección de ingresos completamente funcional con Supabase</p>
+              <div>
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                    Agregar Nuevo Ingreso
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newIncome.amount}
+                        onChange={(e) => setNewIncome({...newIncome, amount: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                      <input
+                        type="text"
+                        value={newIncome.description}
+                        onChange={(e) => setNewIncome({...newIncome, description: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Descripción del ingreso"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Ingreso</label>
+                      <select
+                        value={newIncome.type}
+                        onChange={(e) => setNewIncome({...newIncome, type: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        {incomeTypes.map(type => (
+                          <option key={type.id} value={type.id}>{type.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <input
+                        type="date"
+                        value={newIncome.date}
+                        onChange={(e) => setNewIncome({...newIncome, date: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div className="md:col-span-2 lg:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                      <input
+                        type="text"
+                        value={newIncome.notes || ''}
+                        onChange={(e) => setNewIncome({...newIncome, notes: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Notas adicionales"
+                      />
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <button
+                        onClick={addIncome}
+                        disabled={loading}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Agregando...' : 'Agregar Ingreso'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Lista de Ingresos */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">Ingresos Recientes</h3>
+                  </div>
+                  
+                  <div className="divide-y divide-gray-200">
+                    {incomes.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay ingresos registrados</p>
+                        <p className="text-sm">Agrega tu primer ingreso usando el formulario de arriba</p>
+                      </div>
+                    ) : (
+                      incomes.slice(0, 10).map(income => {
+                        const incomeType = incomeTypes.find(t => t.id === income.income_type_id);
+                        
+                        return (
+                          <div key={income.id} className="p-4 hover:bg-gray-50">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: incomeType?.color || '#10B981' }}
+                                  ></div>
+                                  <div>
+                                    <p className="font-medium text-gray-900">{income.description}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {incomeType?.name} • {new Date(income.date).toLocaleDateString()}
+                                    </p>
+                                    {income.notes && (
+                                      <p className="text-sm text-gray-400 mt-1">{income.notes}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg font-semibold text-green-600">
+                                  +${Number(income.amount).toFixed(2)}
+                                </span>
+                                <button
+                                  onClick={() => deleteIncome(income.id)}
+                                  className="text-gray-400 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  
+                  {incomes.length > 10 && (
+                    <div className="p-4 text-center border-t border-gray-200">
+                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        Ver todos los ingresos ({incomes.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
+            {/* Sección de Reportes */}
             {activeTab === 'reportes' && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center">
                   <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
                   Reportes y Análisis
                 </h2>
-                <p className="text-gray-600">Reportes con filtros avanzados y gráficos</p>
+                <p className="text-gray-600">Reportes con filtros avanzados y gráficos - Próximamente funcionalidad completa</p>
               </div>
             )}
 
+            {/* Sección de Balance */}
             {activeTab === 'balance' && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center">
                   <Calendar className="w-5 h-5 mr-2 text-purple-500" />
                   Balance Mensual
                 </h2>
-                <p className="text-gray-600">Balance con gráficos comparativos mensuales</p>
+                <p className="text-gray-600">Balance con gráficos comparativos mensuales - Próximamente funcionalidad completa</p>
               </div>
             )}
           </div>
