@@ -730,18 +730,28 @@ const AppSupabase = () => {
 
   // Función para agregar método de pago con validación de TC
   const addPaymentMethodWithValidation = async () => {
+    setError(''); // Limpiar errores previos
+    
     if (!newPaymentMethodForm.name.trim()) {
       setError('El nombre del método de pago es obligatorio');
       return;
     }
 
-    // Verificar si ya existe un método de pago con ese nombre
-    const existingMethod = paymentMethods.find(method => 
+    // Refrescar datos para asegurar que tenemos la información más reciente
+    await refreshData();
+
+    // Verificar si ya existe un método de pago con ese nombre (después del refresh)
+    const currentPaymentMethods = paymentMethods.length > 0 ? paymentMethods : 
+      await new Promise(resolve => {
+        setTimeout(() => resolve(paymentMethods), 100); // Esperar un poco por el refresh
+      });
+    
+    const existingMethod = currentPaymentMethods.find(method => 
       method.name.toLowerCase().trim() === newPaymentMethodForm.name.toLowerCase().trim()
     );
     
     if (existingMethod) {
-      setError('Ya existe un método de pago con ese nombre');
+      setError(`Ya existe un método de pago con el nombre "${newPaymentMethodForm.name}"`);
       return;
     }
 
@@ -785,7 +795,12 @@ const AppSupabase = () => {
       setSuccessMessage('Método de pago agregado exitosamente');
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
-      setError(result.error);
+      // Manejo específico para errores de constraint único
+      if (result.error && result.error.includes('duplicate key value violates unique constraint')) {
+        setError(`Ya existe un método de pago con el nombre "${newPaymentMethodForm.name}". Intenta con un nombre diferente.`);
+      } else {
+        setError(result.error || 'Error al crear el método de pago');
+      }
     }
   };
 

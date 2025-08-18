@@ -819,6 +819,27 @@ export const useSupabaseData = () => {
     }
   }, [isAuthenticated]);
 
+  // Función para detectar duplicados en métodos de pago
+  const checkForDuplicates = useCallback(() => {
+    const duplicates = {};
+    const seen = new Set();
+    
+    paymentMethods.forEach(method => {
+      const key = method.name.toLowerCase().trim();
+      if (seen.has(key)) {
+        if (!duplicates[key]) {
+          duplicates[key] = paymentMethods.filter(m => 
+            m.name.toLowerCase().trim() === key
+          );
+        }
+      } else {
+        seen.add(key);
+      }
+    });
+
+    return Object.keys(duplicates).length > 0 ? duplicates : null;
+  }, [paymentMethods]);
+
   return {
     // Estados principales
     loading,
@@ -884,6 +905,7 @@ export const useSupabaseData = () => {
 
     // Utilidades
     refreshData,
+    checkForDuplicates,
     clearError: () => setError(null)
   };
 };
