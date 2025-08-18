@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import AuthModal from './components/Auth/AuthModal';
 import AuthButton from './components/Auth/AuthButton';
@@ -18,6 +18,27 @@ const AppSupabase = () => {
   
   // Estados para búsqueda
   const [searchTerm, setSearchTerm] = useState('');
+  const [advancedFilters, setAdvancedFilters] = useState({
+    minAmount: '',
+    maxAmount: '',
+    hasNotes: false
+  });
+  
+  // Estados para presupuestos
+  const [showBudgets, setShowBudgets] = useState(false);
+  const [budgets, setBudgets] = useState([]);
+  const [newBudget, setNewBudget] = useState({
+    categoryId: '',
+    amount: '',
+    period: 'monthly'
+  });
+  
+  // Estados para gastos recurrentes
+  const [showRecurring, setShowRecurring] = useState(false);
+  const [recurringExpenses, setRecurringExpenses] = useState([]);
+  
+  // Estados para tipos de gráficos
+  const [chartType, setChartType] = useState('pie');
   
   // Estados para mensajes informativos
   const [expenseError, setExpenseError] = useState('');
@@ -369,9 +390,22 @@ const AppSupabase = () => {
     });
   };
 
-  // Función para búsqueda inteligente en gastos
+  // Función para búsqueda inteligente en gastos con filtros avanzados
   const getSearchedExpenses = () => {
-    const filtered = getFilteredExpenses();
+    let filtered = getFilteredExpenses();
+    
+    // Aplicar filtros avanzados
+    if (advancedFilters.minAmount) {
+      filtered = filtered.filter(expense => parseFloat(expense.amount) >= parseFloat(advancedFilters.minAmount));
+    }
+    if (advancedFilters.maxAmount) {
+      filtered = filtered.filter(expense => parseFloat(expense.amount) <= parseFloat(advancedFilters.maxAmount));
+    }
+    if (advancedFilters.hasNotes) {
+      filtered = filtered.filter(expense => expense.notes && expense.notes.trim());
+    }
+    
+    // Aplicar búsqueda por texto
     if (!searchTerm.trim()) return filtered;
 
     return filtered.filter(expense => {
@@ -464,6 +498,60 @@ const AppSupabase = () => {
     const balance = totalIncomes - totalExpenses;
 
     return { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance };
+  };
+
+  // Funciones para manejar presupuestos
+  const addBudget = () => {
+    if (!newBudget.categoryId || !newBudget.amount) return;
+    
+    const budget = {
+      id: Date.now().toString(),
+      categoryId: newBudget.categoryId,
+      amount: parseFloat(newBudget.amount),
+      period: newBudget.period,
+      createdAt: new Date().toISOString()
+    };
+    
+    setBudgets([...budgets, budget]);
+    setNewBudget({ categoryId: '', amount: '', period: 'monthly' });
+    setSuccessMessage('Presupuesto agregado exitosamente');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const deleteBudget = (budgetId) => {
+    setBudgets(budgets.filter(b => b.id !== budgetId));
+    setSuccessMessage('Presupuesto eliminado');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const getBudgetProgress = (budget) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    if (budget.period === 'monthly') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (budget.period === 'weekly') {
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+    } else { // yearly
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
+    }
+    
+    const periodExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expense.category_id === budget.categoryId &&
+             expenseDate >= startDate && expenseDate <= endDate;
+    });
+    
+    const spent = periodExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const percentage = (spent / budget.amount) * 100;
+    
+    return { spent, percentage, remaining: budget.amount - spent };
   };
 
   // Función para obtener datos de tendencia
@@ -603,17 +691,31 @@ const AppSupabase = () => {
               )}
               
               {isAuthenticated && (
-                <button
-                  onClick={() => setShowConfig(!showConfig)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                    darkMode 
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Config</span>
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setShowBudgets(!showBudgets)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      darkMode 
+                        ? 'bg-purple-900 text-purple-300 hover:bg-purple-800' 
+                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    }`}
+                  >
+                    <Target className="w-4 h-4" />
+                    <span className="hidden sm:inline">Presupuestos</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowConfig(!showConfig)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Config</span>
+                  </button>
+                </div>
               )}
               
               <AuthButton
@@ -663,6 +765,156 @@ const AppSupabase = () => {
                     <p>✓ Backup automático</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : showBudgets ? (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Gestión de Presupuestos</h2>
+              <button
+                onClick={() => setShowBudgets(false)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <X className="w-4 h-4" />
+                <span>Cerrar</span>
+              </button>
+            </div>
+
+            {/* Agregar nuevo presupuesto */}
+            <div className={`${cardClasses} p-6 mb-6`}>
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Target className="w-5 h-5 mr-2 text-purple-500" />
+                Crear Nuevo Presupuesto
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Categoría</label>
+                  <select
+                    value={newBudget.categoryId}
+                    onChange={(e) => setNewBudget({...newBudget, categoryId: e.target.value})}
+                    className={inputClasses}
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Monto</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newBudget.amount}
+                    onChange={(e) => setNewBudget({...newBudget, amount: e.target.value})}
+                    className={inputClasses}
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Período</label>
+                  <select
+                    value={newBudget.period}
+                    onChange={(e) => setNewBudget({...newBudget, period: e.target.value})}
+                    className={inputClasses}
+                  >
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensual</option>
+                    <option value="yearly">Anual</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-end">
+                  <button
+                    onClick={addBudget}
+                    disabled={!newBudget.categoryId || !newBudget.amount}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Crear Presupuesto
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de presupuestos activos */}
+            <div className={cardClasses}>
+              <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <h3 className="text-lg font-semibold">Presupuestos Activos</h3>
+              </div>
+              
+              <div className="divide-y divide-gray-200">
+                {budgets.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No hay presupuestos configurados</p>
+                    <p className="text-sm">Crea tu primer presupuesto para controlar tus gastos</p>
+                  </div>
+                ) : (
+                  budgets.map(budget => {
+                    const category = categories.find(c => c.id === budget.categoryId);
+                    const progress = getBudgetProgress(budget);
+                    const isOverBudget = progress.percentage > 100;
+                    
+                    return (
+                      <div key={budget.id} className={`p-6 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-colors`}>
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="font-semibold text-lg">{category?.name}</h4>
+                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              Presupuesto {budget.period === 'monthly' ? 'mensual' : budget.period === 'weekly' ? 'semanal' : 'anual'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => deleteBudget(budget.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">
+                              ${progress.spent.toFixed(2)} de ${budget.amount.toFixed(2)}
+                            </span>
+                            <span className={`text-sm font-bold ${
+                              isOverBudget ? 'text-red-600' : progress.percentage > 80 ? 'text-yellow-600' : 'text-green-600'
+                            }`}>
+                              {progress.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                isOverBudget ? 'bg-red-500' : progress.percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(progress.percentage, 100)}%` }}
+                            ></div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {progress.remaining >= 0 ? `Restante: $${progress.remaining.toFixed(2)}` : `Excedido: $${Math.abs(progress.remaining).toFixed(2)}`}
+                            </span>
+                            {isOverBudget && (
+                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                ¡Presupuesto excedido!
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -1106,6 +1358,8 @@ const AppSupabase = () => {
               {[
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
+                { id: 'presupuestos', label: 'Presupuestos', icon: Target },
+                { id: 'recurrentes', label: 'Recurrentes', icon: Repeat },
                 { id: 'balance', label: 'Balance', icon: Calendar },
                 { id: 'reportes', label: 'Reportes', icon: BarChart3 }
               ].map(tab => (
@@ -1222,26 +1476,88 @@ const AppSupabase = () => {
                   </div>
                 </div>
                 
-                {/* Barra de búsqueda */}
+                {/* Barra de búsqueda avanzada */}
                 <div className={`${cardClasses} p-4 mb-6`}>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
+                  <div className="space-y-4">
+                    {/* Búsqueda principal */}
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Buscar gastos por descripción, monto, fecha, categoría..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
+                      />
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm('')}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      )}
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Buscar gastos por descripción, monto, fecha, categoría..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                      </button>
+                    
+                    {/* Filtros avanzados */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                      <div>
+                        <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Monto mínimo
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={advancedFilters.minAmount}
+                          onChange={(e) => setAdvancedFilters({...advancedFilters, minAmount: e.target.value})}
+                          className={inputClasses}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Monto máximo
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={advancedFilters.maxAmount}
+                          onChange={(e) => setAdvancedFilters({...advancedFilters, maxAmount: e.target.value})}
+                          className={inputClasses}
+                          placeholder="999999.99"
+                        />
+                      </div>
+                      
+                      <div className="flex items-end">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={advancedFilters.hasNotes}
+                            onChange={(e) => setAdvancedFilters({...advancedFilters, hasNotes: e.target.checked})}
+                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                          />
+                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Solo con notas</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Limpiar filtros */}
+                    {(advancedFilters.minAmount || advancedFilters.maxAmount || advancedFilters.hasNotes) && (
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => setAdvancedFilters({ minAmount: '', maxAmount: '', hasNotes: false })}
+                          className={`text-sm px-3 py-1 rounded transition-colors ${
+                            darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          Limpiar filtros avanzados
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1624,6 +1940,53 @@ const AppSupabase = () => {
                       <span>Este Mes</span>
                     </button>
                   </div>
+                  
+                  {/* Selector de tipo de gráfico */}
+                  <div className="mt-4 border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Gráfico:</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        onClick={() => setChartType('pie')}
+                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                          chartType === 'pie' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        🥧 Circular
+                      </button>
+                      <button
+                        onClick={() => setChartType('donut')}
+                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                          chartType === 'donut' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        🍩 Dona
+                      </button>
+                      <button
+                        onClick={() => setChartType('bar')}
+                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                          chartType === 'bar' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        📊 Barras
+                      </button>
+                      <button
+                        onClick={() => setChartType('area')}
+                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                          chartType === 'area' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        📈 Área
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Resumen Filtrado */}
@@ -1716,22 +2079,79 @@ const AppSupabase = () => {
                         <>
                           <div className="h-64 mb-4">
                             <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={categoryStats}
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                >
-                                  {categoryStats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
-                              </PieChart>
+                              {chartType === 'pie' && (
+                                <PieChart>
+                                  <Pie
+                                    data={categoryStats}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                  >
+                                    {categoryStats.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                </PieChart>
+                              )}
+                              
+                              {chartType === 'donut' && (
+                                <PieChart>
+                                  <Pie
+                                    data={categoryStats}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={40}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                  >
+                                    {categoryStats.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                </PieChart>
+                              )}
+                              
+                              {chartType === 'bar' && (
+                                <BarChart data={categoryStats}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Bar dataKey="value" fill="#3B82F6">
+                                    {categoryStats.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              )}
+                              
+                              {chartType === 'area' && (
+                                <AreaChart data={categoryStats}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Area 
+                                    type="monotone" 
+                                    dataKey="value" 
+                                    stroke="#3B82F6" 
+                                    fill="url(#colorGradient)" 
+                                  />
+                                  <defs>
+                                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                  </defs>
+                                </AreaChart>
+                              )}
                             </ResponsiveContainer>
                           </div>
                           
@@ -1919,6 +2339,358 @@ const AppSupabase = () => {
                       </div>
                     );
                   })()}
+                </div>
+              </div>
+            )}
+
+            {/* Sección de Presupuestos */}
+            {activeTab === 'presupuestos' && (
+              <div>
+                {/* Gestión de Presupuestos */}
+                <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
+                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                }`}>
+                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <Target className="w-5 h-5 mr-2 text-green-500" />
+                    Gestión de Presupuestos
+                  </h2>
+                  
+                  {/* Formulario para nuevo presupuesto */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Categoría:</label>
+                      <select
+                        value={newBudget.categoryId}
+                        onChange={(e) => setNewBudget({...newBudget, categoryId: e.target.value})}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        <option value="">Seleccionar categoría</option>
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Monto:</label>
+                      <input
+                        type="number"
+                        value={newBudget.amount}
+                        onChange={(e) => setNewBudget({...newBudget, amount: e.target.value})}
+                        placeholder="0.00"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        }`}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Período:</label>
+                      <select
+                        value={newBudget.period}
+                        onChange={(e) => setNewBudget({...newBudget, period: e.target.value})}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        <option value="weekly">Semanal</option>
+                        <option value="monthly">Mensual</option>
+                        <option value="yearly">Anual</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <button
+                        onClick={addBudget}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+                      >
+                        <PlusCircle className="w-4 h-4 inline mr-1" />
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Lista de presupuestos */}
+                  <div className="space-y-4">
+                    {budgets.map(budget => {
+                      const categoryName = categories.find(c => c.id === budget.categoryId)?.name || 'Sin categoría';
+                      const progress = getBudgetProgress(budget);
+                      
+                      return (
+                        <div key={budget.id} className={`p-4 rounded-lg border transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {categoryName}
+                              </h3>
+                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                ${budget.amount} {budget.period === 'weekly' ? 'semanal' : budget.period === 'monthly' ? 'mensual' : 'anual'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => deleteBudget(budget.id)}
+                              className={`text-red-500 hover:text-red-700 transition-colors ${
+                                darkMode ? 'hover:text-red-400' : ''
+                              }`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="mb-2">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                                Gastado: ${progress.spent.toFixed(2)}
+                              </span>
+                              <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                                {progress.percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className={`w-full bg-gray-200 rounded-full h-2 ${
+                              darkMode ? 'bg-gray-600' : ''
+                            }`}>
+                              <div
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  progress.percentage >= 100 
+                                    ? 'bg-red-500' 
+                                    : progress.percentage >= 80 
+                                      ? 'bg-yellow-500' 
+                                      : 'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(progress.percentage, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          {progress.percentage >= 80 && (
+                            <div className={`text-sm mt-2 p-2 rounded ${
+                              progress.percentage >= 100 
+                                ? darkMode 
+                                  ? 'bg-red-900 text-red-200' 
+                                  : 'bg-red-100 text-red-800'
+                                : darkMode 
+                                  ? 'bg-yellow-900 text-yellow-200' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {progress.percentage >= 100 
+                                ? `¡Presupuesto excedido! Has gastado $${(progress.spent - budget.amount).toFixed(2)} de más.`
+                                : `¡Atención! Has usado el ${progress.percentage.toFixed(1)}% de tu presupuesto.`
+                              }
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {budgets.length === 0 && (
+                      <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay presupuestos configurados</p>
+                        <p className="text-sm">Agrega tu primer presupuesto arriba</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sección de Gastos Recurrentes */}
+            {activeTab === 'recurrentes' && (
+              <div>
+                {/* Gestión de Gastos Recurrentes */}
+                <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
+                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                }`}>
+                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <Repeat className="w-5 h-5 mr-2 text-blue-500" />
+                    Gastos Recurrentes
+                  </h2>
+                  
+                  {/* Formulario para nuevo gasto recurrente */}
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Descripción:</label>
+                      <input
+                        type="text"
+                        placeholder="ej. Netflix, Spotify..."
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        }`}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Monto:</label>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        }`}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Categoría:</label>
+                      <select
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        <option value="">Seleccionar</option>
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>Frecuencia:</label>
+                      <select
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        <option value="weekly">Semanal</option>
+                        <option value="monthly">Mensual</option>
+                        <option value="quarterly">Trimestral</option>
+                        <option value="yearly">Anual</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <button
+                        disabled
+                        className="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-md cursor-not-allowed"
+                      >
+                        <PlusCircle className="w-4 h-4 inline mr-1" />
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Lista de gastos recurrentes simulados */}
+                  <div className="space-y-4">
+                    <div className={`p-4 rounded-lg border transition-colors duration-200 ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Netflix
+                          </h3>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            $15.99 - Mensual
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            darkMode 
+                              ? 'bg-green-900 text-green-200' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            Activo
+                          </span>
+                        </div>
+                      </div>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Próximo cargo: 15 de cada mes
+                      </p>
+                    </div>
+                    
+                    <div className={`p-4 rounded-lg border transition-colors duration-200 ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Seguro de Auto
+                          </h3>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            $120.00 - Mensual
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            darkMode 
+                              ? 'bg-green-900 text-green-200' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            Activo
+                          </span>
+                        </div>
+                      </div>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Próximo cargo: 1 de cada mes
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Información sobre la funcionalidad */}
+                  <div className={`mt-6 p-4 rounded-lg border-2 border-dashed transition-colors duration-200 ${
+                    darkMode 
+                      ? 'border-gray-600 bg-gray-800' 
+                      : 'border-gray-300 bg-gray-50'
+                  }`}>
+                    <div className="text-center">
+                      <AlertCircle className={`w-8 h-8 mx-auto mb-2 ${
+                        darkMode ? 'text-blue-400' : 'text-blue-500'
+                      }`} />
+                      <h3 className={`font-medium mb-2 ${
+                        darkMode ? 'text-blue-400' : 'text-blue-600'
+                      }`}>
+                        Funcionalidad en Desarrollo
+                      </h3>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        El sistema de gastos recurrentes está en desarrollo. Los ejemplos mostrados son solo demostrativos.
+                      </p>
+                      <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Próximamente: automatización de gastos recurrentes, notificaciones, y más.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
