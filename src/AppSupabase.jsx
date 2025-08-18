@@ -149,6 +149,7 @@ const AppSupabase = () => {
     addRecurringExpense: addRecurringExpenseToData,
     updateRecurringExpense,
     deleteRecurringExpense: deleteRecurringExpenseFromData,
+    generateRecurringExpenses,
     updateSettings,
     getFinancialSummary,
     signIn,
@@ -562,6 +563,15 @@ const AppSupabase = () => {
   // Función para obtener datos del mes seleccionado
   const getMonthData = () => {
     const [year, month] = reportMonth.split('-');
+    
+    // Calcular fechas del mes
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+    
+    // Obtener resumen financiero que incluye gastos recurrentes
+    const summary = getFinancialSummary(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+    
+    // Filtrar gastos e ingresos regulares del mes
     const monthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate.getFullYear() === parseInt(year) && 
@@ -574,11 +584,16 @@ const AppSupabase = () => {
              incomeDate.getMonth() === parseInt(month) - 1;
     });
 
-    const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-    const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-    const balance = totalIncomes - totalExpenses;
-
-    return { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance };
+    // Usar los valores del resumen que incluyen gastos recurrentes
+    return { 
+      monthExpenses, 
+      monthIncomes, 
+      totalExpenses: summary.total_expenses,
+      totalIncomes: summary.total_incomes, 
+      balance: summary.balance,
+      regularExpenses: summary.regular_expenses,
+      recurringExpenses: summary.recurring_expenses
+    };
   };
 
   // Funciones para manejar presupuestos
@@ -720,28 +735,22 @@ const AppSupabase = () => {
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
-      const year = date.getFullYear();
-      const month = date.getMonth();
       
-      const monthExpenses = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
-      });
+      // Calcular fechas del mes
+      const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
       
-      const monthIncomes = incomes.filter(income => {
-        const incomeDate = new Date(income.date);
-        return incomeDate.getFullYear() === year && incomeDate.getMonth() === month;
-      });
-      
-      const totalExpenses = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-      const totalIncomes = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-      const balance = totalIncomes - totalExpenses;
+      // Obtener resumen financiero que incluye gastos recurrentes
+      const summary = getFinancialSummary(
+        startDate.toISOString().split('T')[0], 
+        endDate.toISOString().split('T')[0]
+      );
       
       data.push({
         month: date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
-        gastos: totalExpenses,
-        ingresos: totalIncomes,
-        balance: balance
+        gastos: summary.total_expenses,
+        ingresos: summary.total_incomes,
+        balance: summary.balance
       });
     }
     
@@ -2370,18 +2379,20 @@ const AppSupabase = () => {
                 {/* Resumen Filtrado */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                   {(() => {
+                    // Obtener resumen financiero que incluye gastos recurrentes para el período filtrado
+                    const summary = getFinancialSummary(filters.startDate, filters.endDate);
                     const filteredExpenses = getFilteredExpenses();
                     const filteredIncomes = getFilteredIncomes();
-                    const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                    const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-                    const balance = totalIncomes - totalExpenses;
+                    const totalExpenses = summary.total_expenses;
+                    const totalIncomes = summary.total_incomes;
+                    const balance = summary.balance;
                     
                     return (
                       <>
                         <div className="bg-white rounded-lg shadow p-6">
                           <div className="text-center">
                             <p className="text-sm font-medium text-gray-600">Total Ingresos</p>
-                            <p className="text-2xl font-bold text-green-600">${totalIncomes.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncomes)}</p>
                             <p className="text-sm text-gray-500">{filteredIncomes.length} transacciones</p>
                           </div>
                         </div>
@@ -2389,8 +2400,10 @@ const AppSupabase = () => {
                         <div className="bg-white rounded-lg shadow p-6">
                           <div className="text-center">
                             <p className="text-sm font-medium text-gray-600">Total Gastos</p>
-                            <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">{filteredExpenses.length} transacciones</p>
+                            <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+                            <p className="text-sm text-gray-500">
+                              {filteredExpenses.length} regulares + {summary.recurring_expenses} recurrentes
+                            </p>
                           </div>
                         </div>
                         
@@ -2398,7 +2411,7 @@ const AppSupabase = () => {
                           <div className="text-center">
                             <p className="text-sm font-medium text-gray-600">Balance Neto</p>
                             <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              ${balance.toFixed(2)}
+                              {formatCurrency(balance)}
                             </p>
                             <p className="text-sm text-gray-500">
                               {balance >= 0 ? 'Ahorro' : 'Déficit'}
@@ -2433,14 +2446,24 @@ const AppSupabase = () => {
                     
                     {(() => {
                       const filteredExpenses = getFilteredExpenses();
+                      
+                      // Generar gastos recurrentes para el período filtrado
+                      const recurringExpensesInPeriod = generateRecurringExpenses(filters.startDate, filters.endDate);
+                      
                       const categoryStats = categories.map(category => {
                         const categoryExpenses = filteredExpenses.filter(expense => expense.category_id === category.id);
-                        const total = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        const recurringExpenses = recurringExpensesInPeriod.filter(expense => expense.category_id === category.id);
+                        
+                        const regularTotal = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        const recurringTotal = recurringExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        
                         return {
                           name: category.name,
-                          value: total,
-                          count: categoryExpenses.length,
-                          color: category.color
+                          value: regularTotal + recurringTotal,
+                          count: categoryExpenses.length + recurringExpenses.length,
+                          color: category.color,
+                          regular: regularTotal,
+                          recurring: recurringTotal
                         };
                       }).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
 
@@ -3196,7 +3219,7 @@ const AppSupabase = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-600">Balance del Mes</p>
                               <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ${balance.toFixed(2)}
+                                {formatCurrency(balance)}
                               </p>
                               <p className="text-sm text-gray-500">
                                 Tasa de ahorro: {savingsRate.toFixed(1)}%
