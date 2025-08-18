@@ -42,6 +42,20 @@ class DatabaseService {
       throw new Error('Error de conexión. Verifica tu internet.');
     }
 
+    // Manejo específico para errores de constraint único
+    if (error.message?.includes('duplicate key value violates unique constraint')) {
+      if (error.message.includes('payment_methods_user_id_name_key')) {
+        throw new Error('Ya existe un método de pago con este nombre');
+      }
+      if (error.message.includes('categories_user_id_name_key')) {
+        throw new Error('Ya existe una categoría con este nombre');
+      }
+      if (error.message.includes('income_types_user_id_name_key')) {
+        throw new Error('Ya existe un tipo de ingreso con este nombre');
+      }
+      throw new Error('Ya existe un elemento con este nombre');
+    }
+
     throw new Error(error.message || `Error en ${operation}`);
   }
 
