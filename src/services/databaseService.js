@@ -522,6 +522,102 @@ class DatabaseService {
   }
 
   // ==============================================
+  // OPERACIONES DE GASTOS RECURRENTES
+  // ==============================================
+
+  async getRecurringExpenses() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .select(`
+          *,
+          categories(id, name, color)
+        `)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('next_date', { ascending: true });
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      this.handleError(error, 'getRecurringExpenses');
+    }
+  }
+
+  async createRecurringExpense(recurring) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .insert([{
+          user_id: userId,
+          category_id: recurring.category_id,
+          description: recurring.description,
+          amount: parseFloat(recurring.amount),
+          currency: recurring.currency || 'USD',
+          frequency: recurring.frequency,
+          next_date: recurring.next_date
+        }])
+        .select(`
+          *,
+          categories(id, name, color)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      this.handleError(error, 'createRecurringExpense');
+    }
+  }
+
+  async updateRecurringExpense(id, updates) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select(`
+          *,
+          categories(id, name, color)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      this.handleError(error, 'updateRecurringExpense');
+    }
+  }
+
+  async deleteRecurringExpense(id) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return true;
+    } catch (error) {
+      this.handleError(error, 'deleteRecurringExpense');
+    }
+  }
+
+  // ==============================================
   // OPERACIONES DE CONFIGURACIÓN
   // ==============================================
 
@@ -676,12 +772,13 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
-      const [categories, paymentMethods, incomeTypes, expenses, incomes, settings] = await Promise.all([
+      const [categories, paymentMethods, incomeTypes, expenses, incomes, recurringExpenses, settings] = await Promise.all([
         this.getCategories(),
         this.getPaymentMethods(),
         this.getIncomeTypes(),
         this.getExpenses(),
         this.getIncomes(),
+        this.getRecurringExpenses(),
         this.getUserSettings()
       ]);
 
@@ -691,6 +788,7 @@ class DatabaseService {
         incomeTypes,
         expenses,
         incomes,
+        recurringExpenses,
         settings: settings || {}
       };
     } catch (error) {

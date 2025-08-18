@@ -114,7 +114,24 @@ CREATE TABLE IF NOT EXISTS incomes (
 );
 
 -- ==============================================
--- 7. TABLA DE BACKUPS (OPCIONAL)
+-- 7. TABLA DE GASTOS RECURRENTES
+-- ==============================================
+CREATE TABLE IF NOT EXISTS recurring_expenses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    description TEXT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
+    currency TEXT DEFAULT 'USD',
+    frequency TEXT NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
+    next_date DATE NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ==============================================
+-- 8. TABLA DE BACKUPS (OPCIONAL)
 -- ==============================================
 CREATE TABLE IF NOT EXISTS user_backups (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -136,6 +153,10 @@ CREATE INDEX IF NOT EXISTS idx_expenses_payment_method ON expenses(payment_metho
 
 CREATE INDEX IF NOT EXISTS idx_incomes_user_date ON incomes(user_id, date DESC);
 CREATE INDEX IF NOT EXISTS idx_incomes_type ON incomes(income_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_expenses_user ON recurring_expenses(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_recurring_expenses_category ON recurring_expenses(category_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_expenses_next_date ON recurring_expenses(next_date);
 
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_payment_methods_user ON payment_methods(user_id, is_active);
@@ -165,6 +186,7 @@ CREATE TRIGGER update_payment_methods_updated_at BEFORE UPDATE ON payment_method
 CREATE TRIGGER update_income_types_updated_at BEFORE UPDATE ON income_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_expenses_updated_at BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_incomes_updated_at BEFORE UPDATE ON incomes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_recurring_expenses_updated_at BEFORE UPDATE ON recurring_expenses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ==============================================
 -- ROW LEVEL SECURITY (RLS)
@@ -177,6 +199,7 @@ ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE income_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE incomes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recurring_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_backups ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de seguridad: Los usuarios solo pueden ver/editar sus propios datos
@@ -209,6 +232,11 @@ CREATE POLICY "Users can view own incomes" ON incomes FOR SELECT USING (auth.uid
 CREATE POLICY "Users can insert own incomes" ON incomes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own incomes" ON incomes FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own incomes" ON incomes FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own recurring_expenses" ON recurring_expenses FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own recurring_expenses" ON recurring_expenses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own recurring_expenses" ON recurring_expenses FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own recurring_expenses" ON recurring_expenses FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view own backups" ON user_backups FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own backups" ON user_backups FOR INSERT WITH CHECK (auth.uid() = user_id);
@@ -315,6 +343,7 @@ COMMENT ON TABLE payment_methods IS 'Métodos de pago personalizados por usuario
 COMMENT ON TABLE income_types IS 'Tipos de ingresos personalizados por usuario';
 COMMENT ON TABLE expenses IS 'Registros de gastos del usuario';
 COMMENT ON TABLE incomes IS 'Registros de ingresos del usuario';
+COMMENT ON TABLE recurring_expenses IS 'Gastos recurrentes configurados por el usuario';
 COMMENT ON TABLE user_backups IS 'Backups de datos del usuario en formato JSON';
 
 COMMENT ON FUNCTION get_financial_summary IS 'Obtiene resumen financiero para un período específico';

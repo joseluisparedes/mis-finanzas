@@ -35,7 +35,6 @@ const AppSupabase = () => {
   
   // Estados para gastos recurrentes
   const [showRecurring, setShowRecurring] = useState(false);
-  const [recurringExpenses, setRecurringExpenses] = useState([]);
   const [newRecurringExpense, setNewRecurringExpense] = useState({
     description: '',
     amount: '',
@@ -130,6 +129,7 @@ const AppSupabase = () => {
     incomeTypes,
     expenses,
     incomes,
+    recurringExpenses,
     settings,
     addExpense: addExpenseToData,
     updateExpense,
@@ -146,6 +146,9 @@ const AppSupabase = () => {
     addIncomeType,
     updateIncomeType,
     deleteIncomeType,
+    addRecurringExpense: addRecurringExpenseToData,
+    updateRecurringExpense,
+    deleteRecurringExpense: deleteRecurringExpenseFromData,
     updateSettings,
     getFinancialSummary,
     signIn,
@@ -633,45 +636,59 @@ const AppSupabase = () => {
   };
 
   // Funciones para gastos recurrentes
-  const addRecurringExpense = () => {
+  const addRecurringExpense = async () => {
     if (!newRecurringExpense.description || !newRecurringExpense.amount || !newRecurringExpense.category) return;
     
-    const recurringExpense = {
-      id: Date.now().toString(),
+    const result = await addRecurringExpenseToData({
       description: newRecurringExpense.description,
-      amount: parseFloat(newRecurringExpense.amount),
+      amount: newRecurringExpense.amount,
       category: newRecurringExpense.category,
       currency: newRecurringExpense.currency,
       frequency: newRecurringExpense.frequency,
-      nextDate: newRecurringExpense.nextDate,
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-    
-    setRecurringExpenses([...recurringExpenses, recurringExpense]);
-    setNewRecurringExpense({
-      description: '',
-      amount: '',
-      category: '',
-      currency: 'PEN',
-      frequency: 'monthly',
-      nextDate: new Date().toISOString().split('T')[0],
-      isActive: true
+      nextDate: newRecurringExpense.nextDate
     });
-    setSuccessMessage('Gasto recurrente agregado exitosamente');
-    setTimeout(() => setSuccessMessage(''), 3000);
+    
+    if (result.success) {
+      setNewRecurringExpense({
+        description: '',
+        amount: '',
+        category: '',
+        currency: 'PEN',
+        frequency: 'monthly',
+        nextDate: new Date().toISOString().split('T')[0],
+        isActive: true
+      });
+      setSuccessMessage('Gasto recurrente agregado exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
   };
 
-  const deleteRecurringExpense = (id) => {
-    setRecurringExpenses(recurringExpenses.filter(r => r.id !== id));
-    setSuccessMessage('Gasto recurrente eliminado');
-    setTimeout(() => setSuccessMessage(''), 3000);
+  const deleteRecurringExpense = async (id) => {
+    const result = await deleteRecurringExpenseFromData(id);
+    if (result.success) {
+      setSuccessMessage('Gasto recurrente eliminado');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
   };
 
-  const toggleRecurringExpense = (id) => {
-    setRecurringExpenses(recurringExpenses.map(r => 
-      r.id === id ? { ...r, isActive: !r.isActive } : r
-    ));
+  const toggleRecurringExpense = async (id) => {
+    const recurring = recurringExpenses.find(r => r.id === id);
+    if (!recurring) return;
+    
+    const result = await updateRecurringExpense(id, {
+      is_active: !recurring.is_active
+    });
+    
+    if (result.success) {
+      setSuccessMessage('Estado actualizado');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
   };
 
   const getNextDueDate = (currentDate, frequency) => {
@@ -3024,8 +3041,8 @@ const AppSupabase = () => {
                       </div>
                     ) : (
                       recurringExpenses.map(recurring => {
-                        const category = categories.find(c => c.id === recurring.category);
-                        const nextDueDate = new Date(recurring.nextDate).toLocaleDateString();
+                        const category = categories.find(c => c.id === recurring.category_id);
+                        const nextDueDate = new Date(recurring.next_date).toLocaleDateString();
                         const frequencyLabel = {
                           weekly: 'Semanal',
                           monthly: 'Mensual',
@@ -3061,7 +3078,7 @@ const AppSupabase = () => {
                                 <button
                                   onClick={() => toggleRecurringExpense(recurring.id)}
                                   className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
-                                    recurring.isActive 
+                                    recurring.is_active 
                                       ? darkMode 
                                         ? 'bg-green-900 text-green-200 hover:bg-green-800' 
                                         : 'bg-green-100 text-green-800 hover:bg-green-200'
@@ -3070,7 +3087,7 @@ const AppSupabase = () => {
                                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                                   }`}
                                 >
-                                  {recurring.isActive ? 'Activo' : 'Pausado'}
+                                  {recurring.is_active ? 'Activo' : 'Pausado'}
                                 </button>
                                 <button
                                   onClick={() => deleteRecurringExpense(recurring.id)}

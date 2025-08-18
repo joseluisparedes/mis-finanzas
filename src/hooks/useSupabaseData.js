@@ -16,6 +16,7 @@ export const useSupabaseData = () => {
   const [incomeTypes, setIncomeTypes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [incomes, setIncomes] = useState([]);
+  const [recurringExpenses, setRecurringExpenses] = useState([]);
   const [settings, setSettings] = useState({});
 
   // Estados de interfaz
@@ -113,6 +114,7 @@ export const useSupabaseData = () => {
         incomeTypesData,
         expensesData,
         incomesData,
+        recurringExpensesData,
         settingsData
       ] = await Promise.all([
         databaseService.getCategories().catch(err => {
@@ -135,6 +137,10 @@ export const useSupabaseData = () => {
           console.warn('Error cargando ingresos:', err);
           return [];
         }),
+        databaseService.getRecurringExpenses().catch(err => {
+          console.warn('Error cargando gastos recurrentes:', err);
+          return [];
+        }),
         databaseService.getUserSettings().catch(err => {
           console.warn('Error cargando configuración:', err);
           return null;
@@ -146,7 +152,8 @@ export const useSupabaseData = () => {
         metodosPago: paymentMethodsData?.length || 0,
         tiposIngreso: incomeTypesData?.length || 0,
         gastos: expensesData?.length || 0,
-        ingresos: incomesData?.length || 0
+        ingresos: incomesData?.length || 0,
+        gastosRecurrentes: recurringExpensesData?.length || 0
       });
 
       setCategories(categoriesData || []);
@@ -154,6 +161,7 @@ export const useSupabaseData = () => {
       setIncomeTypes(incomeTypesData || []);
       setExpenses(expensesData || []);
       setIncomes(incomesData || []);
+      setRecurringExpenses(recurringExpensesData || []);
       setSettings(settingsData || getDefaultSettings());
       setLastSync(new Date().toISOString());
 
@@ -166,6 +174,7 @@ export const useSupabaseData = () => {
       setIncomeTypes([]);
       setExpenses([]);
       setIncomes([]);
+      setRecurringExpenses([]);
       setSettings(getDefaultSettings());
     } finally {
       setSyncing(false);
@@ -180,6 +189,7 @@ export const useSupabaseData = () => {
     setIncomeTypes([]);
     setExpenses([]);
     setIncomes([]);
+    setRecurringExpenses([]);
     setSettings(getDefaultSettings());
     setLastSync(null);
     setError(null);
@@ -507,6 +517,75 @@ export const useSupabaseData = () => {
   }, [isAuthenticated, settings]);
 
   // ==============================================
+  // FUNCIONES DE GASTOS RECURRENTES
+  // ==============================================
+
+  const addRecurringExpense = useCallback(async (recurringData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newRecurring = await databaseService.createRecurringExpense({
+        category_id: recurringData.category,
+        description: recurringData.description,
+        amount: parseFloat(recurringData.amount),
+        currency: recurringData.currency,
+        frequency: recurringData.frequency,
+        next_date: recurringData.nextDate
+      });
+
+      setRecurringExpenses(prev => [newRecurring, ...prev]);
+      return { success: true, data: newRecurring };
+
+    } catch (error) {
+      console.error('Error adding recurring expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateRecurringExpense = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedRecurring = await databaseService.updateRecurringExpense(id, {
+        category_id: updates.category,
+        description: updates.description,
+        amount: updates.amount ? parseFloat(updates.amount) : undefined,
+        currency: updates.currency,
+        frequency: updates.frequency,
+        next_date: updates.nextDate,
+        is_active: updates.is_active
+      });
+
+      setRecurringExpenses(prev => 
+        prev.map(recurring => recurring.id === id ? updatedRecurring : recurring)
+      );
+
+      return { success: true, data: updatedRecurring };
+
+    } catch (error) {
+      console.error('Error updating recurring expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteRecurringExpense = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteRecurringExpense(id);
+      setRecurringExpenses(prev => prev.filter(recurring => recurring.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting recurring expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
   // FUNCIONES DE ANÁLISIS
   // ==============================================
 
@@ -646,6 +725,7 @@ export const useSupabaseData = () => {
     incomeTypes,
     expenses,
     incomes,
+    recurringExpenses,
     settings,
 
     // Funciones de gastos
@@ -675,6 +755,11 @@ export const useSupabaseData = () => {
 
     // Funciones de configuración
     updateSettings,
+
+    // Funciones de gastos recurrentes
+    addRecurringExpense,
+    updateRecurringExpense,
+    deleteRecurringExpense,
 
     // Funciones de análisis
     getFinancialSummary,
