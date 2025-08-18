@@ -1133,7 +1133,7 @@ const AppSupabase = () => {
             </div>
           </div>
         ) : (
-          <>
+          <div>
             {/* Navigation */}
             <nav className="flex flex-wrap bg-white p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto">
               {[
@@ -1960,7 +1960,7 @@ const AppSupabase = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
