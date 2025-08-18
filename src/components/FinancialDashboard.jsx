@@ -47,8 +47,7 @@ const FinancialDashboard = ({
 
   // Datos calculados según timeframe
   const financialData = useMemo(() => {
-    const { start, end } = getDateRange(timeFrame);
-    return getFinancialSummary ? getFinancialSummary(start, end) : {
+    const defaultData = {
       totalExpenses: 0,
       totalIncomes: 0,
       balance: 0,
@@ -58,6 +57,31 @@ const FinancialDashboard = ({
       averageExpense: 0,
       averageIncome: 0
     };
+
+    if (!getFinancialSummary) {
+      return defaultData;
+    }
+
+    try {
+      const { start, end } = getDateRange(timeFrame);
+      const result = getFinancialSummary(start, end);
+      
+      // Asegurar que todas las propiedades existen y son números
+      // Mapear tanto snake_case como camelCase para compatibilidad
+      return {
+        totalExpenses: Number(result?.totalExpenses || result?.total_expenses) || 0,
+        totalIncomes: Number(result?.totalIncomes || result?.total_incomes) || 0,
+        balance: Number(result?.balance) || 0,
+        savingsRate: Number(result?.savingsRate || result?.savings_rate) || 0,
+        expenseCount: Number(result?.expenseCount || result?.expense_count) || 0,
+        incomeCount: Number(result?.incomeCount || result?.income_count) || 0,
+        averageExpense: Number(result?.averageExpense || result?.average_expense) || 0,
+        averageIncome: Number(result?.averageIncome || result?.average_income) || 0
+      };
+    } catch (error) {
+      console.error('Error calculating financial data:', error);
+      return defaultData;
+    }
   }, [timeFrame, getFinancialSummary]);
 
   // Datos de gastos por categoría
@@ -75,7 +99,7 @@ const FinancialDashboard = ({
         type: 'error',
         icon: AlertTriangle,
         title: 'Balance Negativo',
-        message: `Estás gastando $${Math.abs(financialData.balance).toFixed(2)} más de lo que ingresas`,
+        message: `Estás gastando $${Math.abs(Number(financialData.balance) || 0).toFixed(2)} más de lo que ingresas`,
         action: 'Revisar gastos'
       });
     }
@@ -86,7 +110,7 @@ const FinancialDashboard = ({
         type: 'warning',
         icon: Target,
         title: 'Tasa de Ahorro Baja',
-        message: `Solo estás ahorrando ${financialData.savingsRate.toFixed(1)}%. Recomendamos al menos 20%`,
+        message: `Solo estás ahorrando ${(Number(financialData.savingsRate) || 0).toFixed(1)}%. Recomendamos al menos 20%`,
         action: 'Optimizar gastos'
       });
     }
@@ -247,7 +271,7 @@ const FinancialDashboard = ({
         
         <MetricCard
           title="Tasa de Ahorro"
-          value={`${financialData.savingsRate.toFixed(1)}%`}
+          value={`${(Number(financialData.savingsRate) || 0).toFixed(1)}%`}
           subtitle="De tus ingresos totales"
           icon={Target}
           color="#8B5CF6"

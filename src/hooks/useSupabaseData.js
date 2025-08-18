@@ -1,0 +1,691 @@
+import { useState, useEffect, useCallback } from 'react';
+import authService from '../services/authService.js';
+import databaseService from '../services/databaseService.js';
+
+// Hook para manejar datos financieros con Supabase
+export const useSupabaseData = () => {
+  // Estados principales
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Estados de datos
+  const [categories, setCategories] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [incomeTypes, setIncomeTypes] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [incomes, setIncomes] = useState([]);
+  const [settings, setSettings] = useState({});
+
+  // Estados de interfaz
+  const [lastSync, setLastSync] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Inicializar autenticación y datos
+  useEffect(() => {
+    initializeData();
+    
+    // Listener para cambios de autenticación
+    const removeAuthListener = authService.addAuthListener(handleAuthChange);
+    
+    return () => {
+      removeAuthListener();
+    };
+  }, []);
+
+  // Manejar cambios de autenticación
+  const handleAuthChange = async (authEvent) => {
+    try {
+      console.log('Cambio de autenticación:', authEvent.type, authEvent.user?.email);
+      
+      switch (authEvent.type) {
+        case 'SIGNED_IN':
+          setUser(authEvent.user);
+          setIsAuthenticated(true);
+          setError(null); // Limpiar errores previos
+          console.log('Usuario autenticado, cargando datos...');
+          await loadAllData();
+          break;
+          
+        case 'SIGNED_OUT':
+          console.log('Usuario cerró sesión, limpiando datos...');
+          setUser(null);
+          setIsAuthenticated(false);
+          clearData();
+          setError(null);
+          break;
+          
+        case 'TOKEN_REFRESHED':
+        case 'USER_UPDATED':
+          console.log('Token actualizado o usuario modificado');
+          setUser(authEvent.user);
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling auth change:', error);
+      setError('Error en autenticación: ' + error.message);
+    }
+  };
+
+  // Inicializar datos
+  const initializeData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Inicializando datos...');
+
+      // Verificar si el usuario ya está autenticado
+      const currentUser = authService.getCurrentUser();
+      console.log('Usuario actual:', currentUser?.email || 'No autenticado');
+      
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+        await loadAllData();
+      } else {
+        console.log('Usuario no autenticado, mostrando pantalla de login');
+      }
+    } catch (err) {
+      console.error('Error initializing data:', err);
+      setError('Error de inicialización: ' + err.message);
+    } finally {
+      setLoading(false);
+      console.log('Inicialización completada');
+    }
+  };
+
+  // Cargar todos los datos del usuario
+  const loadAllData = async () => {
+    if (!authService.isUserAuthenticated()) {
+      console.log('Usuario no autenticado, saltando carga de datos');
+      return;
+    }
+
+    try {
+      setSyncing(true);
+      setError(null);
+      console.log('Iniciando carga de datos del usuario...');
+
+      const [
+        categoriesData,
+        paymentMethodsData,
+        incomeTypesData,
+        expensesData,
+        incomesData,
+        settingsData
+      ] = await Promise.all([
+        databaseService.getCategories().catch(err => {
+          console.warn('Error cargando categorías:', err);
+          return [];
+        }),
+        databaseService.getPaymentMethods().catch(err => {
+          console.warn('Error cargando métodos de pago:', err);
+          return [];
+        }),
+        databaseService.getIncomeTypes().catch(err => {
+          console.warn('Error cargando tipos de ingreso:', err);
+          return [];
+        }),
+        databaseService.getExpenses().catch(err => {
+          console.warn('Error cargando gastos:', err);
+          return [];
+        }),
+        databaseService.getIncomes().catch(err => {
+          console.warn('Error cargando ingresos:', err);
+          return [];
+        }),
+        databaseService.getUserSettings().catch(err => {
+          console.warn('Error cargando configuración:', err);
+          return null;
+        })
+      ]);
+
+      console.log('Datos cargados:', {
+        categorias: categoriesData?.length || 0,
+        metodosPago: paymentMethodsData?.length || 0,
+        tiposIngreso: incomeTypesData?.length || 0,
+        gastos: expensesData?.length || 0,
+        ingresos: incomesData?.length || 0
+      });
+
+      setCategories(categoriesData || []);
+      setPaymentMethods(paymentMethodsData || []);
+      setIncomeTypes(incomeTypesData || []);
+      setExpenses(expensesData || []);
+      setIncomes(incomesData || []);
+      setSettings(settingsData || getDefaultSettings());
+      setLastSync(new Date().toISOString());
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError('Error cargando datos: ' + error.message);
+      // No bloquear la UI, usar datos vacíos
+      setCategories([]);
+      setPaymentMethods([]);
+      setIncomeTypes([]);
+      setExpenses([]);
+      setIncomes([]);
+      setSettings(getDefaultSettings());
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Limpiar datos al cerrar sesión
+  const clearData = () => {
+    console.log('Limpiando datos de sesión...');
+    setCategories([]);
+    setPaymentMethods([]);
+    setIncomeTypes([]);
+    setExpenses([]);
+    setIncomes([]);
+    setSettings(getDefaultSettings());
+    setLastSync(null);
+    setError(null);
+  };
+
+  // Configuración por defecto
+  const getDefaultSettings = () => ({
+    auto_backup: true,
+    backup_frequency: 'daily',
+    currency: 'USD',
+    date_format: 'YYYY-MM-DD',
+    show_json_export: false,
+    theme: 'light',
+    language: 'es'
+  });
+
+  // ==============================================
+  // FUNCIONES DE GASTOS
+  // ==============================================
+
+  const addExpense = useCallback(async (expenseData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newExpense = await databaseService.createExpense({
+        category_id: expenseData.category,
+        payment_method_id: expenseData.paymentMethod,
+        amount: parseFloat(expenseData.amount),
+        description: expenseData.description,
+        date: expenseData.date,
+        notes: expenseData.notes
+      });
+
+      setExpenses(prev => [newExpense, ...prev]);
+      return { success: true, data: newExpense };
+
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateExpense = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedExpense = await databaseService.updateExpense(id, {
+        category_id: updates.category,
+        payment_method_id: updates.paymentMethod,
+        amount: updates.amount ? parseFloat(updates.amount) : undefined,
+        description: updates.description,
+        date: updates.date,
+        notes: updates.notes
+      });
+
+      setExpenses(prev => 
+        prev.map(expense => expense.id === id ? updatedExpense : expense)
+      );
+
+      return { success: true, data: updatedExpense };
+
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteExpense = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteExpense(id);
+      setExpenses(prev => prev.filter(expense => expense.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
+  // FUNCIONES DE INGRESOS
+  // ==============================================
+
+  const addIncome = useCallback(async (incomeData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newIncome = await databaseService.createIncome({
+        income_type_id: incomeData.type,
+        amount: parseFloat(incomeData.amount),
+        description: incomeData.description,
+        date: incomeData.date,
+        notes: incomeData.notes
+      });
+
+      setIncomes(prev => [newIncome, ...prev]);
+      return { success: true, data: newIncome };
+
+    } catch (error) {
+      console.error('Error adding income:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateIncome = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedIncome = await databaseService.updateIncome(id, {
+        income_type_id: updates.type,
+        amount: updates.amount ? parseFloat(updates.amount) : undefined,
+        description: updates.description,
+        date: updates.date,
+        notes: updates.notes
+      });
+
+      setIncomes(prev => 
+        prev.map(income => income.id === id ? updatedIncome : income)
+      );
+
+      return { success: true, data: updatedIncome };
+
+    } catch (error) {
+      console.error('Error updating income:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteIncome = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteIncome(id);
+      setIncomes(prev => prev.filter(income => income.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting income:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
+  // FUNCIONES DE CATEGORÍAS
+  // ==============================================
+
+  const addCategory = useCallback(async (categoryData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newCategory = await databaseService.createCategory(categoryData);
+      setCategories(prev => [...prev, newCategory]);
+      return { success: true, data: newCategory };
+
+    } catch (error) {
+      console.error('Error adding category:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateCategory = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedCategory = await databaseService.updateCategory(id, updates);
+      setCategories(prev => 
+        prev.map(category => category.id === id ? updatedCategory : category)
+      );
+      return { success: true, data: updatedCategory };
+
+    } catch (error) {
+      console.error('Error updating category:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteCategory = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteCategory(id);
+      setCategories(prev => prev.filter(category => category.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
+  // FUNCIONES DE MÉTODOS DE PAGO
+  // ==============================================
+
+  const addPaymentMethod = useCallback(async (methodData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newMethod = await databaseService.createPaymentMethod(methodData);
+      setPaymentMethods(prev => [...prev, newMethod]);
+      return { success: true, data: newMethod };
+
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updatePaymentMethod = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedMethod = await databaseService.updatePaymentMethod(id, updates);
+      setPaymentMethods(prev => 
+        prev.map(method => method.id === id ? updatedMethod : method)
+      );
+      return { success: true, data: updatedMethod };
+
+    } catch (error) {
+      console.error('Error updating payment method:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deletePaymentMethod = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deletePaymentMethod(id);
+      setPaymentMethods(prev => prev.filter(method => method.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
+  // FUNCIONES DE TIPOS DE INGRESOS
+  // ==============================================
+
+  const addIncomeType = useCallback(async (typeData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newType = await databaseService.createIncomeType(typeData);
+      setIncomeTypes(prev => [...prev, newType]);
+      return { success: true, data: newType };
+
+    } catch (error) {
+      console.error('Error adding income type:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateIncomeType = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedType = await databaseService.updateIncomeType(id, updates);
+      setIncomeTypes(prev => 
+        prev.map(type => type.id === id ? updatedType : type)
+      );
+      return { success: true, data: updatedType };
+
+    } catch (error) {
+      console.error('Error updating income type:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteIncomeType = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteIncomeType(id);
+      setIncomeTypes(prev => prev.filter(type => type.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting income type:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
+  // FUNCIONES DE CONFIGURACIÓN
+  // ==============================================
+
+  const updateSettings = useCallback(async (newSettings) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedSettings = await databaseService.updateUserSettings({
+        ...settings,
+        ...newSettings
+      });
+
+      setSettings(updatedSettings);
+      return { success: true, data: updatedSettings };
+
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated, settings]);
+
+  // ==============================================
+  // FUNCIONES DE ANÁLISIS
+  // ==============================================
+
+  const getFinancialSummary = useCallback((startDate, endDate) => {
+    try {
+      if (!isAuthenticated) {
+        // Calcular localmente si no está autenticado
+        const filteredExpenses = expenses.filter(expense => {
+          const expenseDate = new Date(expense.date);
+          const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+          const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+          return expenseDate >= start && expenseDate <= end;
+        });
+
+        const filteredIncomes = incomes.filter(income => {
+          const incomeDate = new Date(income.date);
+          const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+          const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+          return incomeDate >= start && incomeDate <= end;
+        });
+
+        const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+        const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+
+        return {
+          total_expenses: totalExpenses,
+          total_incomes: totalIncomes,
+          balance: totalIncomes - totalExpenses,
+          expense_count: filteredExpenses.length,
+          income_count: filteredIncomes.length,
+          savings_rate: totalIncomes > 0 ? ((totalIncomes - totalExpenses) / totalIncomes * 100) : 0
+        };
+      }
+
+      // Para usuarios autenticados, hacer cálculo local temporal hasta implementar función de BD
+      const filteredExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+        const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+        return expenseDate >= start && expenseDate <= end;
+      });
+
+      const filteredIncomes = incomes.filter(income => {
+        const incomeDate = new Date(income.date);
+        const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+        const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+        return incomeDate >= start && incomeDate <= end;
+      });
+
+      const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+      const balance = totalIncomes - totalExpenses;
+
+      return {
+        total_expenses: totalExpenses,
+        total_incomes: totalIncomes,
+        balance: balance,
+        expense_count: filteredExpenses.length,
+        income_count: filteredIncomes.length,
+        savings_rate: totalIncomes > 0 ? ((balance / totalIncomes) * 100) : 0,
+        average_expense: filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0,
+        average_income: filteredIncomes.length > 0 ? totalIncomes / filteredIncomes.length : 0
+      };
+
+    } catch (error) {
+      console.error('Error getting financial summary:', error);
+      return {
+        total_expenses: 0,
+        total_incomes: 0,
+        balance: 0,
+        expense_count: 0,
+        income_count: 0,
+        savings_rate: 0
+      };
+    }
+  }, [isAuthenticated, expenses, incomes]);
+
+  // ==============================================
+  // FUNCIONES DE AUTENTICACIÓN
+  // ==============================================
+
+  const signIn = useCallback(async (email, password) => {
+    try {
+      setError(null);
+      const result = await authService.signIn(email, password);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  const signUp = useCallback(async (email, password, userData = {}) => {
+    try {
+      setError(null);
+      const result = await authService.signUp(email, password, userData);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      setError(null);
+      const result = await authService.signOut();
+      return result;
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  // ==============================================
+  // UTILIDADES
+  // ==============================================
+
+  const refreshData = useCallback(async () => {
+    if (isAuthenticated) {
+      await loadAllData();
+    }
+  }, [isAuthenticated]);
+
+  return {
+    // Estados principales
+    loading,
+    error,
+    user,
+    isAuthenticated,
+    syncing,
+    lastSync,
+
+    // Datos
+    categories,
+    paymentMethods,
+    incomeTypes,
+    expenses,
+    incomes,
+    settings,
+
+    // Funciones de gastos
+    addExpense,
+    updateExpense,
+    deleteExpense,
+
+    // Funciones de ingresos
+    addIncome,
+    updateIncome,
+    deleteIncome,
+
+    // Funciones de categorías
+    addCategory,
+    updateCategory,
+    deleteCategory,
+
+    // Funciones de métodos de pago
+    addPaymentMethod,
+    updatePaymentMethod,
+    deletePaymentMethod,
+
+    // Funciones de tipos de ingresos
+    addIncomeType,
+    updateIncomeType,
+    deleteIncomeType,
+
+    // Funciones de configuración
+    updateSettings,
+
+    // Funciones de análisis
+    getFinancialSummary,
+
+    // Funciones de autenticación
+    signIn,
+    signUp,
+    signOut,
+
+    // Utilidades
+    refreshData,
+    clearError: () => setError(null)
+  };
+};
