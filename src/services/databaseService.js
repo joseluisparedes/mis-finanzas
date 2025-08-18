@@ -30,6 +30,20 @@ class DatabaseService {
     return userId;
   }
 
+  // Función auxiliar para convertir fecha string a fecha local sin timezone issues
+  convertToLocalDate(dateString) {
+    if (!dateString) return dateString;
+    
+    // Si ya es una fecha completa, devolverla tal como está
+    if (dateString.includes('T') || dateString.includes(' ')) {
+      return dateString;
+    }
+    
+    // Para fechas en formato "YYYY-MM-DD", agregarle la hora local
+    // Esto evita que Supabase la interprete como UTC
+    return `${dateString}T12:00:00`;
+  }
+
   // Manejo genérico de errores
   handleError(error, operation) {
     console.error(`Error in ${operation}:`, error);
@@ -370,7 +384,7 @@ class DatabaseService {
           payment_method_id: expense.payment_method_id,
           amount: parseFloat(expense.amount),
           description: expense.description,
-          date: expense.date,
+          date: this.convertToLocalDate(expense.date),
           notes: expense.notes,
           tags: expense.tags || [],
           is_recurring: expense.is_recurring || false,
@@ -395,9 +409,15 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Procesar fechas en updates si existen
+      const processedUpdates = { ...updates };
+      if (processedUpdates.date) {
+        processedUpdates.date = this.convertToLocalDate(processedUpdates.date);
+      }
+      
       const { data, error } = await supabase
         .from('expenses')
-        .update(updates)
+        .update(processedUpdates)
         .eq('id', id)
         .eq('user_id', userId)
         .select(`
@@ -480,7 +500,7 @@ class DatabaseService {
           income_type_id: income.income_type_id,
           amount: parseFloat(income.amount),
           description: income.description,
-          date: income.date,
+          date: this.convertToLocalDate(income.date),
           notes: income.notes,
           tags: income.tags || [],
           is_recurring: income.is_recurring || false,
@@ -504,9 +524,15 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Procesar fechas en updates si existen
+      const processedUpdates = { ...updates };
+      if (processedUpdates.date) {
+        processedUpdates.date = this.convertToLocalDate(processedUpdates.date);
+      }
+      
       const { data, error } = await supabase
         .from('incomes')
-        .update(updates)
+        .update(processedUpdates)
         .eq('id', id)
         .eq('user_id', userId)
         .select(`
@@ -580,7 +606,7 @@ class DatabaseService {
           amount: parseFloat(recurring.amount),
           currency: recurring.currency || 'PEN',
           frequency: recurring.frequency,
-          next_date: recurring.next_date
+          next_date: this.convertToLocalDate(recurring.next_date)
         }])
         .select(`
           *,
@@ -600,9 +626,15 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Procesar fechas en updates si existen
+      const processedUpdates = { ...updates };
+      if (processedUpdates.next_date) {
+        processedUpdates.next_date = this.convertToLocalDate(processedUpdates.next_date);
+      }
+      
       const { data, error } = await supabase
         .from('recurring_expenses')
-        .update(updates)
+        .update(processedUpdates)
         .eq('id', id)
         .eq('user_id', userId)
         .select(`
