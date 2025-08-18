@@ -44,6 +44,9 @@ class DatabaseService {
 
     // Manejo específico para errores de constraint único
     if (error.message?.includes('duplicate key value violates unique constraint')) {
+      if (error.message.includes('payment_methods_user_id_name_active_idx')) {
+        throw new Error('Ya existe un método de pago activo con este nombre');
+      }
       if (error.message.includes('payment_methods_user_id_name_key')) {
         throw new Error('Ya existe un método de pago con este nombre');
       }

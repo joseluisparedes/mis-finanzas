@@ -859,19 +859,25 @@ const AppSupabase = () => {
   const MessageAlert = ({ message, type = 'success' }) => {
     if (!message) return null;
     
-    const bgColor = type === 'error' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-    const textColor = type === 'error' ? 'text-red-800' : 'text-green-800';
-    const iconColor = type === 'error' ? 'text-red-400' : 'text-green-400';
+    const isError = type === 'error';
+    const bgColor = isError ? 'bg-red-100 border-red-300' : 'bg-green-100 border-green-300';
+    const textColor = isError ? 'text-red-900' : 'text-green-900';
+    const iconColor = isError ? 'text-red-500' : 'text-green-500';
     
     return (
-      <div className={`mb-4 p-4 rounded-lg border ${bgColor}`}>
-        <div className="flex">
+      <div className={`fixed top-4 right-4 left-4 z-50 mx-auto max-w-md p-4 rounded-lg border-2 shadow-lg transform transition-all duration-300 ${bgColor} ${isError ? 'animate-pulse border-red-400' : ''}`}>
+        <div className="flex items-start">
           <div className="flex-shrink-0">
-            <AlertCircle className={`h-5 w-5 ${iconColor}`} />
+            <AlertCircle className={`h-6 w-6 ${iconColor}`} />
           </div>
-          <div className="ml-3">
-            <p className={`text-sm ${textColor}`}>{message}</p>
+          <div className="ml-3 flex-1">
+            <p className={`text-sm font-medium ${textColor}`}>{message}</p>
           </div>
+          {isError && (
+            <div className="ml-2">
+              <div className={`h-2 w-2 rounded-full ${iconColor.replace('text-', 'bg-')} animate-ping`}></div>
+            </div>
+          )}
         </div>
       </div>
     );
