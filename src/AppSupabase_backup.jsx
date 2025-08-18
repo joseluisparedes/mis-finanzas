@@ -66,48 +66,71 @@ const AppSupabase = () => {
 
   // Estados para migración
   const [migrationLoading, setMigrationLoading] = useState(false);
+
   const [migrationProgress, setMigrationProgress] = useState(null);
 
   // Hook personalizado para datos con Supabase
   const {
+    // Estados
     loading,
     error: dataError,
     user,
     isAuthenticated,
     syncing,
     lastSync,
+    
+    // Datos
     categories,
     paymentMethods,
     incomeTypes,
     expenses,
     incomes,
     settings,
+    
+    // Funciones de gastos
     addExpense: addExpenseToData,
     updateExpense,
     deleteExpense: deleteExpenseFromData,
+    
+    // Funciones de ingresos
     addIncome: addIncomeToData,
     updateIncome,
     deleteIncome: deleteIncomeFromData,
+    
+    // Funciones de categorías
     addCategory,
     updateCategory,
     deleteCategory,
+    
+    // Funciones de métodos de pago
     addPaymentMethod,
     updatePaymentMethod,
     deletePaymentMethod,
+    
+    // Funciones de tipos de ingresos
     addIncomeType,
     updateIncomeType,
     deleteIncomeType,
+    
+    // Funciones de configuración
     updateSettings,
+    
+    // Funciones de análisis
     getFinancialSummary,
+    
+    // Funciones de autenticación
     signIn,
     signUp,
     signOut,
+    
+    // Utilidades
     refreshData,
     clearError
   } = useSupabaseData();
 
   // Verificar migración al cargar - DESACTIVADO (app 100% Supabase)
   useEffect(() => {
+    // Banner de migración desactivado permanentemente
     setShowMigrationBanner(false);
   }, [isAuthenticated]);
 
@@ -315,6 +338,31 @@ const AppSupabase = () => {
     setShowExportModal(false);
   };
 
+  // Función para descargar plantilla Excel
+  const handleDownloadTemplate = async () => {
+    try {
+      const result = await supabaseExcelService.exportToExcel({
+        expenses: false,
+        incomes: false,
+        categories: true,
+        paymentMethods: true,
+        incomeTypes: true,
+        metadata: true
+      });
+      
+      if (result.success) {
+        setSuccessMessage('Plantilla Excel descargada exitosamente');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setExpenseError('Error descargando plantilla');
+        setTimeout(() => setExpenseError(''), 3000);
+      }
+    } catch (error) {
+      setExpenseError('Error: ' + error.message);
+      setTimeout(() => setExpenseError(''), 3000);
+    }
+  };
+
   // Función para filtrar gastos
   const getFilteredExpenses = () => {
     return expenses.filter(expense => {
@@ -343,6 +391,7 @@ const AppSupabase = () => {
       return true;
     });
   };
+
 
   // Función para obtener datos del mes seleccionado
   const getMonthData = () => {
@@ -402,6 +451,54 @@ const AppSupabase = () => {
     return data;
   };
 
+  // Calcular datos del mes actual
+  const { monthExpenses, monthIncomes, totalExpenses, totalIncomes, balance } = getMonthData();
+  const trendData = getTrendData();
+
+
+  // Datos para gráficos
+  const getChartData = () => {
+    const filteredExpenses = getFilteredExpenses();
+    
+    // Datos por categoría
+    const categoryData = categories.map(category => ({
+      name: category.name,
+      value: filteredExpenses
+        .filter(expense => expense.category_id === category.id)
+        .reduce((sum, expense) => sum + parseFloat(expense.amount), 0),
+      color: category.color
+    })).filter(item => item.value > 0);
+
+    // Datos por método de pago
+    const paymentData = paymentMethods.map(method => ({
+      name: method.name,
+      value: filteredExpenses
+        .filter(expense => expense.payment_method_id === method.id)
+        .reduce((sum, expense) => sum + parseFloat(expense.amount), 0),
+      color: method.color
+    })).filter(item => item.value > 0);
+
+    // Datos por fecha (últimos 7 días)
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayExpenses = filteredExpenses
+        .filter(expense => expense.date === dateStr)
+        .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      
+      last7Days.push({
+        date: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+        gastos: dayExpenses
+      });
+    }
+
+    return { categoryData, paymentData, last7Days };
+  };
+
+  const { categoryData, paymentData, last7Days } = getChartData();
+
   // Componente para mensajes
   const MessageAlert = ({ message, type = 'success' }) => {
     if (!message) return null;
@@ -424,6 +521,24 @@ const AppSupabase = () => {
     );
   };
 
+  // Función para obtener gastos por categoría (adaptada para Supabase)
+  const getExpensesByCategory = () => {
+    return categories.map(category => {
+      const categoryExpenses = expenses.filter(
+        expense => expense.category_id === category.id
+      );
+      const total = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      
+      return {
+        ...category,
+        total,
+        count: categoryExpenses.length,
+        percentage: expenses.length > 0 ? (categoryExpenses.length / expenses.length) * 100 : 0
+      };
+    }).filter(category => category.total > 0);
+  };
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -439,12 +554,14 @@ const AppSupabase = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 space-y-2 sm:space-y-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 text-center sm:text-left">💰 Gestor Financiero</h1>
             
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              {/* Indicador de sincronización */}
               {isAuthenticated && (
                 <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg text-xs">
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
@@ -455,6 +572,7 @@ const AppSupabase = () => {
                 </div>
               )}
               
+              {/* Botones de importar/exportar (solo si está autenticado) */}
               {isAuthenticated && (
                 <div className="flex space-x-2">
                   <button
@@ -479,6 +597,7 @@ const AppSupabase = () => {
                 </div>
               )}
               
+              {/* Botón de configuración (solo si está autenticado) */}
               {isAuthenticated && (
                 <button
                   onClick={() => setShowConfig(!showConfig)}
@@ -489,6 +608,7 @@ const AppSupabase = () => {
                 </button>
               )}
               
+              {/* Botón de autenticación */}
               <AuthButton
                 isAuthenticated={isAuthenticated}
                 user={user}
@@ -502,6 +622,38 @@ const AppSupabase = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Banner de migración */}
+        {showMigrationBanner && (
+          <MigrationBanner
+            hasLocalData={migrationService.hasLocalData()}
+            onMigrate={handleMigration}
+            onDismiss={() => setShowMigrationBanner(false)}
+            loading={migrationLoading}
+            isVisible={true}
+          />
+        )}
+        
+        {/* Progreso de migración */}
+        {migrationProgress && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800">{migrationProgress.status}</p>
+                <div className="mt-2 bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(migrationProgress.current / migrationProgress.total) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  {migrationProgress.current} de {migrationProgress.total} elementos procesados
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Mensajes */}
         {successMessage && <MessageAlert message={successMessage} type="success" />}
         {(dataError || expenseError || incomeError) && (
           <MessageAlert 
@@ -510,6 +662,8 @@ const AppSupabase = () => {
           />
         )}
         
+        
+        {/* Contenido principal */}
         {!isAuthenticated ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
@@ -586,7 +740,7 @@ const AppSupabase = () => {
               {/* Gestión de Categorías */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <PlusCircle className="w-5 h-5 mr-2 text-green-500" />
+                  <PieChart className="w-5 h-5 mr-2 text-green-500" />
                   Categorías de Gastos
                 </h3>
                 
@@ -691,6 +845,222 @@ const AppSupabase = () => {
                 </div>
               </div>
 
+              {/* Gestión de Métodos de Pago */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
+                  Métodos de Pago
+                </h3>
+                
+                {/* Agregar nuevo método */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre del método de pago"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          const newPaymentMethod = {
+                            name: e.target.value.trim(),
+                            color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                            sort_order: paymentMethods.length + 1
+                          };
+                          addPaymentMethod(newPaymentMethod);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <input
+                      type="color"
+                      defaultValue="#6B7280"
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const nameInput = e.target.parentElement.querySelector('input[type="text"]');
+                        const colorInput = e.target.parentElement.querySelector('input[type="color"]');
+                        if (nameInput.value.trim()) {
+                          const newPaymentMethod = {
+                            name: nameInput.value.trim(),
+                            color: colorInput.value,
+                            sort_order: paymentMethods.length + 1
+                          };
+                          addPaymentMethod(newPaymentMethod);
+                          nameInput.value = '';
+                          colorInput.value = '#6B7280';
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Lista de métodos de pago */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {paymentMethods.map(method => (
+                    <div key={method.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: method.color }}
+                        ></div>
+                        {editingPayment === method.id ? (
+                          <input
+                            type="text"
+                            defaultValue={method.name}
+                            className="border-none bg-transparent focus:outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
+                            onBlur={(e) => {
+                              if (e.target.value.trim() && e.target.value !== method.name) {
+                                updatePaymentMethod(method.id, { name: e.target.value.trim() });
+                              }
+                              setEditingPayment(null);
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="font-medium">{method.name}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setEditingPayment(editingPayment === method.id ? null : method.id)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este método de pago?')) {
+                              deletePaymentMethod(method.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gestión de Tipos de Ingresos */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                  Tipos de Ingresos
+                </h3>
+                
+                {/* Agregar nuevo tipo */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre del tipo de ingreso"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          const newIncomeType = {
+                            name: e.target.value.trim(),
+                            color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                            sort_order: incomeTypes.length + 1
+                          };
+                          addIncomeType(newIncomeType);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <input
+                      type="color"
+                      defaultValue="#10B981"
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const nameInput = e.target.parentElement.querySelector('input[type="text"]');
+                        const colorInput = e.target.parentElement.querySelector('input[type="color"]');
+                        if (nameInput.value.trim()) {
+                          const newIncomeType = {
+                            name: nameInput.value.trim(),
+                            color: colorInput.value,
+                            sort_order: incomeTypes.length + 1
+                          };
+                          addIncomeType(newIncomeType);
+                          nameInput.value = '';
+                          colorInput.value = '#10B981';
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Lista de tipos de ingresos */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {incomeTypes.map(type => (
+                    <div key={type.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: type.color }}
+                        ></div>
+                        {editingIncome === type.id ? (
+                          <input
+                            type="text"
+                            defaultValue={type.name}
+                            className="border-none bg-transparent focus:outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
+                            onBlur={(e) => {
+                              if (e.target.value.trim() && e.target.value !== type.name) {
+                                updateIncomeType(type.id, { name: e.target.value.trim() });
+                              }
+                              setEditingIncome(null);
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="font-medium">{type.name}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setEditingIncome(editingIncome === type.id ? null : type.id)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este tipo de ingreso?')) {
+                              deleteIncomeType(type.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Estadísticas de Uso */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -728,7 +1098,18 @@ const AppSupabase = () => {
                 <div className="space-y-3">
                   <button
                     onClick={() => {
-                      handleConfirmExport();
+                      const result = supabaseExcelService.exportToExcel({
+                        expenses: true,
+                        incomes: true,
+                        categories: true,
+                        paymentMethods: true,
+                        incomeTypes: true,
+                        metadata: true
+                      });
+                      if (result.success) {
+                        setSuccessMessage('Datos exportados exitosamente');
+                        setTimeout(() => setSuccessMessage(''), 3000);
+                      }
                     }}
                     className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
@@ -753,6 +1134,7 @@ const AppSupabase = () => {
           </div>
         ) : (
           <div>
+            {/* Navigation */}
             <nav className="flex flex-wrap bg-white p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto">
               {[
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
@@ -775,6 +1157,7 @@ const AppSupabase = () => {
                 </button>
               ))}
             </nav>
+
 
             {/* Sección de Gastos */}
             {activeTab === 'gastos' && (
@@ -1089,15 +1472,15 @@ const AppSupabase = () => {
 
             {/* Sección de Reportes */}
             {activeTab === 'reportes' && (
-              <div>
-                {/* Filtros de Reportes */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <div className="space-y-6">
+                {/* Filtros de transacciones */}
+                <div className="bg-white rounded-lg shadow p-6">
                   <h2 className="text-xl font-semibold mb-4 flex items-center">
                     <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
-                    Reportes y Análisis
+                    Reportes y Filtros de Transacciones
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
@@ -1147,349 +1530,304 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex space-x-3">
+                  <div className="mt-4 flex justify-end">
                     <button
-                      onClick={() => setFilters({
-                        startDate: '',
-                        endDate: '',
-                        paymentMethod: '',
-                        category: ''
-                      })}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      onClick={() => setFilters({ startDate: '', endDate: '', category: '', paymentMethod: '' })}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                     >
-                      <X className="w-4 h-4" />
-                      <span>Limpiar Filtros</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        const today = new Date();
-                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                        setFilters({
-                          ...filters,
-                          startDate: firstDay.toISOString().split('T')[0],
-                          endDate: today.toISOString().split('T')[0]
-                        });
-                      }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Este Mes</span>
+                      Limpiar Filtros
                     </button>
                   </div>
                 </div>
 
-                {/* Resumen Filtrado */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                  {(() => {
-                    const filteredExpenses = getFilteredExpenses();
-                    const filteredIncomes = getFilteredIncomes();
-                    const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                    const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-                    const balance = totalIncomes - totalExpenses;
-                    
-                    return (
-                      <>
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-600">Total Ingresos</p>
-                            <p className="text-2xl font-bold text-green-600">${totalIncomes.toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">{filteredIncomes.length} transacciones</p>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-600">Total Gastos</p>
-                            <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">{filteredExpenses.length} transacciones</p>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-600">Balance Neto</p>
-                            <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              ${balance.toFixed(2)}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {balance >= 0 ? 'Ahorro' : 'Déficit'}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-600">Promedio Diario</p>
-                            <p className="text-lg font-bold text-blue-600">
-                              ${(() => {
-                                const days = filters.startDate && filters.endDate 
-                                  ? Math.max(1, Math.ceil((new Date(filters.endDate) - new Date(filters.startDate)) / (1000 * 60 * 60 * 24)) + 1)
-                                  : 30;
-                                return (totalExpenses / days).toFixed(2);
-                              })()}
-                            </p>
-                            <p className="text-sm text-gray-500">gastos por día</p>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Gráficos de Análisis */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  {/* Distribución de Gastos por Categoría */}
+                {/* Resumen de datos filtrados */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Gastos por Categoría</h3>
-                    
-                    {(() => {
-                      const filteredExpenses = getFilteredExpenses();
-                      const categoryStats = categories.map(category => {
-                        const categoryExpenses = filteredExpenses.filter(expense => expense.category_id === category.id);
-                        const total = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                        return {
-                          name: category.name,
-                          value: total,
-                          count: categoryExpenses.length,
-                          color: category.color
-                        };
-                      }).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
-
-                      if (categoryStats.length === 0) {
-                        return (
-                          <div className="text-center text-gray-500 py-12">
-                            <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No hay gastos con los filtros aplicados</p>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <>
-                          <div className="h-64 mb-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={categoryStats}
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                >
-                                  {categoryStats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            {categoryStats.slice(0, 5).map(category => (
-                              <div key={category.name} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: category.color }}
-                                  ></div>
-                                  <span>{category.name}</span>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-medium">${category.value.toFixed(2)}</div>
-                                  <div className="text-gray-500">{category.count} gastos</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      );
-                    })()}
+                    <div className="flex items-center">
+                      <TrendingDown className="w-8 h-8 text-red-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Gastos Filtrados</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          ${getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">{getFilteredExpenses().length} transacciones</p>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Distribución por Método de Pago */}
+                  
                   <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Gastos por Método de Pago</h3>
-                    
-                    {(() => {
-                      const filteredExpenses = getFilteredExpenses();
-                      const paymentStats = paymentMethods.map(method => {
-                        const methodExpenses = filteredExpenses.filter(expense => expense.payment_method_id === method.id);
-                        const total = methodExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                        return {
-                          name: method.name,
-                          value: total,
-                          count: methodExpenses.length,
-                          color: method.color
-                        };
-                      }).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
-
-                      if (paymentStats.length === 0) {
-                        return (
-                          <div className="text-center text-gray-500 py-12">
-                            <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No hay gastos con los filtros aplicados</p>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <>
-                          <div className="h-64 mb-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={paymentStats}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
-                                <Bar dataKey="value" fill="#3B82F6" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            {paymentStats.map(method => (
-                              <div key={method.name} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: method.color }}
-                                  ></div>
-                                  <span>{method.name}</span>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-medium">${method.value.toFixed(2)}</div>
-                                  <div className="text-gray-500">{method.count} gastos</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      );
-                    })()}
+                    <div className="flex items-center">
+                      <TrendingUp className="w-8 h-8 text-green-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Ingresos Filtrados</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          ${getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">{getFilteredIncomes().length} transacciones</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <Calendar className="w-8 h-8 text-blue-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Balance Filtrado</p>
+                        <p className={`text-2xl font-bold ${
+                          (getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
+                           getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0)) >= 0 
+                          ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          ${(
+                            getFilteredIncomes().reduce((sum, income) => sum + parseFloat(income.amount), 0) - 
+                            getFilteredExpenses().reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
+                          ).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Transacciones Filtradas */}
+                {/* Transacciones filtradas */}
                 <div className="bg-white rounded-lg shadow">
                   <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Filter className="w-5 h-5 mr-2" />
-                      Transacciones Filtradas
-                    </h3>
+                    <h3 className="text-lg font-semibold">Historial de Transacciones Filtradas</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Mostrando {getFilteredExpenses().length} gastos y {getFilteredIncomes().length} ingresos
+                    </p>
                   </div>
                   
                   <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                    {(() => {
-                      const filteredExpenses = getFilteredExpenses();
-                      const filteredIncomes = getFilteredIncomes();
-                      
-                      const allTransactions = [
-                        ...filteredExpenses.map(expense => ({
-                          ...expense,
-                          type: 'expense',
-                          amount: -parseFloat(expense.amount),
-                          categoryName: categories.find(c => c.id === expense.category_id)?.name || 'Sin categoría',
-                          categoryColor: categories.find(c => c.id === expense.category_id)?.color || '#6B7280',
-                          paymentMethodName: paymentMethods.find(p => p.id === expense.payment_method_id)?.name || 'Sin método'
-                        })),
-                        ...filteredIncomes.map(income => ({
-                          ...income,
-                          type: 'income',
-                          amount: parseFloat(income.amount),
-                          categoryName: incomeTypes.find(t => t.id === income.income_type_id)?.name || 'Sin tipo',
-                          categoryColor: incomeTypes.find(t => t.id === income.income_type_id)?.color || '#10B981',
-                          paymentMethodName: 'N/A'
-                        }))
-                      ].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                      if (allTransactions.length === 0) {
-                        return (
-                          <div className="p-8 text-center text-gray-500">
-                            <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No hay transacciones con los filtros aplicados</p>
-                            <p className="text-sm">Ajusta los filtros para ver más resultados</p>
-                          </div>
-                        );
-                      }
-
-                      return allTransactions.slice(0, 20).map(transaction => (
-                        <div key={`${transaction.type}-${transaction.id}`} className="p-4 hover:bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: transaction.categoryColor }}
-                                ></div>
-                                <div>
-                                  <p className="font-medium text-gray-900 flex items-center space-x-2">
-                                    <span>{transaction.description}</span>
-                                    {transaction.type === 'expense' ? (
-                                      <TrendingDown className="w-4 h-4 text-red-500" />
-                                    ) : (
-                                      <TrendingUp className="w-4 h-4 text-green-500" />
-                                    )}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    {transaction.categoryName}
-                                    {transaction.type === 'expense' && ` • ${transaction.paymentMethodName}`}
-                                    {' • '}{new Date(transaction.date).toLocaleDateString()}
-                                  </p>
-                                  {transaction.notes && (
-                                    <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
-                                  )}
+                    {[...getFilteredExpenses().map(expense => ({ ...expense, type: 'expense' })), 
+                      ...getFilteredIncomes().map(income => ({ ...income, type: 'income' }))]
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay transacciones que coincidan con los filtros</p>
+                        <p className="text-sm">Ajusta los filtros para ver más resultados</p>
+                      </div>
+                    ) : (
+                      [...getFilteredExpenses().map(expense => ({ ...expense, type: 'expense' })), 
+                       ...getFilteredIncomes().map(income => ({ ...income, type: 'income' }))]
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .map(transaction => {
+                          if (transaction.type === 'expense') {
+                            const category = categories.find(c => c.id === transaction.category_id);
+                            const paymentMethod = paymentMethods.find(p => p.id === transaction.payment_method_id);
+                            
+                            return (
+                              <div key={`expense-${transaction.id}`} className="p-4 hover:bg-gray-50">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: category?.color || '#6B7280' }}
+                                    ></div>
+                                    <div>
+                                      <p className="font-medium">{transaction.description}</p>
+                                      <p className="text-sm text-gray-500">
+                                        {category?.name} • {paymentMethod?.name} • {new Date(transaction.date).toLocaleDateString()}
+                                      </p>
+                                      {transaction.notes && (
+                                        <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <span className="text-lg font-semibold text-red-600">
+                                      -${Number(transaction.amount).toFixed(2)}
+                                    </span>
+                                    <p className="text-xs text-gray-500">Gasto</p>
+                                  </div>
                                 </div>
+                              </div>
+                            );
+                          } else {
+                            const incomeType = incomeTypes.find(t => t.id === transaction.income_type_id);
+                            
+                            return (
+                              <div key={`income-${transaction.id}`} className="p-4 hover:bg-gray-50">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: incomeType?.color || '#10B981' }}
+                                    ></div>
+                                    <div>
+                                      <p className="font-medium">{transaction.description}</p>
+                                      <p className="text-sm text-gray-500">
+                                        {incomeType?.name} • {new Date(transaction.date).toLocaleDateString()}
+                                      </p>
+                                      {transaction.notes && (
+                                        <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <span className="text-lg font-semibold text-green-600">
+                                      +${Number(transaction.amount).toFixed(2)}
+                                    </span>
+                                    <p className="text-xs text-gray-500">Ingreso</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                        })
+                    )}
+                  </div>
+                </div>
+
+                {/* Gráficos */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Gráfico por categorías */}
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold mb-4">Gastos por Categoría</h3>
+                    {categoryData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, 'Monto']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-64 flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <PieChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>No hay datos para mostrar</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tendencia financiera */}
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Tendencia Financiera</h3>
+                      <select
+                        value={trendPeriod}
+                        onChange={(e) => setTrendPeriod(e.target.value)}
+                        className="text-sm border border-gray-300 rounded px-2 py-1"
+                      >
+                        <option value="3">Últimos 3 meses</option>
+                        <option value="6">Últimos 6 meses</option>
+                        <option value="12">Últimos 12 meses</option>
+                      </select>
+                    </div>
+                    
+                    {trendData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={trendData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, '']} />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="ingresos" 
+                            stroke="#10B981" 
+                            strokeWidth={2}
+                            name="Ingresos"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="gastos" 
+                            stroke="#EF4444" 
+                            strokeWidth={2}
+                            name="Gastos"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="balance" 
+                            stroke="#3B82F6" 
+                            strokeWidth={2}
+                            name="Balance"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-64 flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>No hay datos para mostrar</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desglose detallado */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">Desglose por Categoría</h3>
+                  </div>
+                  
+                  <div className="p-6">
+                    {getExpensesByCategory().length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No hay gastos para mostrar en el período seleccionado</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {getExpensesByCategory().map(category => (
+                          <div key={category.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div 
+                                className="w-4 h-4 rounded-full" 
+                                style={{ backgroundColor: category.color }}
+                              ></div>
+                              <div>
+                                <p className="font-medium">{category.name}</p>
+                                <p className="text-sm text-gray-500">{category.count} transacciones</p>
                               </div>
                             </div>
                             
                             <div className="text-right">
-                              <span className={`text-lg font-semibold ${
-                                transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                              </span>
+                              <p className="font-bold text-lg">${category.total.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500">
+                                {((category.total / totalExpenses) * 100).toFixed(1)}% del total
+                              </p>
                             </div>
                           </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                  
-                  {(() => {
-                    const filteredExpenses = getFilteredExpenses();
-                    const filteredIncomes = getFilteredIncomes();
-                    const totalTransactions = filteredExpenses.length + filteredIncomes.length;
-                    
-                    return totalTransactions > 20 && (
-                      <div className="p-4 text-center border-t border-gray-200">
-                        <p className="text-blue-600 text-sm font-medium">
-                          Mostrando 20 de {totalTransactions} transacciones
-                        </p>
+                        ))}
                       </div>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Sección de Balance */}
             {activeTab === 'balance' && (
-              <div>
-                {/* Controles de Balance */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+              <div className="space-y-6">
+                {/* Selector de período */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
                     <h2 className="text-xl font-semibold flex items-center">
-                      <Calendar className="w-5 h-5 mr-2 text-purple-500" />
+                      <Calendar className="w-5 h-5 mr-2 text-blue-500" />
                       Balance Mensual
                     </h2>
                     
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                    <div className="flex items-center space-x-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mes:</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mes del Balance</label>
                         <input
                           type="month"
                           value={reportMonth}
@@ -1497,88 +1835,73 @@ const AppSupabase = () => {
                           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Período de Tendencia:</label>
-                        <select
-                          value={trendPeriod}
-                          onChange={(e) => setTrendPeriod(e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="3">Últimos 3 meses</option>
-                          <option value="6">Últimos 6 meses</option>
-                          <option value="12">Últimos 12 meses</option>
-                        </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumen del mes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <TrendingUp className="w-8 h-8 text-green-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Ingresos del Mes</p>
+                        <p className="text-2xl font-bold text-green-600">${totalIncomes.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{monthIncomes.length} transacciones</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <TrendingDown className="w-8 h-8 text-red-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Gastos del Mes</p>
+                        <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{monthExpenses.length} transacciones</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <Calendar className="w-8 h-8 text-blue-500" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Balance del Mes</p>
+                        <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ${balance.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {balance >= 0 ? 'Superávit' : 'Déficit'}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Resumen del Mes Seleccionado */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  {(() => {
-                    const { totalExpenses, totalIncomes, balance } = getMonthData();
-                    const savingsRate = totalIncomes > 0 ? ((balance / totalIncomes) * 100) : 0;
-                    
-                    return (
-                      <>
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-600">Ingresos del Mes</p>
-                              <p className="text-2xl font-bold text-green-600">
-                                ${totalIncomes.toFixed(2)}
-                              </p>
-                            </div>
-                            <TrendingUp className="h-8 w-8 text-green-500" />
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-600">Gastos del Mes</p>
-                              <p className="text-2xl font-bold text-red-600">
-                                ${totalExpenses.toFixed(2)}
-                              </p>
-                            </div>
-                            <TrendingDown className="h-8 w-8 text-red-500" />
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white rounded-lg shadow p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-600">Balance del Mes</p>
-                              <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ${balance.toFixed(2)}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Tasa de ahorro: {savingsRate.toFixed(1)}%
-                              </p>
-                            </div>
-                            <Calendar className="h-8 w-8 text-purple-500" />
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Gráfico de Tendencias */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Tendencia de los Últimos {trendPeriod} Meses</h3>
+                {/* Gráficos comparativos */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Comparativo de Balance</h3>
+                    <select
+                      value={trendPeriod}
+                      onChange={(e) => setTrendPeriod(e.target.value)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1"
+                    >
+                      <option value="1">Último mes</option>
+                      <option value="3">Últimos 3 meses</option>
+                      <option value="6">Últimos 6 meses</option>
+                      <option value="12">Últimos 12 meses</option>
+                    </select>
+                  </div>
                   
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={getTrendData()}>
+                  {trendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={trendData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <Tooltip 
-                          formatter={(value, name) => [`$${Number(value).toFixed(2)}`, name === 'gastos' ? 'Gastos' : name === 'ingresos' ? 'Ingresos' : 'Balance']}
-                          labelFormatter={(label) => `Mes: ${label}`}
-                        />
+                        <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, '']} />
                         <Legend />
                         <Line 
                           type="monotone" 
@@ -1597,113 +1920,50 @@ const AppSupabase = () => {
                         <Line 
                           type="monotone" 
                           dataKey="balance" 
-                          stroke="#8B5CF6" 
-                          strokeWidth={2}
+                          stroke="#3B82F6" 
+                          strokeWidth={3}
                           name="Balance"
                         />
                       </LineChart>
                     </ResponsiveContainer>
-                  </div>
-                </div>
+                  ) : (
+                    <div className="h-64 flex items-center justify-center text-gray-500">
+                      <div className="text-center">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No hay datos para mostrar</p>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Análisis por Categorías del Mes */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Gastos por Categoría */}
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Gastos por Categoría</h3>
-                    
-                    {(() => {
-                      const { monthExpenses } = getMonthData();
-                      const categoryData = categories.map(category => {
-                        const categoryExpenses = monthExpenses.filter(expense => expense.category_id === category.id);
-                        const total = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                        return {
-                          name: category.name,
-                          value: total,
-                          color: category.color
-                        };
-                      }).filter(item => item.value > 0);
-
-                      if (categoryData.length === 0) {
-                        return (
-                          <div className="text-center text-gray-500 py-8">
-                            <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No hay gastos en este mes</p>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={categoryData}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              >
-                                {categoryData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cantidad']} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Ingresos por Tipo */}
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Ingresos por Tipo</h3>
-                    
-                    {(() => {
-                      const { monthIncomes } = getMonthData();
-                      const incomeData = incomeTypes.map(type => {
-                        const typeIncomes = monthIncomes.filter(income => income.income_type_id === type.id);
-                        const total = typeIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-                        return {
-                          name: type.name,
-                          value: total,
-                          color: type.color
-                        };
-                      }).filter(item => item.value > 0);
-
-                      if (incomeData.length === 0) {
-                        return (
-                          <div className="text-center text-gray-500 py-8">
-                            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No hay ingresos en este mes</p>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={incomeData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis />
-                              <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cantidad']} />
-                              <Bar dataKey="value" fill="#10B981" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                {/* Resumen de gastos por los últimos 7 días */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold mb-4">Gastos de los Últimos 7 Días</h3>
+                  
+                  {last7Days.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={last7Days}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, 'Gastos']} />
+                        <Bar dataKey="gastos" fill="#EF4444" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-48 flex items-center justify-center text-gray-500">
+                      <div className="text-center">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No hay datos de gastos para mostrar</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
         )}
 
+        {/* Modal de autenticación */}
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
@@ -1712,38 +1972,101 @@ const AppSupabase = () => {
           loading={loading}
         />
 
+        {/* Modal de selección de exportación */}
         {showExportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Seleccionar datos a exportar</h3>
-                  <button
-                    onClick={() => setShowExportModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Seleccionar datos a exportar</h3>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.expenses}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, expenses: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Gastos ({expenses.length} registros)</span>
+                </label>
                 
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setShowExportModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleConfirmExport}
-                    disabled={!Object.values(exportSelections).some(Boolean)}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    Exportar Excel
-                  </button>
-                </div>
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.incomes}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, incomes: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Ingresos ({incomes.length} registros)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.categories}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, categories: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Categorías ({categories.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.paymentMethods}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, paymentMethods: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Métodos de Pago ({paymentMethods.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.incomeTypes}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, incomeTypes: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Tipos de Ingreso ({incomeTypes.length} elementos)</span>
+                </label>
+                
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={exportSelections.metadata}
+                    onChange={(e) => setExportSelections(prev => ({ ...prev, metadata: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Metadatos del sistema</span>
+                </label>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmExport}
+                  disabled={!Object.values(exportSelections).some(Boolean)}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Exportar Excel
+                </button>
               </div>
             </div>
           </div>
+        </div>
         )}
       </div>
     </div>
