@@ -127,12 +127,10 @@ const AppSupabase = () => {
     clearError
   } = useSupabaseData();
 
-  // Verificar migración al cargar
+  // Verificar migración al cargar - DESACTIVADO (app 100% Supabase)
   useEffect(() => {
-    if (isAuthenticated) {
-      const shouldShow = migrationService.shouldShowMigrationBanner();
-      setShowMigrationBanner(shouldShow);
-    }
+    // Banner de migración desactivado permanentemente
+    setShowMigrationBanner(false);
   }, [isAuthenticated]);
 
   // Función para limpiar mensajes
