@@ -526,15 +526,6 @@ const AppSupabase = () => {
     }).filter(category => category.total > 0);
   };
 
-  // Debug: Log del estado actual
-  console.log('Estado actual:', {
-    loading,
-    isAuthenticated,
-    user: user?.email,
-    error: dataError,
-    categoriesCount: categories.length,
-    expensesCount: expenses.length
-  });
 
   if (loading) {
     return (
@@ -659,17 +650,6 @@ const AppSupabase = () => {
           />
         )}
         
-        {/* Debug info - solo en desarrollo */}
-        {import.meta.env.DEV && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-            <strong>Debug:</strong> Auth={isAuthenticated ? 'Sí' : 'No'}, 
-            User={user?.email || 'None'}, 
-            Categories={categories.length}, 
-            Expenses={expenses.length},
-            Loading={loading ? 'Sí' : 'No'},
-            Error={dataError || 'None'}
-          </div>
-        )}
         
         {/* Contenido principal */}
         {!isAuthenticated ? (

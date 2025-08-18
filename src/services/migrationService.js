@@ -384,15 +384,9 @@ class MigrationService {
 
   // Verificar si debe mostrar el banner de migración
   shouldShowMigrationBanner() {
-    if (!authService.isUserAuthenticated()) {
-      return false;
-    }
-    
-    if (this.isMigrationCompleted()) {
-      return false;
-    }
-    
-    return this.hasLocalData();
+    // La aplicación ahora está completamente conectada a Supabase
+    // No necesitamos mostrar el banner de migración
+    return false;
   }
 
   // Exportar datos locales como backup antes de migrar
