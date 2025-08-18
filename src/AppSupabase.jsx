@@ -691,6 +691,222 @@ const AppSupabase = () => {
                 </div>
               </div>
 
+              {/* Gestión de Métodos de Pago */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
+                  Métodos de Pago
+                </h3>
+                
+                {/* Agregar nuevo método de pago */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre del método"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          const newPaymentMethod = {
+                            name: e.target.value.trim(),
+                            color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                            sort_order: paymentMethods.length + 1
+                          };
+                          addPaymentMethod(newPaymentMethod);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <input
+                      type="color"
+                      defaultValue="#74B9FF"
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const nameInput = e.target.parentElement.querySelector('input[type="text"]');
+                        const colorInput = e.target.parentElement.querySelector('input[type="color"]');
+                        if (nameInput.value.trim()) {
+                          const newPaymentMethod = {
+                            name: nameInput.value.trim(),
+                            color: colorInput.value,
+                            sort_order: paymentMethods.length + 1
+                          };
+                          addPaymentMethod(newPaymentMethod);
+                          nameInput.value = '';
+                          colorInput.value = '#74B9FF';
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Lista de métodos de pago */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {paymentMethods.map(method => (
+                    <div key={method.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: method.color }}
+                        ></div>
+                        {editingPayment === method.id ? (
+                          <input
+                            type="text"
+                            defaultValue={method.name}
+                            className="border-none bg-transparent focus:outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
+                            onBlur={(e) => {
+                              if (e.target.value.trim() && e.target.value !== method.name) {
+                                updatePaymentMethod(method.id, { name: e.target.value.trim() });
+                              }
+                              setEditingPayment(null);
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="font-medium">{method.name}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setEditingPayment(editingPayment === method.id ? null : method.id)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este método de pago?')) {
+                              deletePaymentMethod(method.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gestión de Tipos de Ingresos */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                  Tipos de Ingresos
+                </h3>
+                
+                {/* Agregar nuevo tipo de ingreso */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Nombre del tipo de ingreso"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          const newIncomeType = {
+                            name: e.target.value.trim(),
+                            color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                            sort_order: incomeTypes.length + 1
+                          };
+                          addIncomeType(newIncomeType);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <input
+                      type="color"
+                      defaultValue="#00B894"
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const nameInput = e.target.parentElement.querySelector('input[type="text"]');
+                        const colorInput = e.target.parentElement.querySelector('input[type="color"]');
+                        if (nameInput.value.trim()) {
+                          const newIncomeType = {
+                            name: nameInput.value.trim(),
+                            color: colorInput.value,
+                            sort_order: incomeTypes.length + 1
+                          };
+                          addIncomeType(newIncomeType);
+                          nameInput.value = '';
+                          colorInput.value = '#00B894';
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Lista de tipos de ingresos */}
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {incomeTypes.map(type => (
+                    <div key={type.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: type.color }}
+                        ></div>
+                        {editingIncome === type.id ? (
+                          <input
+                            type="text"
+                            defaultValue={type.name}
+                            className="border-none bg-transparent focus:outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
+                            onBlur={(e) => {
+                              if (e.target.value.trim() && e.target.value !== type.name) {
+                                updateIncomeType(type.id, { name: e.target.value.trim() });
+                              }
+                              setEditingIncome(null);
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="font-medium">{type.name}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setEditingIncome(editingIncome === type.id ? null : type.id)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este tipo de ingreso?')) {
+                              deleteIncomeType(type.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Estadísticas de Uso */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -698,14 +914,18 @@ const AppSupabase = () => {
                   Estadísticas de Uso
                 </h3>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">{categories.length}</div>
                     <div className="text-sm text-gray-600">Categorías</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{paymentMethods.length}</div>
+                    <div className="text-2xl font-bold text-cyan-600">{paymentMethods.length}</div>
                     <div className="text-sm text-gray-600">Métodos de Pago</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{incomeTypes.length}</div>
+                    <div className="text-sm text-gray-600">Tipos de Ingresos</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-red-600">{expenses.length}</div>
@@ -785,8 +1005,8 @@ const AppSupabase = () => {
                     Agregar Nuevo Gasto
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                       <input
                         type="number"
@@ -799,7 +1019,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1 lg:col-span-2 xl:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                       <input
                         type="text"
@@ -810,7 +1030,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                       <select
                         value={newExpense.category}
@@ -824,7 +1044,7 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
                       <select
                         value={newExpense.paymentMethod}
@@ -838,7 +1058,7 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                       <input
                         type="date"
@@ -848,7 +1068,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="md:col-span-2 lg:col-span-2">
+                    <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
                       <input
                         type="text"
@@ -859,7 +1079,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="flex items-end">
+                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex items-end">
                       <button
                         onClick={addExpense}
                         disabled={loading}
@@ -948,8 +1168,8 @@ const AppSupabase = () => {
                     Agregar Nuevo Ingreso
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                       <input
                         type="number"
@@ -962,7 +1182,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1 lg:col-span-2 xl:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                       <input
                         type="text"
@@ -973,7 +1193,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Ingreso</label>
                       <select
                         value={newIncome.type}
@@ -987,7 +1207,7 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
-                    <div>
+                    <div className="sm:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                       <input
                         type="date"
@@ -997,7 +1217,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="md:col-span-2 lg:col-span-2">
+                    <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
                       <input
                         type="text"
@@ -1008,7 +1228,7 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="flex items-end">
+                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex items-end">
                       <button
                         onClick={addIncome}
                         disabled={loading}
@@ -1097,7 +1317,7 @@ const AppSupabase = () => {
                     Reportes y Análisis
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
@@ -1147,7 +1367,7 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex space-x-3">
+                  <div className="mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                     <button
                       onClick={() => setFilters({
                         startDate: '',
@@ -1155,7 +1375,7 @@ const AppSupabase = () => {
                         paymentMethod: '',
                         category: ''
                       })}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                       <X className="w-4 h-4" />
                       <span>Limpiar Filtros</span>
@@ -1171,7 +1391,7 @@ const AppSupabase = () => {
                           endDate: today.toISOString().split('T')[0]
                         });
                       }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                     >
                       <Calendar className="w-4 h-4" />
                       <span>Este Mes</span>
@@ -1714,7 +1934,7 @@ const AppSupabase = () => {
 
         {showExportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Seleccionar datos a exportar</h3>
@@ -1726,19 +1946,135 @@ const AppSupabase = () => {
                   </button>
                 </div>
                 
+                <div className="space-y-4 mb-6">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Datos de Transacciones</h4>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.expenses}
+                        onChange={(e) => setExportSelections({...exportSelections, expenses: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Gastos</span>
+                        <span className="text-gray-500 ml-1">({expenses.length} registros)</span>
+                      </span>
+                    </label>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.incomes}
+                        onChange={(e) => setExportSelections({...exportSelections, incomes: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Ingresos</span>
+                        <span className="text-gray-500 ml-1">({incomes.length} registros)</span>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Configuración</h4>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.categories}
+                        onChange={(e) => setExportSelections({...exportSelections, categories: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Categorías de Gastos</span>
+                        <span className="text-gray-500 ml-1">({categories.length} categorías)</span>
+                      </span>
+                    </label>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.paymentMethods}
+                        onChange={(e) => setExportSelections({...exportSelections, paymentMethods: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Métodos de Pago</span>
+                        <span className="text-gray-500 ml-1">({paymentMethods.length} métodos)</span>
+                      </span>
+                    </label>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.incomeTypes}
+                        onChange={(e) => setExportSelections({...exportSelections, incomeTypes: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Tipos de Ingresos</span>
+                        <span className="text-gray-500 ml-1">({incomeTypes.length} tipos)</span>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Información Adicional</h4>
+                    
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={exportSelections.metadata}
+                        onChange={(e) => setExportSelections({...exportSelections, metadata: e.target.checked})}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Metadatos</span>
+                        <span className="text-gray-500 ml-1">(fecha de exportación, resumen, etc.)</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => {
+                      const allSelected = Object.values(exportSelections).every(Boolean);
+                      const newSelections = {
+                        expenses: !allSelected,
+                        incomes: !allSelected,
+                        categories: !allSelected,
+                        paymentMethods: !allSelected,
+                        incomeTypes: !allSelected,
+                        metadata: !allSelected
+                      };
+                      setExportSelections(newSelections);
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {Object.values(exportSelections).every(Boolean) ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                  </button>
+                  
+                  <span className="text-sm text-gray-500">
+                    {Object.values(exportSelections).filter(Boolean).length} de {Object.keys(exportSelections).length} seleccionados
+                  </span>
+                </div>
+                
                 <div className="flex space-x-3">
                   <button
                     onClick={() => setShowExportModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirmExport}
                     disabled={!Object.values(exportSelections).some(Boolean)}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   >
-                    Exportar Excel
+                    Exportar a Excel
                   </button>
                 </div>
               </div>
