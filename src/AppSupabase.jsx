@@ -71,9 +71,18 @@ const AppSupabase = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   // Estados para mensajes informativos
+  const [error, setError] = useState('');
   const [expenseError, setExpenseError] = useState('');
   const [incomeError, setIncomeError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Limpiar errores automáticamente después de 5 segundos
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
   
   // Estados para formularios
   const [newExpense, setNewExpense] = useState({
@@ -723,6 +732,16 @@ const AppSupabase = () => {
   const addPaymentMethodWithValidation = async () => {
     if (!newPaymentMethodForm.name.trim()) {
       setError('El nombre del método de pago es obligatorio');
+      return;
+    }
+
+    // Verificar si ya existe un método de pago con ese nombre
+    const existingMethod = paymentMethods.find(method => 
+      method.name.toLowerCase().trim() === newPaymentMethodForm.name.toLowerCase().trim()
+    );
+    
+    if (existingMethod) {
+      setError('Ya existe un método de pago con ese nombre');
       return;
     }
 
