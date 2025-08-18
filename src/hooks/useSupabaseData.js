@@ -199,7 +199,7 @@ export const useSupabaseData = () => {
   const getDefaultSettings = () => ({
     auto_backup: true,
     backup_frequency: 'daily',
-    currency: 'USD',
+    currency: 'PEN',
     date_format: 'YYYY-MM-DD',
     show_json_export: false,
     theme: 'light',
@@ -586,56 +586,116 @@ export const useSupabaseData = () => {
   }, [isAuthenticated]);
 
   // ==============================================
+  // FUNCIONES DE GASTOS RECURRENTES AUTOMÁTICOS
+  // ==============================================
+
+  // Calcular cuántas veces debe aplicarse un gasto recurrente en un período
+  const getRecurringOccurrences = useCallback((recurring, startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const nextDate = new Date(recurring.next_date);
+    const occurrences = [];
+
+    // Si la próxima fecha es después del período, no hay ocurrencias
+    if (nextDate > end) return occurrences;
+
+    let currentDate = new Date(nextDate);
+    
+    // Retroceder para encontrar la primera fecha dentro del período
+    while (currentDate > start) {
+      switch (recurring.frequency) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() - 1);
+          break;
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() - 7);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          break;
+        case 'yearly':
+          currentDate.setFullYear(currentDate.getFullYear() - 1);
+          break;
+        default:
+          return occurrences;
+      }
+    }
+
+    // Avanzar hasta estar dentro del período y generar ocurrencias
+    currentDate = new Date(nextDate);
+    while (currentDate <= end) {
+      if (currentDate >= start && currentDate <= end) {
+        occurrences.push({
+          ...recurring,
+          date: currentDate.toISOString().split('T')[0],
+          id: `recurring_${recurring.id}_${currentDate.getTime()}`,
+          isRecurring: true
+        });
+      }
+      
+      switch (recurring.frequency) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+        case 'yearly':
+          currentDate.setFullYear(currentDate.getFullYear() + 1);
+          break;
+        default:
+          return occurrences;
+      }
+    }
+
+    return occurrences;
+  }, []);
+
+  // Generar gastos recurrentes virtuales para un período
+  const generateRecurringExpenses = useCallback((startDate, endDate) => {
+    const virtualExpenses = [];
+    
+    recurringExpenses.forEach(recurring => {
+      if (recurring.is_active) {
+        const occurrences = getRecurringOccurrences(recurring, startDate, endDate);
+        virtualExpenses.push(...occurrences);
+      }
+    });
+
+    return virtualExpenses;
+  }, [recurringExpenses, getRecurringOccurrences]);
+
+  // ==============================================
   // FUNCIONES DE ANÁLISIS
   // ==============================================
 
   const getFinancialSummary = useCallback((startDate, endDate) => {
     try {
-      if (!isAuthenticated) {
-        // Calcular localmente si no está autenticado
-        const filteredExpenses = expenses.filter(expense => {
-          const expenseDate = new Date(expense.date);
-          const start = startDate ? new Date(startDate) : new Date('1900-01-01');
-          const end = endDate ? new Date(endDate) : new Date('2100-12-31');
-          return expenseDate >= start && expenseDate <= end;
-        });
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+      const end = endDate ? new Date(endDate) : new Date('2100-12-31');
 
-        const filteredIncomes = incomes.filter(income => {
-          const incomeDate = new Date(income.date);
-          const start = startDate ? new Date(startDate) : new Date('1900-01-01');
-          const end = endDate ? new Date(endDate) : new Date('2100-12-31');
-          return incomeDate >= start && incomeDate <= end;
-        });
-
-        const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-        const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
-
-        return {
-          total_expenses: totalExpenses,
-          total_incomes: totalIncomes,
-          balance: totalIncomes - totalExpenses,
-          expense_count: filteredExpenses.length,
-          income_count: filteredIncomes.length,
-          savings_rate: totalIncomes > 0 ? ((totalIncomes - totalExpenses) / totalIncomes * 100) : 0
-        };
-      }
-
-      // Para usuarios autenticados, hacer cálculo local temporal hasta implementar función de BD
+      // Filtrar gastos normales
       const filteredExpenses = expenses.filter(expense => {
         const expenseDate = new Date(expense.date);
-        const start = startDate ? new Date(startDate) : new Date('1900-01-01');
-        const end = endDate ? new Date(endDate) : new Date('2100-12-31');
         return expenseDate >= start && expenseDate <= end;
       });
 
+      // Generar gastos recurrentes virtuales para el período
+      const recurringExpensesInPeriod = generateRecurringExpenses(start, end);
+
+      // Combinar gastos normales y recurrentes
+      const allExpenses = [...filteredExpenses, ...recurringExpensesInPeriod];
+
+      // Filtrar ingresos
       const filteredIncomes = incomes.filter(income => {
         const incomeDate = new Date(income.date);
-        const start = startDate ? new Date(startDate) : new Date('1900-01-01');
-        const end = endDate ? new Date(endDate) : new Date('2100-12-31');
         return incomeDate >= start && incomeDate <= end;
       });
 
-      const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+      const totalExpenses = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
       const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
       const balance = totalIncomes - totalExpenses;
 
@@ -643,11 +703,13 @@ export const useSupabaseData = () => {
         total_expenses: totalExpenses,
         total_incomes: totalIncomes,
         balance: balance,
-        expense_count: filteredExpenses.length,
+        expense_count: allExpenses.length,
         income_count: filteredIncomes.length,
         savings_rate: totalIncomes > 0 ? ((balance / totalIncomes) * 100) : 0,
-        average_expense: filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0,
-        average_income: filteredIncomes.length > 0 ? totalIncomes / filteredIncomes.length : 0
+        average_expense: allExpenses.length > 0 ? totalExpenses / allExpenses.length : 0,
+        average_income: filteredIncomes.length > 0 ? totalIncomes / filteredIncomes.length : 0,
+        recurring_expenses: recurringExpensesInPeriod.length,
+        regular_expenses: filteredExpenses.length
       };
 
     } catch (error) {
@@ -658,10 +720,12 @@ export const useSupabaseData = () => {
         balance: 0,
         expense_count: 0,
         income_count: 0,
-        savings_rate: 0
+        savings_rate: 0,
+        recurring_expenses: 0,
+        regular_expenses: 0
       };
     }
-  }, [isAuthenticated, expenses, incomes]);
+  }, [expenses, incomes, generateRecurringExpenses]);
 
   // ==============================================
   // FUNCIONES DE AUTENTICACIÓN
@@ -760,6 +824,7 @@ export const useSupabaseData = () => {
     addRecurringExpense,
     updateRecurringExpense,
     deleteRecurringExpense,
+    generateRecurringExpenses,
 
     // Funciones de análisis
     getFinancialSummary,

@@ -558,7 +558,7 @@ class DatabaseService {
           category_id: recurring.category_id,
           description: recurring.description,
           amount: parseFloat(recurring.amount),
-          currency: recurring.currency || 'USD',
+          currency: recurring.currency || 'PEN',
           frequency: recurring.frequency,
           next_date: recurring.next_date
         }])

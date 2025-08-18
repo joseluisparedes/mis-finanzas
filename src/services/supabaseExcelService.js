@@ -122,7 +122,7 @@ class SupabaseExcelService {
           'Usuario': user?.email || 'Desconocido',
           'Total_Gastos': expenses.length,
           'Total_Ingresos': incomes.length,
-          'Moneda': settings?.currency || 'USD',
+          'Moneda': settings?.currency || 'PEN',
           'Exportado_Desde': 'Supabase'
         }]);
         

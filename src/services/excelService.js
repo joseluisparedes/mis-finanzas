@@ -166,7 +166,7 @@ class ExcelService {
               settings: {
                 autoBackup: true,
                 backupFrequency: 'daily',
-                currency: 'USD',
+                currency: 'PEN',
                 dateFormat: 'YYYY-MM-DD'
               }
             };

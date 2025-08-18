@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS recurring_expenses (
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     description TEXT NOT NULL,
     amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
-    currency TEXT DEFAULT 'USD',
+    currency TEXT DEFAULT 'PEN',
     frequency TEXT NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
     next_date DATE NOT NULL,
     is_active BOOLEAN DEFAULT true,

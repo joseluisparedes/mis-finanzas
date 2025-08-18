@@ -1157,7 +1157,7 @@ const AppSupabase = () => {
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium">
-                              ${progress.spent.toFixed(2)} de ${budget.amount.toFixed(2)}
+                              {formatCurrency(progress.spent)} de {formatCurrency(budget.amount)}
                             </span>
                             <span className={`text-sm font-bold ${
                               isOverBudget ? 'text-red-600' : progress.percentage > 80 ? 'text-yellow-600' : 'text-green-600'
@@ -1989,7 +1989,7 @@ const AppSupabase = () => {
                               
                               <div className="flex items-center space-x-2">
                                 <span className="text-lg font-semibold text-red-600">
-                                  -${Number(expense.amount).toFixed(2)}
+                                  -{formatCurrency(Number(expense.amount), expense.currency)}
                                 </span>
                                 <button
                                   onClick={() => deleteExpense(expense.id)}
@@ -2198,7 +2198,7 @@ const AppSupabase = () => {
                               
                               <div className="flex items-center space-x-2">
                                 <span className="text-lg font-semibold text-green-600">
-                                  +${Number(income.amount).toFixed(2)}
+                                  +{formatCurrency(Number(income.amount), income.currency)}
                                 </span>
                                 <button
                                   onClick={() => deleteIncome(income.id)}
@@ -2695,7 +2695,7 @@ const AppSupabase = () => {
                               <span className={`text-lg font-semibold ${
                                 transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'
                               }`}>
-                                {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                                {transaction.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount), transaction.currency)}
                               </span>
                             </div>
                           </div>

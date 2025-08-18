@@ -300,7 +300,7 @@ class MigrationService {
           await databaseService.updateUserSettings({
             auto_backup: localData.settings.autoBackup || true,
             backup_frequency: localData.settings.backupFrequency || 'daily',
-            currency: localData.settings.currency || 'USD',
+            currency: localData.settings.currency || 'PEN',
             date_format: localData.settings.dateFormat || 'YYYY-MM-DD',
             show_json_export: localData.settings.showJsonExport || false
           });
