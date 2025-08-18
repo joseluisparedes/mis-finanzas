@@ -669,6 +669,77 @@ export const useSupabaseData = () => {
   }, [recurringExpenses, getRecurringOccurrences]);
 
   // ==============================================
+  // FUNCIONES DE TARJETAS DE CRÉDITO
+  // ==============================================
+
+  // Función para determinar el mes al que pertenece un gasto de TC
+  const getCreditCardAssignmentMonth = useCallback((expenseDate, paymentMethod) => {
+    if (!paymentMethod || paymentMethod.payment_type !== 'credit_card') {
+      return expenseDate; // Para métodos que no son TC, mantener fecha original
+    }
+
+    const expDate = new Date(expenseDate);
+    const expDay = expDate.getDate();
+    const expMonth = expDate.getMonth();
+    const expYear = expDate.getFullYear();
+    
+    const closingDay = paymentMethod.cc_closing_day;
+    const paymentDay = paymentMethod.cc_payment_day;
+
+    // Determinar a qué ciclo de TC pertenece este gasto
+    let cycleMonth, cycleYear;
+    
+    if (expDay <= closingDay) {
+      // El gasto está dentro del ciclo actual
+      cycleMonth = expMonth;
+      cycleYear = expYear;
+    } else {
+      // El gasto está en el próximo ciclo
+      cycleMonth = expMonth + 1;
+      cycleYear = expYear;
+      if (cycleMonth > 11) {
+        cycleMonth = 0;
+        cycleYear++;
+      }
+    }
+
+    // Calcular fecha de cierre del ciclo
+    const closingDate = new Date(cycleYear, cycleMonth, closingDay);
+    
+    // Calcular fecha de pago
+    let paymentDate = new Date(cycleYear, cycleMonth, paymentDay);
+    if (paymentDay < closingDay) {
+      // Si el día de pago es menor que el de cierre, está en el mes siguiente
+      paymentDate.setMonth(paymentDate.getMonth() + 1);
+    }
+
+    // Determinar qué mes tiene más días entre cierre y pago
+    const closingMonth = closingDate.getMonth();
+    const paymentMonth = paymentDate.getMonth();
+    
+    let assignmentMonth;
+    
+    if (closingMonth === paymentMonth) {
+      // Mismo mes
+      assignmentMonth = closingMonth;
+    } else {
+      // Diferentes meses - asignar al que tenga más días
+      const daysInClosingMonth = new Date(closingDate.getFullYear(), closingMonth + 1, 0).getDate();
+      const daysInPaymentMonth = new Date(paymentDate.getFullYear(), paymentMonth + 1, 0).getDate();
+      
+      if (daysInClosingMonth >= daysInPaymentMonth) {
+        assignmentMonth = closingMonth;
+      } else {
+        assignmentMonth = paymentMonth;
+      }
+    }
+
+    // Retornar fecha ajustada al mes de asignación
+    const assignmentYear = assignmentMonth < closingMonth ? paymentDate.getFullYear() : closingDate.getFullYear();
+    return new Date(assignmentYear, assignmentMonth, 1).toISOString().split('T')[0];
+  }, []);
+
+  // ==============================================
   // FUNCIONES DE ANÁLISIS
   // ==============================================
 
@@ -677,10 +748,15 @@ export const useSupabaseData = () => {
       const start = startDate ? new Date(startDate) : new Date('1900-01-01');
       const end = endDate ? new Date(endDate) : new Date('2100-12-31');
 
-      // Filtrar gastos normales
+      // Filtrar gastos normales considerando fechas de TC
       const filteredExpenses = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate >= start && expenseDate <= end;
+        const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+        const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+        const assignmentDateObj = new Date(assignmentDate);
+        const expenseMonth = assignmentDateObj.getMonth();
+        const expenseYear = assignmentDateObj.getFullYear();
+        
+        return assignmentDateObj >= start && assignmentDateObj <= end;
       });
 
       // Generar gastos recurrentes virtuales para el período
@@ -725,7 +801,7 @@ export const useSupabaseData = () => {
         regular_expenses: 0
       };
     }
-  }, [expenses, incomes, generateRecurringExpenses]);
+  }, [expenses, incomes, paymentMethods, generateRecurringExpenses, getCreditCardAssignmentMonth]);
 
   // ==============================================
   // FUNCIONES DE AUTENTICACIÓN
@@ -825,6 +901,9 @@ export const useSupabaseData = () => {
     updateRecurringExpense,
     deleteRecurringExpense,
     generateRecurringExpenses,
+
+    // Funciones de tarjetas de crédito
+    getCreditCardAssignmentMonth,
 
     // Funciones de análisis
     getFinancialSummary,

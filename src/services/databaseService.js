@@ -165,7 +165,10 @@ class DatabaseService {
           name: method.name,
           color: method.color || '#74B9FF',
           icon: method.icon || 'credit-card',
-          sort_order: method.sort_order || 0
+          sort_order: method.sort_order || 0,
+          payment_type: method.payment_type || 'cash',
+          cc_closing_day: method.cc_closing_day || null,
+          cc_payment_day: method.cc_payment_day || null
         }])
         .select()
         .single();

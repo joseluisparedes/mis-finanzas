@@ -48,6 +48,15 @@ const AppSupabase = () => {
   // Estados para tipos de gráficos
   const [chartType, setChartType] = useState('pie');
   
+  // Estado para formulario de método de pago
+  const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
+    name: '',
+    color: '#74B9FF',
+    payment_type: 'cash',
+    cc_closing_day: '',
+    cc_payment_day: ''
+  });
+  
   // Estados para monedas y tipo de cambio
   const [exchangeRate, setExchangeRate] = useState(3.75); // Tipo de cambio USD a PEN
   const [currencies] = useState([
@@ -150,6 +159,7 @@ const AppSupabase = () => {
     updateRecurringExpense,
     deleteRecurringExpense: deleteRecurringExpenseFromData,
     generateRecurringExpenses,
+    getCreditCardAssignmentMonth,
     updateSettings,
     getFinancialSummary,
     signIn,
@@ -404,15 +414,18 @@ const AppSupabase = () => {
     setShowExportModal(false);
   };
 
-  // Función para filtrar gastos
+  // Función para filtrar gastos considerando fechas de TC
   const getFilteredExpenses = () => {
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
+      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+      const assignmentDateObj = new Date(assignmentDate);
+      
       const startDate = filters.startDate ? new Date(filters.startDate) : null;
       const endDate = filters.endDate ? new Date(filters.endDate) : null;
       
-      if (startDate && expenseDate < startDate) return false;
-      if (endDate && expenseDate > endDate) return false;
+      if (startDate && assignmentDateObj < startDate) return false;
+      if (endDate && assignmentDateObj > endDate) return false;
       if (filters.paymentMethod && expense.payment_method_id !== filters.paymentMethod) return false;
       if (filters.category && expense.category_id !== filters.category) return false;
       
@@ -700,6 +713,57 @@ const AppSupabase = () => {
     
     if (result.success) {
       setSuccessMessage('Estado actualizado');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
+  };
+
+  // Función para agregar método de pago con validación de TC
+  const addPaymentMethodWithValidation = async () => {
+    if (!newPaymentMethodForm.name.trim()) {
+      setError('El nombre del método de pago es obligatorio');
+      return;
+    }
+
+    if (newPaymentMethodForm.payment_type === 'credit_card') {
+      if (!newPaymentMethodForm.cc_closing_day || !newPaymentMethodForm.cc_payment_day) {
+        setError('Para tarjetas de crédito, las fechas de cierre y pago son obligatorias');
+        return;
+      }
+      
+      const closingDay = parseInt(newPaymentMethodForm.cc_closing_day);
+      const paymentDay = parseInt(newPaymentMethodForm.cc_payment_day);
+      
+      if (closingDay < 1 || closingDay > 31 || paymentDay < 1 || paymentDay > 31) {
+        setError('Los días deben estar entre 1 y 31');
+        return;
+      }
+    }
+
+    const methodData = {
+      name: newPaymentMethodForm.name.trim(),
+      color: newPaymentMethodForm.color,
+      payment_type: newPaymentMethodForm.payment_type,
+      sort_order: paymentMethods.length + 1
+    };
+
+    if (newPaymentMethodForm.payment_type === 'credit_card') {
+      methodData.cc_closing_day = parseInt(newPaymentMethodForm.cc_closing_day);
+      methodData.cc_payment_day = parseInt(newPaymentMethodForm.cc_payment_day);
+    }
+
+    const result = await addPaymentMethod(methodData);
+    
+    if (result.success) {
+      setNewPaymentMethodForm({
+        name: '',
+        color: '#74B9FF',
+        payment_type: 'cash',
+        cc_closing_day: '',
+        cc_payment_day: ''
+      });
+      setSuccessMessage('Método de pago agregado exitosamente');
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
       setError(result.error);
@@ -1441,46 +1505,94 @@ const AppSupabase = () => {
                 
                 {/* Agregar nuevo método de pago */}
                 <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Nombre del método"
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
-                          const newPaymentMethod = {
-                            name: e.target.value.trim(),
-                            color: '#' + Math.floor(Math.random()*16777215).toString(16),
-                            sort_order: paymentMethods.length + 1
-                          };
-                          addPaymentMethod(newPaymentMethod);
-                          e.target.value = '';
-                        }
-                      }}
-                    />
-                    <input
-                      type="color"
-                      defaultValue="#74B9FF"
-                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
-                    />
+                  <div className="space-y-4">
+                    {/* Campos básicos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Nombre del método"
+                        value={newPaymentMethodForm.name}
+                        onChange={(e) => setNewPaymentMethodForm({
+                          ...newPaymentMethodForm, 
+                          name: e.target.value
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="color"
+                        value={newPaymentMethodForm.color}
+                        onChange={(e) => setNewPaymentMethodForm({
+                          ...newPaymentMethodForm, 
+                          color: e.target.value
+                        })}
+                        className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                      />
+                      <select
+                        value={newPaymentMethodForm.payment_type}
+                        onChange={(e) => setNewPaymentMethodForm({
+                          ...newPaymentMethodForm, 
+                          payment_type: e.target.value,
+                          cc_closing_day: '',
+                          cc_payment_day: ''
+                        })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="cash">Efectivo/Débito</option>
+                        <option value="credit_card">Tarjeta de Crédito</option>
+                      </select>
+                    </div>
+                    
+                    {/* Campos específicos para TC */}
+                    {newPaymentMethodForm.payment_type === 'credit_card' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div>
+                          <label className="block text-sm font-medium text-blue-700 mb-1">
+                            Día de Cierre *
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            placeholder="Ej: 10"
+                            value={newPaymentMethodForm.cc_closing_day}
+                            onChange={(e) => setNewPaymentMethodForm({
+                              ...newPaymentMethodForm, 
+                              cc_closing_day: e.target.value
+                            })}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-blue-600 mt-1">
+                            Día del mes que cierra el estado de cuenta
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-blue-700 mb-1">
+                            Día de Pago *
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            placeholder="Ej: 19"
+                            value={newPaymentMethodForm.cc_payment_day}
+                            onChange={(e) => setNewPaymentMethodForm({
+                              ...newPaymentMethodForm, 
+                              cc_payment_day: e.target.value
+                            })}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-blue-600 mt-1">
+                            Día límite de pago cada mes
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <button
-                      onClick={(e) => {
-                        const nameInput = e.target.parentElement.querySelector('input[type="text"]');
-                        const colorInput = e.target.parentElement.querySelector('input[type="color"]');
-                        if (nameInput.value.trim()) {
-                          const newPaymentMethod = {
-                            name: nameInput.value.trim(),
-                            color: colorInput.value,
-                            sort_order: paymentMethods.length + 1
-                          };
-                          addPaymentMethod(newPaymentMethod);
-                          nameInput.value = '';
-                          colorInput.value = '#74B9FF';
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      onClick={addPaymentMethodWithValidation}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                     >
-                      Agregar
+                      {newPaymentMethodForm.payment_type === 'credit_card' ? 'Agregar Tarjeta de Crédito' : 'Agregar Método de Pago'}
                     </button>
                   </div>
                 </div>
@@ -1513,7 +1625,33 @@ const AppSupabase = () => {
                             autoFocus
                           />
                         ) : (
-                          <span className="font-medium">{method.name}</span>
+                          <div className="flex flex-col">
+                            <span 
+                              onClick={() => setEditingPayment(method.id)}
+                              className="font-medium cursor-pointer hover:text-blue-600"
+                            >
+                              {method.name}
+                            </span>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {method.payment_type === 'credit_card' ? (
+                                <>
+                                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                                    TC
+                                  </span>
+                                  <span className="text-xs text-gray-600">
+                                    Cierre: {method.cc_closing_day}
+                                  </span>
+                                  <span className="text-xs text-gray-600">
+                                    Pago: {method.cc_payment_day}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
+                                  Efectivo/Débito
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                       

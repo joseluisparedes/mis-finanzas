@@ -53,10 +53,17 @@ CREATE TABLE IF NOT EXISTS payment_methods (
     icon TEXT DEFAULT 'credit-card',
     is_active BOOLEAN DEFAULT true,
     sort_order INTEGER DEFAULT 0,
+    payment_type TEXT DEFAULT 'cash' CHECK (payment_type IN ('cash', 'credit_card')),
+    cc_closing_day INTEGER CHECK (cc_closing_day BETWEEN 1 AND 31),
+    cc_payment_day INTEGER CHECK (cc_payment_day BETWEEN 1 AND 31),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     
-    UNIQUE(user_id, name)
+    UNIQUE(user_id, name),
+    CONSTRAINT check_cc_fields CHECK (
+        (payment_type = 'cash' AND cc_closing_day IS NULL AND cc_payment_day IS NULL) OR
+        (payment_type = 'credit_card' AND cc_closing_day IS NOT NULL AND cc_payment_day IS NOT NULL)
+    )
 );
 
 -- ==============================================
