@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import AuthModal from './components/Auth/AuthModal';
@@ -14,6 +14,10 @@ const AppSupabase = () => {
   const [activeTab, setActiveTab] = useState('gastos');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  
+  // Estados para búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Estados para mensajes informativos
   const [expenseError, setExpenseError] = useState('');
@@ -110,6 +114,40 @@ const AppSupabase = () => {
   useEffect(() => {
     setShowMigrationBanner(false);
   }, [isAuthenticated]);
+
+  // Cargar preferencia de tema desde localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('finanzas-theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // Aplicar tema cuando cambia darkMode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('finanzas-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('finanzas-theme', 'light');
+    }
+  }, [darkMode]);
+
+  // Clases helper para tema oscuro
+  const cardClasses = `rounded-lg shadow transition-colors duration-200 ${
+    darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+  }`;
+  
+  const inputClasses = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+    darkMode 
+      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+  }`;
 
   // Función para limpiar mensajes
   const clearMessages = () => {
@@ -331,6 +369,39 @@ const AppSupabase = () => {
     });
   };
 
+  // Función para búsqueda inteligente en gastos
+  const getSearchedExpenses = () => {
+    const filtered = getFilteredExpenses();
+    if (!searchTerm.trim()) return filtered;
+
+    return filtered.filter(expense => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Buscar en descripción
+      if (expense.description.toLowerCase().includes(searchLower)) return true;
+      
+      // Buscar en monto
+      if (expense.amount.toString().includes(searchTerm)) return true;
+      
+      // Buscar en fecha
+      const formattedDate = new Date(expense.date).toLocaleDateString();
+      if (formattedDate.includes(searchTerm)) return true;
+      
+      // Buscar en categoría
+      const category = categories.find(c => c.id === expense.category_id);
+      if (category && category.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Buscar en método de pago
+      const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
+      if (paymentMethod && paymentMethod.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Buscar en notas
+      if (expense.notes && expense.notes.toLowerCase().includes(searchLower)) return true;
+      
+      return false;
+    });
+  };
+
   const getFilteredIncomes = () => {
     return incomes.filter(income => {
       const incomeDate = new Date(income.date);
@@ -341,6 +412,35 @@ const AppSupabase = () => {
       if (endDate && incomeDate > endDate) return false;
       
       return true;
+    });
+  };
+
+  // Función para búsqueda inteligente en ingresos
+  const getSearchedIncomes = () => {
+    const filtered = getFilteredIncomes();
+    if (!searchTerm.trim()) return filtered;
+
+    return filtered.filter(income => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Buscar en descripción
+      if (income.description.toLowerCase().includes(searchLower)) return true;
+      
+      // Buscar en monto
+      if (income.amount.toString().includes(searchTerm)) return true;
+      
+      // Buscar en fecha
+      const formattedDate = new Date(income.date).toLocaleDateString();
+      if (formattedDate.includes(searchTerm)) return true;
+      
+      // Buscar en tipo de ingreso
+      const incomeType = incomeTypes.find(t => t.id === income.income_type_id);
+      if (incomeType && incomeType.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Buscar en notas
+      if (income.notes && income.notes.toLowerCase().includes(searchLower)) return true;
+      
+      return false;
     });
   };
 
@@ -438,19 +538,34 @@ const AppSupabase = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <header className={`shadow-sm border-b transition-colors duration-200 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 space-y-2 sm:space-y-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 text-center sm:text-left">💰 Gestor Financiero</h1>
+            <h1 className={`text-xl sm:text-2xl font-bold text-center sm:text-left transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-900'}`}>💰 Gestor Financiero</h1>
             
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              {/* Toggle de modo oscuro */}
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                  darkMode 
+                    ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <span className="hidden sm:inline">{darkMode ? 'Claro' : 'Oscuro'}</span>
+              </button>
               {isAuthenticated && (
-                <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg text-xs">
+                <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-xs transition-colors duration-200 ${
+                  darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                }`}>
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
                   <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
                   {lastSync && (
-                    <span className="text-gray-500">• {new Date(lastSync).toLocaleTimeString()}</span>
+                    <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>• {new Date(lastSync).toLocaleTimeString()}</span>
                   )}
                 </div>
               )}
@@ -459,14 +574,22 @@ const AppSupabase = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      darkMode 
+                        ? 'bg-green-900 text-green-300 hover:bg-green-800' 
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
                     title="Exportar a Excel"
                   >
                     <Download className="w-4 h-4" />
                     <span className="hidden sm:inline">Excel</span>
                   </button>
                   
-                  <label className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors cursor-pointer text-sm">
+                  <label className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm ${
+                    darkMode 
+                      ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' 
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}>
                     <Upload className="w-4 h-4" />
                     <span className="hidden sm:inline">Importar</span>
                     <input
@@ -482,7 +605,11 @@ const AppSupabase = () => {
               {isAuthenticated && (
                 <button
                   onClick={() => setShowConfig(!showConfig)}
-                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                    darkMode 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   <Settings className="w-4 h-4" />
                   <span>Config</span>
@@ -973,7 +1100,9 @@ const AppSupabase = () => {
           </div>
         ) : (
           <div>
-            <nav className="flex flex-wrap bg-white p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto">
+            <nav className={`flex flex-wrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
               {[
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
@@ -987,7 +1116,9 @@ const AppSupabase = () => {
                   className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-md transition-colors text-sm whitespace-nowrap ${
                     activeTab === tab.id 
                       ? 'bg-blue-600 text-white' 
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : darkMode 
+                        ? 'text-gray-300 hover:bg-gray-700' 
+                        : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -999,7 +1130,7 @@ const AppSupabase = () => {
             {/* Sección de Gastos */}
             {activeTab === 'gastos' && (
               <div>
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className={`${cardClasses} p-6 mb-6`}>
                   <h2 className="text-xl font-semibold mb-4 flex items-center">
                     <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
                     Agregar Nuevo Gasto
@@ -1091,21 +1222,66 @@ const AppSupabase = () => {
                   </div>
                 </div>
                 
+                {/* Barra de búsqueda */}
+                <div className={`${cardClasses} p-4 mb-6`}>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar gastos por descripción, monto, fecha, categoría..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 {/* Lista de Gastos */}
-                <div className="bg-white rounded-lg shadow">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold">Gastos Recientes</h3>
+                <div className={cardClasses}>
+                  <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Gastos {searchTerm && `(${getSearchedExpenses().length} resultados)`}</h3>
+                      {searchTerm && (
+                        <span className="text-sm text-gray-500">
+                          Búsqueda: "{searchTerm}"
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="divide-y divide-gray-200">
-                    {expenses.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">
-                        <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No hay gastos registrados</p>
-                        <p className="text-sm">Agrega tu primer gasto usando el formulario de arriba</p>
-                      </div>
-                    ) : (
-                      expenses.slice(0, 10).map(expense => {
+                    {(() => {
+                      const searchedExpenses = getSearchedExpenses();
+                      if (searchedExpenses.length === 0) {
+                        return (
+                          <div className="p-8 text-center text-gray-500">
+                            <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            {searchTerm ? (
+                              <>
+                                <p>No se encontraron gastos con "{searchTerm}"</p>
+                                <p className="text-sm">Intenta con otros términos de búsqueda</p>
+                              </>
+                            ) : (
+                              <>
+                                <p>No hay gastos registrados</p>
+                                <p className="text-sm">Agrega tu primer gasto usando el formulario de arriba</p>
+                              </>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return searchedExpenses.slice(0, 10).map(expense => {
                         const category = categories.find(c => c.id === expense.category_id);
                         const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
                         
@@ -1144,17 +1320,20 @@ const AppSupabase = () => {
                             </div>
                           </div>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
                   
-                  {expenses.length > 10 && (
-                    <div className="p-4 text-center border-t border-gray-200">
-                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                        Ver todos los gastos ({expenses.length})
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    const searchedExpenses = getSearchedExpenses();
+                    return searchedExpenses.length > 10 && (
+                      <div className="p-4 text-center border-t border-gray-200">
+                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                          Ver todos los gastos ({searchedExpenses.length})
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -1162,7 +1341,7 @@ const AppSupabase = () => {
             {/* Sección de Ingresos */}
             {activeTab === 'ingresos' && (
               <div>
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className={`${cardClasses} p-6 mb-6`}>
                   <h2 className="text-xl font-semibold mb-4 flex items-center">
                     <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
                     Agregar Nuevo Ingreso
@@ -1240,21 +1419,66 @@ const AppSupabase = () => {
                   </div>
                 </div>
                 
+                {/* Barra de búsqueda para ingresos */}
+                <div className={`${cardClasses} p-4 mb-6`}>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar ingresos por descripción, monto, fecha, tipo..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 {/* Lista de Ingresos */}
-                <div className="bg-white rounded-lg shadow">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold">Ingresos Recientes</h3>
+                <div className={cardClasses}>
+                  <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Ingresos {searchTerm && `(${getSearchedIncomes().length} resultados)`}</h3>
+                      {searchTerm && (
+                        <span className="text-sm text-gray-500">
+                          Búsqueda: "{searchTerm}"
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="divide-y divide-gray-200">
-                    {incomes.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No hay ingresos registrados</p>
-                        <p className="text-sm">Agrega tu primer ingreso usando el formulario de arriba</p>
-                      </div>
-                    ) : (
-                      incomes.slice(0, 10).map(income => {
+                    {(() => {
+                      const searchedIncomes = getSearchedIncomes();
+                      if (searchedIncomes.length === 0) {
+                        return (
+                          <div className="p-8 text-center text-gray-500">
+                            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            {searchTerm ? (
+                              <>
+                                <p>No se encontraron ingresos con "{searchTerm}"</p>
+                                <p className="text-sm">Intenta con otros términos de búsqueda</p>
+                              </>
+                            ) : (
+                              <>
+                                <p>No hay ingresos registrados</p>
+                                <p className="text-sm">Agrega tu primer ingreso usando el formulario de arriba</p>
+                              </>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return searchedIncomes.slice(0, 10).map(income => {
                         const incomeType = incomeTypes.find(t => t.id === income.income_type_id);
                         
                         return (
@@ -1292,17 +1516,20 @@ const AppSupabase = () => {
                             </div>
                           </div>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
                   
-                  {incomes.length > 10 && (
-                    <div className="p-4 text-center border-t border-gray-200">
-                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                        Ver todos los ingresos ({incomes.length})
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    const searchedIncomes = getSearchedIncomes();
+                    return searchedIncomes.length > 10 && (
+                      <div className="p-4 text-center border-t border-gray-200">
+                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                          Ver todos los ingresos ({searchedIncomes.length})
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
