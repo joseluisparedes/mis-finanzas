@@ -124,6 +124,7 @@ const AppSupabase = () => {
     description: '',
     amount: '',
     category: '',
+    incomeType: '',
     currency: 'PEN',
     frequency: 'monthly',
     nextDate: getTodayLocalDateString(),
@@ -180,6 +181,17 @@ const AppSupabase = () => {
     } catch (error) {
       console.error('Error guardando día de sueldo:', error);
     }
+  };
+
+  // Función para cambiar el tipo de transacción recurrente
+  const handleRecurringTypeChange = (type) => {
+    setRecurringTransactionType(type);
+    // Limpiar campos específicos del tipo anterior
+    setNewRecurringExpense({
+      ...newRecurringExpense,
+      category: '',
+      incomeType: ''
+    });
   };
 
   // Función para alternar el colapso de secciones
@@ -799,28 +811,44 @@ const AppSupabase = () => {
 
   // Funciones para gastos recurrentes
   const addRecurringExpense = async () => {
-    if (!newRecurringExpense.description || !newRecurringExpense.amount || !newRecurringExpense.category) return;
+    // Validar campos según el tipo de transacción
+    const isExpense = recurringTransactionType === 'expense';
+    const requiredField = isExpense ? newRecurringExpense.category : newRecurringExpense.incomeType;
     
-    const result = await addRecurringExpenseToData({
+    if (!newRecurringExpense.description || !newRecurringExpense.amount || !requiredField) return;
+    
+    const transactionData = {
       description: newRecurringExpense.description,
       amount: newRecurringExpense.amount,
-      category: newRecurringExpense.category,
       currency: newRecurringExpense.currency,
       frequency: newRecurringExpense.frequency,
-      nextDate: newRecurringExpense.nextDate
-    });
+      nextDate: newRecurringExpense.nextDate,
+      transaction_type: recurringTransactionType
+    };
+
+    // Agregar el campo específico según el tipo
+    if (isExpense) {
+      transactionData.category = newRecurringExpense.category;
+    } else {
+      transactionData.incomeType = newRecurringExpense.incomeType;
+    }
+    
+    const result = await addRecurringExpenseToData(transactionData);
     
     if (result.success) {
       setNewRecurringExpense({
         description: '',
         amount: '',
         category: '',
+        incomeType: '',
         currency: 'PEN',
         frequency: 'monthly',
         nextDate: getTodayLocalDateString(),
         isActive: true
       });
-      setSuccessMessage('Gasto recurrente agregado exitosamente');
+      setSuccessMessage(
+        `${recurringTransactionType === 'expense' ? 'Gasto' : 'Ingreso'} recurrente agregado exitosamente`
+      );
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
       setError(result.error);
@@ -3301,7 +3329,7 @@ const AppSupabase = () => {
                       darkMode ? 'bg-gray-700' : 'bg-gray-100'
                     }`}>
                       <button
-                        onClick={() => setRecurringTransactionType('expense')}
+                        onClick={() => handleRecurringTypeChange('expense')}
                         className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
                           recurringTransactionType === 'expense'
                             ? 'bg-red-500 text-white'
@@ -3313,7 +3341,7 @@ const AppSupabase = () => {
                         💸 Gastos
                       </button>
                       <button
-                        onClick={() => setRecurringTransactionType('income')}
+                        onClick={() => handleRecurringTypeChange('income')}
                         className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
                           recurringTransactionType === 'income'
                             ? 'bg-green-500 text-white'
@@ -3327,7 +3355,7 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  {/* Formulario para nuevo gasto recurrente */}
+                  {/* Formulario para nueva transacción recurrente */}
                   <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
@@ -3337,7 +3365,7 @@ const AppSupabase = () => {
                         type="text"
                         value={newRecurringExpense.description}
                         onChange={(e) => setNewRecurringExpense({...newRecurringExpense, description: e.target.value})}
-                        placeholder="ej. Netflix, Spotify..."
+                        placeholder={recurringTransactionType === 'expense' ? 'ej. Netflix, Spotify...' : 'ej. Sueldo, Freelance...'}
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -3365,23 +3393,39 @@ const AppSupabase = () => {
                       />
                     </div>
                     
+                    {/* Campo condicional: Categoría para gastos, Tipo de ingreso para ingresos */}
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
                         darkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>Categoría:</label>
+                      }`}>
+                        {recurringTransactionType === 'expense' ? 'Categoría:' : 'Tipo de Ingreso:'}
+                      </label>
                       <select
-                        value={newRecurringExpense.category}
-                        onChange={(e) => setNewRecurringExpense({...newRecurringExpense, category: e.target.value})}
+                        value={recurringTransactionType === 'expense' ? newRecurringExpense.category : newRecurringExpense.incomeType}
+                        onChange={(e) => {
+                          if (recurringTransactionType === 'expense') {
+                            setNewRecurringExpense({...newRecurringExpense, category: e.target.value, incomeType: ''});
+                          } else {
+                            setNewRecurringExpense({...newRecurringExpense, incomeType: e.target.value, category: ''});
+                          }
+                        }}
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white' 
                             : 'bg-white border-gray-300 text-gray-900'
                         }`}
                       >
-                        <option value="">Seleccionar categoría</option>
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
+                        <option value="">
+                          {recurringTransactionType === 'expense' ? 'Seleccionar categoría' : 'Seleccionar tipo de ingreso'}
+                        </option>
+                        {recurringTransactionType === 'expense' 
+                          ? categories.map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))
+                          : incomeTypes.map(type => (
+                              <option key={type.id} value={type.id}>{type.name}</option>
+                            ))
+                        }
                       </select>
                     </div>
                     
@@ -3443,11 +3487,15 @@ const AppSupabase = () => {
                     <div className="flex items-end">
                       <button
                         onClick={addRecurringExpense}
-                        disabled={!newRecurringExpense.description || !newRecurringExpense.amount || !newRecurringExpense.category}
+                        disabled={
+                          !newRecurringExpense.description || 
+                          !newRecurringExpense.amount || 
+                          (recurringTransactionType === 'expense' ? !newRecurringExpense.category : !newRecurringExpense.incomeType)
+                        }
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
                         <PlusCircle className="w-4 h-4 inline mr-1" />
-                        Agregar
+                        {recurringTransactionType === 'expense' ? 'Agregar Gasto' : 'Agregar Ingreso'}
                       </button>
                     </div>
                   </div>
