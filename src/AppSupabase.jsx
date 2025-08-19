@@ -251,7 +251,9 @@ const AppSupabase = () => {
   // Estados para filtros de reportes (separados)
   const [reportFilters, setReportFilters] = useState({
     startDate: '',
-    endDate: ''
+    endDate: '',
+    category: '',
+    paymentMethod: ''
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -649,6 +651,8 @@ const AppSupabase = () => {
       
       if (startDate && assignmentDateObj < startDate) return false;
       if (endDate && assignmentDateObj > endDate) return false;
+      if (reportFilters.paymentMethod && expense.payment_method_id !== reportFilters.paymentMethod) return false;
+      if (reportFilters.category && expense.category_id !== reportFilters.category) return false;
       
       return true;
     });
@@ -662,6 +666,7 @@ const AppSupabase = () => {
       
       if (startDate && incomeDate < startDate) return false;
       if (endDate && incomeDate > endDate) return false;
+      // Los ingresos no tienen categoría ni método de pago, así que no aplicamos esos filtros
       
       return true;
     });
@@ -2628,7 +2633,7 @@ const AppSupabase = () => {
                     Reportes y Análisis
                   </h2>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
@@ -2649,9 +2654,41 @@ const AppSupabase = () => {
                       />
                     </div>
                     
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                      <select
+                        value={reportFilters.category}
+                        onChange={(e) => setReportFilters({...reportFilters, category: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todas las categorías</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                      <select
+                        value={reportFilters.paymentMethod}
+                        onChange={(e) => setReportFilters({...reportFilters, paymentMethod: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Todos los métodos</option>
+                        {paymentMethods.map(method => (
+                          <option key={method.id} value={method.id}>
+                            {method.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
                     <div className="flex flex-col space-y-2">
                       <button
-                        onClick={() => setReportFilters({ startDate: '', endDate: '' })}
+                        onClick={() => setReportFilters({ startDate: '', endDate: '', category: '', paymentMethod: '' })}
                         className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
                       >
                         Limpiar Filtros
@@ -2664,7 +2701,9 @@ const AppSupabase = () => {
                           const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                           setReportFilters({
                             startDate: formatDateToLocalString(firstDay),
-                            endDate: formatDateToLocalString(lastDay)
+                            endDate: formatDateToLocalString(lastDay),
+                            category: '',
+                            paymentMethod: ''
                           });
                         }}
                         className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm flex items-center justify-center space-x-1"
@@ -2672,34 +2711,6 @@ const AppSupabase = () => {
                         <Calendar className="w-4 h-4" />
                         <span>Este Mes</span>
                       </button>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                      <select
-                        value={filters.category}
-                        onChange={(e) => setFilters({...filters, category: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Todas las categorías</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
-                      <select
-                        value={filters.paymentMethod}
-                        onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Todos los métodos</option>
-                        {paymentMethods.map(method => (
-                          <option key={method.id} value={method.id}>{method.name}</option>
-                        ))}
-                      </select>
                     </div>
                   </div>
                   
