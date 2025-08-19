@@ -2579,10 +2579,10 @@ const AppSupabase = () => {
                         onClick={() => {
                           const now = new Date();
                           const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                          const today = new Date();
+                          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                           setReportFilters({
                             startDate: formatDateToLocalString(firstDay),
-                            endDate: formatDateToLocalString(today)
+                            endDate: formatDateToLocalString(lastDay)
                           });
                         }}
                         className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm flex items-center justify-center space-x-1"
