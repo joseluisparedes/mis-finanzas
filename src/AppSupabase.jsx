@@ -117,8 +117,9 @@ const AppSupabase = () => {
     period: 'monthly'
   });
   
-  // Estados para gastos recurrentes
+  // Estados para transacciones recurrentes
   const [showRecurring, setShowRecurring] = useState(false);
+  const [recurringTransactionType, setRecurringTransactionType] = useState('expense');
   const [newRecurringExpense, setNewRecurringExpense] = useState({
     description: '',
     amount: '',
@@ -143,15 +144,21 @@ const AppSupabase = () => {
   
   // Estados para monedas y tipo de cambio
   const [exchangeRate, setExchangeRate] = useState(3.75); // Tipo de cambio USD a PEN
+  const [salaryDay, setSalaryDay] = useState(28); // Día del mes que recibes tu sueldo
   const [currencies] = useState([
     { id: 'PEN', name: 'Soles (S/.)', symbol: 'S/.' },
     { id: 'USD', name: 'Dólares ($)', symbol: '$' }
   ]);
 
-  // Cargar tipo de cambio desde configuración cuando se cargan los settings
+  // Cargar tipo de cambio y día de sueldo desde configuración cuando se cargan los settings
   useEffect(() => {
-    if (settings && settings.exchange_rate) {
-      setExchangeRate(settings.exchange_rate);
+    if (settings) {
+      if (settings.exchange_rate) {
+        setExchangeRate(settings.exchange_rate);
+      }
+      if (settings.salary_day) {
+        setSalaryDay(settings.salary_day);
+      }
     }
   }, [settings]);
 
@@ -162,6 +169,16 @@ const AppSupabase = () => {
       setExchangeRate(newRate);
     } catch (error) {
       console.error('Error guardando tipo de cambio:', error);
+    }
+  };
+
+  // Función para guardar día de sueldo
+  const saveSalaryDay = async (newDay) => {
+    try {
+      await updateSettings({ salary_day: newDay });
+      setSalaryDay(newDay);
+    } catch (error) {
+      console.error('Error guardando día de sueldo:', error);
     }
   };
 
@@ -1506,6 +1523,43 @@ const AppSupabase = () => {
                     </div>
                     <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                       Actualiza este valor cuando cambien las tasas de cambio
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Día del Sueldo
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Día:
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={salaryDay}
+                        onChange={(e) => {
+                          const newDay = parseInt(e.target.value) || 28;
+                          if (newDay >= 1 && newDay <= 31) {
+                            saveSalaryDay(newDay);
+                          }
+                        }}
+                        className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                        placeholder="28"
+                      />
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        de cada mes
+                      </span>
+                    </div>
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Usado para calcular cuándo impactan los gastos de TC en tu balance
                     </p>
                   </div>
                   
@@ -3234,12 +3288,44 @@ const AppSupabase = () => {
                 <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
                   darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                 }`}>
-                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${
-                    darkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    <Repeat className="w-5 h-5 mr-2 text-blue-500" />
-                    Gastos Recurrentes
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-semibold flex items-center ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      <Repeat className="w-5 h-5 mr-2 text-blue-500" />
+                      Transacciones Recurrentes
+                    </h2>
+                    
+                    {/* Toggle entre Gastos e Ingresos */}
+                    <div className={`flex items-center rounded-lg p-1 transition-colors duration-200 ${
+                      darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <button
+                        onClick={() => setRecurringTransactionType('expense')}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
+                          recurringTransactionType === 'expense'
+                            ? 'bg-red-500 text-white'
+                            : darkMode 
+                              ? 'text-gray-300 hover:text-white' 
+                              : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        💸 Gastos
+                      </button>
+                      <button
+                        onClick={() => setRecurringTransactionType('income')}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
+                          recurringTransactionType === 'income'
+                            ? 'bg-green-500 text-white'
+                            : darkMode 
+                              ? 'text-gray-300 hover:text-white' 
+                              : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        💰 Ingresos
+                      </button>
+                    </div>
+                  </div>
                   
                   {/* Formulario para nuevo gasto recurrente */}
                   <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">

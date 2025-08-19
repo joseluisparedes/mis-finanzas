@@ -93,3 +93,54 @@ SELECT
 -- DIAGNÓSTICO: Ejecuta estos comandos para ver exactamente qué está pasando
 -- Si ves que date = '2025-08-17' entonces el problema persiste
 -- =======================================================================
+
+-- =======================================================================
+-- NUEVAS FUNCIONALIDADES: SALARY_DAY E INGRESOS RECURRENTES
+-- =======================================================================
+
+-- PASO 7: Agregar salary_day a la tabla settings
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS salary_day INTEGER DEFAULT 28;
+
+-- PASO 8: Modificar tabla recurring_expenses para incluir ingresos recurrentes
+ALTER TABLE recurring_expenses ADD COLUMN IF NOT EXISTS transaction_type VARCHAR(10) DEFAULT 'expense' CHECK (transaction_type IN ('expense', 'income'));
+
+-- PASO 9: Agregar columna para referenciar income_type en recurring_expenses (para ingresos recurrentes)
+ALTER TABLE recurring_expenses ADD COLUMN IF NOT EXISTS income_type_id UUID REFERENCES income_types(id);
+
+-- PASO 10: Actualizar constraint para que sea flexible con category_id e income_type_id
+ALTER TABLE recurring_expenses DROP CONSTRAINT IF EXISTS recurring_expenses_category_id_fkey;
+ALTER TABLE recurring_expenses ALTER COLUMN category_id DROP NOT NULL;
+
+-- PASO 11: Agregar constraint para validar que tenga category_id O income_type_id según el tipo
+ALTER TABLE recurring_expenses ADD CONSTRAINT check_category_or_income_type 
+CHECK (
+    (transaction_type = 'expense' AND category_id IS NOT NULL AND income_type_id IS NULL) OR
+    (transaction_type = 'income' AND income_type_id IS NOT NULL AND category_id IS NULL)
+);
+
+-- PASO 12: Re-agregar la foreign key constraint para category_id
+ALTER TABLE recurring_expenses ADD CONSTRAINT recurring_expenses_category_id_fkey 
+FOREIGN KEY (category_id) REFERENCES categories(id);
+
+-- PASO 13: Verificar la estructura actualizada
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'recurring_expenses' 
+ORDER BY ordinal_position;
+
+-- PASO 14: Verificar settings actualizada
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'settings' 
+ORDER BY ordinal_position;
+
+-- PASO 15: Insertar salary_day predeterminado para usuarios existentes
+UPDATE settings SET salary_day = 28 WHERE salary_day IS NULL;
