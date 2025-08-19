@@ -682,20 +682,33 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Preparar datos base
+      const insertData = {
+        user_id: userId,
+        description: recurring.description,
+        amount: parseFloat(recurring.amount),
+        currency: recurring.currency || 'PEN',
+        frequency: recurring.frequency,
+        next_date: this.convertToLocalDate(recurring.next_date),
+        transaction_type: recurring.transaction_type || 'expense'
+      };
+
+      // Agregar campos específicos según el tipo
+      if (recurring.transaction_type === 'income') {
+        insertData.income_type_id = recurring.income_type_id;
+        insertData.category_id = null;
+      } else {
+        insertData.category_id = recurring.category_id;
+        insertData.income_type_id = null;
+      }
+      
       const { data, error } = await supabase
         .from('recurring_expenses')
-        .insert([{
-          user_id: userId,
-          category_id: recurring.category_id,
-          description: recurring.description,
-          amount: parseFloat(recurring.amount),
-          currency: recurring.currency || 'PEN',
-          frequency: recurring.frequency,
-          next_date: this.convertToLocalDate(recurring.next_date)
-        }])
+        .insert([insertData])
         .select(`
           *,
-          categories(id, name, color)
+          categories(id, name, color),
+          income_types(id, name)
         `)
         .single();
 
