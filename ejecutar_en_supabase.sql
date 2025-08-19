@@ -9,33 +9,76 @@
 --
 -- =======================================================================
 
--- PASO 1: Corregir constraint de métodos de pago
--- Esto permite crear métodos con el mismo nombre si el anterior está inactivo
-DROP INDEX IF EXISTS payment_methods_user_id_name_active_idx;
-ALTER TABLE payment_methods DROP CONSTRAINT IF EXISTS payment_methods_user_id_name_key;
+-- PASO 1: Crear función para insertar gastos con fecha correcta
+CREATE OR REPLACE FUNCTION create_expense_with_date(
+    p_user_id UUID,
+    p_category_id UUID,
+    p_payment_method_id UUID,
+    p_amount DECIMAL,
+    p_description TEXT,
+    p_date_str TEXT,
+    p_notes TEXT DEFAULT NULL,
+    p_tags TEXT[] DEFAULT '{}',
+    p_is_recurring BOOLEAN DEFAULT FALSE,
+    p_recurring_frequency TEXT DEFAULT NULL
+)
+RETURNS TABLE(id UUID, user_id UUID, date DATE) AS $$
+BEGIN
+    RETURN QUERY
+    INSERT INTO expenses (
+        user_id, category_id, payment_method_id, amount, 
+        description, date, notes, tags, is_recurring, recurring_frequency
+    ) VALUES (
+        p_user_id, p_category_id, p_payment_method_id, p_amount,
+        p_description, p_date_str::DATE, p_notes, p_tags, p_is_recurring, p_recurring_frequency
+    )
+    RETURNING expenses.id, expenses.user_id, expenses.date;
+END;
+$$ LANGUAGE plpgsql;
 
-CREATE UNIQUE INDEX payment_methods_user_id_name_active_idx 
-ON payment_methods (user_id, name) 
-WHERE is_active = true;
+-- PASO 2: Crear función para insertar ingresos con fecha correcta
+CREATE OR REPLACE FUNCTION create_income_with_date(
+    p_user_id UUID,
+    p_income_type_id UUID,
+    p_amount DECIMAL,
+    p_description TEXT,
+    p_date_str TEXT,
+    p_notes TEXT DEFAULT NULL,
+    p_tags TEXT[] DEFAULT '{}',
+    p_is_recurring BOOLEAN DEFAULT FALSE,
+    p_recurring_frequency TEXT DEFAULT NULL
+)
+RETURNS TABLE(id UUID, user_id UUID, date DATE) AS $$
+BEGIN
+    RETURN QUERY
+    INSERT INTO incomes (
+        user_id, income_type_id, amount, 
+        description, date, notes, tags, is_recurring, recurring_frequency
+    ) VALUES (
+        p_user_id, p_income_type_id, p_amount,
+        p_description, p_date_str::DATE, p_notes, p_tags, p_is_recurring, p_recurring_frequency
+    )
+    RETURNING incomes.id, incomes.user_id, incomes.date;
+END;
+$$ LANGUAGE plpgsql;
 
--- PASO 2: Verificar configuración de zona horaria
+-- PASO 3: Verificar configuración de zona horaria
 SELECT name, setting, unit, category 
 FROM pg_settings 
 WHERE name IN ('timezone', 'log_timezone', 'TimeZone');
 
--- PASO 3: Mostrar últimas inserciones para verificar fechas
-SELECT 
-    id,
-    date,
-    created_at,
-    description,
-    amount
-FROM expenses 
-WHERE created_at >= CURRENT_DATE - INTERVAL '3 days'
-ORDER BY created_at DESC
-LIMIT 10;
+-- PASO 4: Probar las funciones con fecha de hoy
+SELECT create_expense_with_date(
+    'debe-ser-tu-user-id'::UUID,
+    'alguna-category-id'::UUID,
+    'algun-payment-method-id'::UUID,
+    100.50,
+    'Prueba de fecha',
+    '2025-08-18',
+    'Nota de prueba'
+);
 
 -- =======================================================================
--- VALIDACIÓN: Después de ejecutar, intenta crear un método de pago 
--- con el mismo nombre de uno que hayas borrado antes. Debería funcionar.
+-- VALIDACIÓN: Después de ejecutar, las fechas deberían guardarse correctamente
+-- usando p_date_str::DATE que fuerza interpretación como fecha local
 -- =======================================================================

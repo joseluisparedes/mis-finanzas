@@ -382,35 +382,70 @@ class DatabaseService {
       const userId = this.getCurrentUserId();
       
       console.log('💰 createExpense - Fecha original:', expense.date);
-      const convertedDate = this.convertToLocalDate(expense.date);
-      console.log('💰 createExpense - Fecha convertida:', convertedDate);
       
+      // SOLUCIÓN DEFINITIVA: Usar función SQL DATE() para forzar interpretación local
       const { data, error } = await supabase
+        .rpc('create_expense_with_date', {
+          p_user_id: userId,
+          p_category_id: expense.category_id,
+          p_payment_method_id: expense.payment_method_id,
+          p_amount: parseFloat(expense.amount),
+          p_description: expense.description,
+          p_date_str: expense.date, // Enviar como string
+          p_notes: expense.notes,
+          p_tags: expense.tags || [],
+          p_is_recurring: expense.is_recurring || false,
+          p_recurring_frequency: expense.recurring_frequency
+        });
+
+      if (error) {
+        console.log('💰 Error con función SQL, usando método tradicional...');
+        // Fallback al método tradicional con zona horaria explícita
+        const convertedDate = `${expense.date}T12:00:00-05:00`;
+        
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('expenses')
+          .insert([{
+            user_id: userId,
+            category_id: expense.category_id,
+            payment_method_id: expense.payment_method_id,
+            amount: parseFloat(expense.amount),
+            description: expense.description,
+            date: convertedDate,
+            notes: expense.notes,
+            tags: expense.tags || [],
+            is_recurring: expense.is_recurring || false,
+            recurring_frequency: expense.recurring_frequency
+          }])
+          .select(`
+            *,
+            categories(id, name, color),
+            payment_methods(id, name, color)
+          `)
+          .single();
+
+        if (fallbackError) throw fallbackError;
+        
+        console.log('💰 createExpense - Resultado fallback:', fallbackData);
+        return fallbackData;
+      }
+
+      console.log('💰 createExpense - Resultado con función SQL:', data);
+      
+      // Obtener el registro creado con las relaciones
+      const { data: expenseWithRelations, error: selectError } = await supabase
         .from('expenses')
-        .insert([{
-          user_id: userId,
-          category_id: expense.category_id,
-          payment_method_id: expense.payment_method_id,
-          amount: parseFloat(expense.amount),
-          description: expense.description,
-          date: convertedDate,
-          notes: expense.notes,
-          tags: expense.tags || [],
-          is_recurring: expense.is_recurring || false,
-          recurring_frequency: expense.recurring_frequency
-        }])
         .select(`
           *,
           categories(id, name, color),
           payment_methods(id, name, color)
         `)
+        .eq('id', data[0].id)
         .single();
 
-      if (error) throw error;
-
-      console.log('💰 createExpense - Resultado de BD:', data);
-      console.log('💰 createExpense - Fecha en resultado:', data?.date);
-      return data;
+      if (selectError) throw selectError;
+      
+      return expenseWithRelations;
     } catch (error) {
       this.handleError(error, 'createExpense');
     }
@@ -505,33 +540,66 @@ class DatabaseService {
       const userId = this.getCurrentUserId();
       
       console.log('💵 createIncome - Fecha original:', income.date);
-      const convertedDate = this.convertToLocalDate(income.date);
-      console.log('💵 createIncome - Fecha convertida:', convertedDate);
       
+      // SOLUCIÓN DEFINITIVA: Usar función SQL DATE() para forzar interpretación local
       const { data, error } = await supabase
+        .rpc('create_income_with_date', {
+          p_user_id: userId,
+          p_income_type_id: income.income_type_id,
+          p_amount: parseFloat(income.amount),
+          p_description: income.description,
+          p_date_str: income.date, // Enviar como string
+          p_notes: income.notes,
+          p_tags: income.tags || [],
+          p_is_recurring: income.is_recurring || false,
+          p_recurring_frequency: income.recurring_frequency
+        });
+
+      if (error) {
+        console.log('💵 Error con función SQL, usando método tradicional...');
+        // Fallback al método tradicional con zona horaria explícita
+        const convertedDate = `${income.date}T12:00:00-05:00`;
+        
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('incomes')
+          .insert([{
+            user_id: userId,
+            income_type_id: income.income_type_id,
+            amount: parseFloat(income.amount),
+            description: income.description,
+            date: convertedDate,
+            notes: income.notes,
+            tags: income.tags || [],
+            is_recurring: income.is_recurring || false,
+            recurring_frequency: income.recurring_frequency
+          }])
+          .select(`
+            *,
+            income_types(id, name, color)
+          `)
+          .single();
+
+        if (fallbackError) throw fallbackError;
+        
+        console.log('💵 createIncome - Resultado fallback:', fallbackData);
+        return fallbackData;
+      }
+
+      console.log('💵 createIncome - Resultado con función SQL:', data);
+      
+      // Obtener el registro creado con las relaciones
+      const { data: incomeWithRelations, error: selectError } = await supabase
         .from('incomes')
-        .insert([{
-          user_id: userId,
-          income_type_id: income.income_type_id,
-          amount: parseFloat(income.amount),
-          description: income.description,
-          date: convertedDate,
-          notes: income.notes,
-          tags: income.tags || [],
-          is_recurring: income.is_recurring || false,
-          recurring_frequency: income.recurring_frequency
-        }])
         .select(`
           *,
           income_types(id, name, color)
         `)
+        .eq('id', data[0].id)
         .single();
 
-      if (error) throw error;
-
-      console.log('💵 createIncome - Resultado de BD:', data);
-      console.log('💵 createIncome - Fecha en resultado:', data?.date);
-      return data;
+      if (selectError) throw selectError;
+      
+      return incomeWithRelations;
     } catch (error) {
       this.handleError(error, 'createIncome');
     }
