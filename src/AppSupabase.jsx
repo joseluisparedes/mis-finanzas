@@ -2546,7 +2546,7 @@ const AppSupabase = () => {
                     Reportes y Análisis
                   </h2>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
@@ -2565,6 +2565,31 @@ const AppSupabase = () => {
                         onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    
+                    <div className="flex flex-col space-y-2">
+                      <button
+                        onClick={() => setReportFilters({ startDate: '', endDate: '' })}
+                        className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        Limpiar Filtros
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const now = new Date();
+                          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                          const today = new Date();
+                          setReportFilters({
+                            startDate: formatDateToLocalString(firstDay),
+                            endDate: formatDateToLocalString(today)
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm flex items-center justify-center space-x-1"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>Este Mes</span>
+                      </button>
                     </div>
                     
                     <div>
@@ -2882,9 +2907,16 @@ const AppSupabase = () => {
                     <h3 className="text-lg font-semibold mb-4">Gastos por Método de Pago</h3>
                     
                     {(() => {
-                      const filteredExpenses = getFilteredExpenses();
+                      const filteredExpenses = getReportFilteredExpenses();
+                      
+                      // Generar gastos recurrentes para el período filtrado
+                      const recurringExpensesInPeriod = generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate);
+                      
+                      // Combinar gastos normales y recurrentes
+                      const allExpenses = [...filteredExpenses, ...recurringExpensesInPeriod];
+                      
                       const paymentStats = paymentMethods.map(method => {
-                        const methodExpenses = filteredExpenses.filter(expense => expense.payment_method_id === method.id);
+                        const methodExpenses = allExpenses.filter(expense => expense.payment_method_id === method.id);
                         const total = methodExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
                         return {
                           name: method.name,
@@ -2911,7 +2943,7 @@ const AppSupabase = () => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
                                 <Bar dataKey="value" fill="#3B82F6" />
                               </BarChart>
                             </ResponsiveContainer>
