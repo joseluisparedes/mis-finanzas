@@ -3048,12 +3048,34 @@ const AppSupabase = () => {
                       const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
                       const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
                       
+                      // Generar gastos recurrentes para el período cuando estamos en reportes
+                      const recurringExpensesInPeriod = activeTab === 'reportes' 
+                        ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
+                        : [];
+                      
                       const allTransactions = [
                         ...filteredExpenses.map(expense => {
                           const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
                           return {
                             ...expense,
                             type: 'expense',
+                            isRecurring: false,
+                            amount: -parseFloat(expense.amount),
+                            categoryName: categories.find(c => c.id === expense.category_id)?.name || 'Sin categoría',
+                            categoryColor: categories.find(c => c.id === expense.category_id)?.color || '#6B7280',
+                            paymentMethodName: paymentMethod?.name || 'Sin método',
+                            paymentMethod: paymentMethod,
+                            billingMonth: paymentMethod?.payment_type === 'credit_card' 
+                              ? getCreditCardAssignmentMonth(expense.date, paymentMethod)
+                              : null
+                          };
+                        }),
+                        ...recurringExpensesInPeriod.map(expense => {
+                          const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
+                          return {
+                            ...expense,
+                            type: 'expense',
+                            isRecurring: true,
                             amount: -parseFloat(expense.amount),
                             categoryName: categories.find(c => c.id === expense.category_id)?.name || 'Sin categoría',
                             categoryColor: categories.find(c => c.id === expense.category_id)?.color || '#6B7280',
@@ -3067,6 +3089,7 @@ const AppSupabase = () => {
                         ...filteredIncomes.map(income => ({
                           ...income,
                           type: 'income',
+                          isRecurring: false,
                           amount: parseFloat(income.amount),
                           categoryName: incomeTypes.find(t => t.id === income.income_type_id)?.name || 'Sin tipo',
                           categoryColor: incomeTypes.find(t => t.id === income.income_type_id)?.color || '#10B981',
@@ -3096,6 +3119,12 @@ const AppSupabase = () => {
                                 <div>
                                   <p className="font-medium text-gray-900 flex items-center space-x-2">
                                     <span>{transaction.description}</span>
+                                    {transaction.isRecurring && (
+                                      <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                                        <Repeat className="w-3 h-3" />
+                                        <span>Recurrente</span>
+                                      </span>
+                                    )}
                                     {transaction.type === 'expense' ? (
                                       <TrendingDown className="w-4 h-4 text-red-500" />
                                     ) : (
@@ -3135,7 +3164,10 @@ const AppSupabase = () => {
                   {(() => {
                     const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
                     const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
-                    const totalTransactions = filteredExpenses.length + filteredIncomes.length;
+                    const recurringExpensesInPeriod = activeTab === 'reportes' 
+                      ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
+                      : [];
+                    const totalTransactions = filteredExpenses.length + filteredIncomes.length + recurringExpensesInPeriod.length;
                     
                     return totalTransactions > 20 && (
                       <div className="p-4 text-center border-t border-gray-200">
