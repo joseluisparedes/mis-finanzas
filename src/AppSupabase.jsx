@@ -610,6 +610,38 @@ const AppSupabase = () => {
     });
   };
 
+  // Funciones para filtrar con reportFilters (para la sección de Reportes)
+  const getReportFilteredExpenses = () => {
+    return expenses.filter(expense => {
+      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+      const assignmentDateObj = new Date(assignmentDate);
+      
+      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
+      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
+      
+      if (startDate && assignmentDateObj < startDate) return false;
+      if (endDate && assignmentDateObj > endDate) return false;
+      if (reportFilters.paymentMethod && expense.payment_method_id !== reportFilters.paymentMethod) return false;
+      if (reportFilters.category && expense.category_id !== reportFilters.category) return false;
+      
+      return true;
+    });
+  };
+
+  const getReportFilteredIncomes = () => {
+    return incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
+      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
+      
+      if (startDate && incomeDate < startDate) return false;
+      if (endDate && incomeDate > endDate) return false;
+      
+      return true;
+    });
+  };
+
   // Función para búsqueda inteligente en ingresos
   const getSearchedIncomes = () => {
     const filtered = getFilteredIncomes();
@@ -3045,8 +3077,8 @@ const AppSupabase = () => {
                   
                   <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
                     {(() => {
-                      const filteredExpenses = getFilteredExpenses();
-                      const filteredIncomes = getFilteredIncomes();
+                      const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
+                      const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
                       
                       const allTransactions = [
                         ...filteredExpenses.map(expense => {
@@ -3133,8 +3165,8 @@ const AppSupabase = () => {
                   </div>
                   
                   {(() => {
-                    const filteredExpenses = getFilteredExpenses();
-                    const filteredIncomes = getFilteredIncomes();
+                    const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
+                    const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
                     const totalTransactions = filteredExpenses.length + filteredIncomes.length;
                     
                     return totalTransactions > 20 && (
