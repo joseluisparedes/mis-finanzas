@@ -67,18 +67,29 @@ SELECT name, setting, unit, category
 FROM pg_settings 
 WHERE name IN ('timezone', 'log_timezone', 'TimeZone');
 
--- PASO 4: Probar las funciones con fecha de hoy
-SELECT create_expense_with_date(
-    'debe-ser-tu-user-id'::UUID,
-    'alguna-category-id'::UUID,
-    'algun-payment-method-id'::UUID,
-    100.50,
-    'Prueba de fecha',
-    '2025-08-18',
-    'Nota de prueba'
-);
+-- PASO 4: Ver último registro insertado
+SELECT 
+    id,
+    description,
+    amount,
+    date,
+    created_at,
+    created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima' as created_at_lima
+FROM expenses 
+ORDER BY created_at DESC
+LIMIT 3;
+
+-- PASO 5: Ver configuración de zona horaria actual
+SHOW timezone;
+
+-- PASO 6: Ver cómo PostgreSQL interpreta la fecha '2025-08-18'
+SELECT 
+    '2025-08-18'::DATE as fecha_como_date,
+    '2025-08-18T12:00:00-05:00'::TIMESTAMPTZ as fecha_con_timezone,
+    CURRENT_DATE as fecha_actual_server,
+    NOW() as timestamp_actual_server;
 
 -- =======================================================================
--- VALIDACIÓN: Después de ejecutar, las fechas deberían guardarse correctamente
--- usando p_date_str::DATE que fuerza interpretación como fecha local
+-- DIAGNÓSTICO: Ejecuta estos comandos para ver exactamente qué está pasando
+-- Si ves que date = '2025-08-17' entonces el problema persiste
 -- =======================================================================

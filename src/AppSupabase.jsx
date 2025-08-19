@@ -18,6 +18,18 @@ const AppSupabase = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // Función para mostrar fechas correctamente en la UI
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    // Agregar 'T00:00:00' para evitar problemas de zona horaria
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit', 
+      day: '2-digit'
+    });
+  };
+
   const getTodayLocalDateString = () => {
     // Crear fecha explícitamente en hora local de Perú
     const now = new Date();
@@ -492,7 +504,7 @@ const AppSupabase = () => {
       if (expense.amount.toString().includes(searchTerm)) return true;
       
       // Buscar en fecha
-      const formattedDate = new Date(expense.date).toLocaleDateString();
+      const formattedDate = formatDateForDisplay(expense.date);
       if (formattedDate.includes(searchTerm)) return true;
       
       // Buscar en categoría
@@ -538,7 +550,7 @@ const AppSupabase = () => {
       if (income.amount.toString().includes(searchTerm)) return true;
       
       // Buscar en fecha
-      const formattedDate = new Date(income.date).toLocaleDateString();
+      const formattedDate = formatDateForDisplay(income.date);
       if (formattedDate.includes(searchTerm)) return true;
       
       // Buscar en tipo de ingreso
@@ -2193,7 +2205,7 @@ const AppSupabase = () => {
                                           {' '}• Cierre: {new Date(getCreditCardAssignmentMonth(expense.date, paymentMethod)).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
                                         </span>
                                       )}
-                                      {' '}• {new Date(expense.date).toLocaleDateString()}
+                                      {' '}• {formatDateForDisplay(expense.date)}
                                     </p>
                                     {expense.notes && (
                                       <p className="text-sm text-gray-400 mt-1">{expense.notes}</p>
@@ -2402,7 +2414,7 @@ const AppSupabase = () => {
                                   <div>
                                     <p className="font-medium text-gray-900">{income.description}</p>
                                     <p className="text-sm text-gray-500">
-                                      {incomeType?.name} • {new Date(income.date).toLocaleDateString()}
+                                      {incomeType?.name} • {formatDateForDisplay(income.date)}
                                     </p>
                                     {income.notes && (
                                       <p className="text-sm text-gray-400 mt-1">{income.notes}</p>
@@ -2923,7 +2935,7 @@ const AppSupabase = () => {
                                         {' '}• Cierre: {new Date(transaction.billingMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
                                       </span>
                                     )}
-                                    {' • '}{new Date(transaction.date).toLocaleDateString()}
+                                    {' • '}{formatDateForDisplay(transaction.date)}
                                   </p>
                                   {transaction.notes && (
                                     <p className="text-sm text-gray-400 mt-1">{transaction.notes}</p>
@@ -3283,7 +3295,7 @@ const AppSupabase = () => {
                     ) : (
                       recurringExpenses.map(recurring => {
                         const category = categories.find(c => c.id === recurring.category_id);
-                        const nextDueDate = new Date(recurring.next_date).toLocaleDateString();
+                        const nextDueDate = formatDateForDisplay(recurring.next_date);
                         const frequencyLabel = {
                           weekly: 'Semanal',
                           monthly: 'Mensual',
