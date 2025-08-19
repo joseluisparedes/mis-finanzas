@@ -35,6 +35,7 @@ class DatabaseService {
     if (!dateString) return dateString;
     
     console.log('🕐 convertToLocalDate - Input:', dateString);
+    console.log('🕐 convertToLocalDate - Tipo:', typeof dateString);
     
     // Si ya es una fecha completa, devolverla tal como está
     if (dateString.includes('T') || dateString.includes(' ')) {
@@ -42,12 +43,10 @@ class DatabaseService {
       return dateString;
     }
     
-    // SOLUCIÓN FINAL: Usar zona horaria explícita de Perú
-    // Esto asegura que la fecha se interprete correctamente
-    const convertedDate = `${dateString}T12:00:00-05:00`;
-    
-    console.log('🕐 convertToLocalDate - Output (mediodía Lima/Perú):', convertedDate);
-    return convertedDate;
+    // PRUEBA SIMPLIFICADA: Solo enviar la fecha como está
+    // PostgreSQL debería interpretar DATE '2025-08-18' correctamente
+    console.log('🕐 convertToLocalDate - Output (fecha simple):', dateString);
+    return dateString;
   }
 
   // Manejo genérico de errores

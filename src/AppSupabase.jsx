@@ -19,7 +19,14 @@ const AppSupabase = () => {
   };
 
   const getTodayLocalDateString = () => {
-    return formatDateToLocalString(new Date());
+    // Crear fecha explícitamente en hora local de Perú
+    const now = new Date();
+    const peruTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Lima"}));
+    console.log('🌍 getTodayLocalDateString - Fecha original:', now);
+    console.log('🌍 getTodayLocalDateString - Fecha Perú:', peruTime);
+    const result = formatDateToLocalString(peruTime);
+    console.log('🌍 getTodayLocalDateString - Resultado:', result);
+    return result;
   };
 
   // Estados principales del hook
