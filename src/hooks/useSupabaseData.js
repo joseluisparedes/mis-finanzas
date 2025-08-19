@@ -685,6 +685,7 @@ export const useSupabaseData = () => {
     const expYear = expDate.getFullYear();
     
     const closingDay = paymentMethod.cc_closing_day;
+    const paymentDay = paymentMethod.cc_payment_day;
 
     // Determinar el mes de cierre al que pertenece este gasto
     let closingMonth, closingYear;
@@ -703,9 +704,17 @@ export const useSupabaseData = () => {
       }
     }
 
-    // El gasto se asigna al mes de cierre de la tarjeta
-    // Esto significa que aparecerá en el balance del mes cuando cierre la tarjeta
-    return new Date(closingYear, closingMonth, 1).toISOString().split('T')[0];
+    // Calcular el mes de pago (siguiente mes después del cierre)
+    let paymentMonth = closingMonth + 1;
+    let paymentYear = closingYear;
+    if (paymentMonth > 11) {
+      paymentMonth = 0;
+      paymentYear++;
+    }
+
+    // El gasto se asigna al mes de PAGO, no al mes de cierre
+    // Esto significa que aparecerá en el balance del mes cuando realmente pagas
+    return new Date(paymentYear, paymentMonth, 1).toISOString().split('T')[0];
   }, []);
 
   // ==============================================
