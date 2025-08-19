@@ -69,6 +69,7 @@ const AppSupabase = () => {
     addPaymentMethod,
     deleteRecurringExpense: deleteRecurringExpenseFromData,
     generateRecurringExpenses,
+    generateRecurringIncomes,
     getCreditCardAssignmentMonth,
     updateSettings,
     signIn,
@@ -253,7 +254,8 @@ const AppSupabase = () => {
     startDate: '',
     endDate: '',
     category: '',
-    paymentMethod: ''
+    paymentMethod: '',
+    showRecurring: true
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -2686,9 +2688,26 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Opciones</label>
+                      <div className="flex items-center space-x-2 pt-2">
+                        <input
+                          type="checkbox"
+                          id="showRecurring"
+                          checked={reportFilters.showRecurring}
+                          onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="showRecurring" className="text-sm text-gray-700 flex items-center space-x-1">
+                          <Repeat className="w-4 h-4 text-purple-600" />
+                          <span>Incluir recurrentes</span>
+                        </label>
+                      </div>
+                    </div>
+                    
                     <div className="flex flex-col space-y-2">
                       <button
-                        onClick={() => setReportFilters({ startDate: '', endDate: '', category: '', paymentMethod: '' })}
+                        onClick={() => setReportFilters({ startDate: '', endDate: '', category: '', paymentMethod: '', showRecurring: true })}
                         className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
                       >
                         Limpiar Filtros
@@ -2703,7 +2722,8 @@ const AppSupabase = () => {
                             startDate: formatDateToLocalString(firstDay),
                             endDate: formatDateToLocalString(lastDay),
                             category: '',
-                            paymentMethod: ''
+                            paymentMethod: '',
+                            showRecurring: true
                           });
                         }}
                         className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm flex items-center justify-center space-x-1"
@@ -3048,9 +3068,13 @@ const AppSupabase = () => {
                       const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
                       const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
                       
-                      // Generar gastos recurrentes para el período cuando estamos en reportes
-                      const recurringExpensesInPeriod = activeTab === 'reportes' 
+                      // Generar gastos e ingresos recurrentes para el período cuando estamos en reportes
+                      const recurringExpensesInPeriod = activeTab === 'reportes' && reportFilters.showRecurring
                         ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
+                        : [];
+                      
+                      const recurringIncomesInPeriod = activeTab === 'reportes' && reportFilters.showRecurring
+                        ? generateRecurringIncomes(reportFilters.startDate, reportFilters.endDate)
                         : [];
                       
                       const allTransactions = [
@@ -3090,6 +3114,15 @@ const AppSupabase = () => {
                           ...income,
                           type: 'income',
                           isRecurring: false,
+                          amount: parseFloat(income.amount),
+                          categoryName: incomeTypes.find(t => t.id === income.income_type_id)?.name || 'Sin tipo',
+                          categoryColor: incomeTypes.find(t => t.id === income.income_type_id)?.color || '#10B981',
+                          paymentMethodName: 'N/A'
+                        })),
+                        ...recurringIncomesInPeriod.map(income => ({
+                          ...income,
+                          type: 'income',
+                          isRecurring: true,
                           amount: parseFloat(income.amount),
                           categoryName: incomeTypes.find(t => t.id === income.income_type_id)?.name || 'Sin tipo',
                           categoryColor: incomeTypes.find(t => t.id === income.income_type_id)?.color || '#10B981',
@@ -3164,10 +3197,13 @@ const AppSupabase = () => {
                   {(() => {
                     const filteredExpenses = activeTab === 'reportes' ? getReportFilteredExpenses() : getFilteredExpenses();
                     const filteredIncomes = activeTab === 'reportes' ? getReportFilteredIncomes() : getFilteredIncomes();
-                    const recurringExpensesInPeriod = activeTab === 'reportes' 
+                    const recurringExpensesInPeriod = activeTab === 'reportes' && reportFilters.showRecurring
                       ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
                       : [];
-                    const totalTransactions = filteredExpenses.length + filteredIncomes.length + recurringExpensesInPeriod.length;
+                    const recurringIncomesInPeriod = activeTab === 'reportes' && reportFilters.showRecurring
+                      ? generateRecurringIncomes(reportFilters.startDate, reportFilters.endDate)
+                      : [];
+                    const totalTransactions = filteredExpenses.length + filteredIncomes.length + recurringExpensesInPeriod.length + recurringIncomesInPeriod.length;
                     
                     return totalTransactions > 20 && (
                       <div className="p-4 text-center border-t border-gray-200">
