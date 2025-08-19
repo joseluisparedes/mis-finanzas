@@ -42,19 +42,11 @@ class DatabaseService {
       return dateString;
     }
     
-    // Enfoque más agresivo: crear una fecha explícitamente local
-    // Intentemos diferentes formatos para ver cuál funciona
+    // SOLUCIÓN FINAL: Usar zona horaria explícita de Perú
+    // Esto asegura que la fecha se interprete correctamente
+    const convertedDate = `${dateString}T12:00:00-05:00`;
     
-    // Opción 1: Con zona horaria de Lima/Perú (-05:00)
-    const convertedDate1 = `${dateString}T12:00:00-05:00`;
-    
-    // Opción 2: Como DATE literal de PostgreSQL
-    const convertedDate2 = dateString; // Mantener como string simple
-    
-    // Por ahora, vamos a probar el formato sin zona horaria pero con hora
-    const convertedDate = `${dateString}T00:00:00`;
-    
-    console.log('🕐 convertToLocalDate - Output (medianoche local):', convertedDate);
+    console.log('🕐 convertToLocalDate - Output (mediodía Lima/Perú):', convertedDate);
     return convertedDate;
   }
 
