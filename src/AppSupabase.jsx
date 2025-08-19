@@ -92,6 +92,13 @@ const AppSupabase = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [menuCollapsed, setMenuCollapsed] = useState({
+    gastos: false,
+    ingresos: false,
+    balance: false,
+    reportes: false,
+    configuracion: false
+  });
   
   // Estados para búsqueda
   const [searchTerm, setSearchTerm] = useState('');
@@ -140,6 +147,31 @@ const AppSupabase = () => {
     { id: 'PEN', name: 'Soles (S/.)', symbol: 'S/.' },
     { id: 'USD', name: 'Dólares ($)', symbol: '$' }
   ]);
+
+  // Cargar tipo de cambio desde configuración cuando se cargan los settings
+  useEffect(() => {
+    if (settings && settings.exchange_rate) {
+      setExchangeRate(settings.exchange_rate);
+    }
+  }, [settings]);
+
+  // Función para guardar tipo de cambio
+  const saveExchangeRate = async (newRate) => {
+    try {
+      await updateSettings({ exchange_rate: newRate });
+      setExchangeRate(newRate);
+    } catch (error) {
+      console.error('Error guardando tipo de cambio:', error);
+    }
+  };
+
+  // Función para alternar el colapso de secciones
+  const toggleSection = (section) => {
+    setMenuCollapsed(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
   // Estados para ordenamiento
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -179,12 +211,18 @@ const AppSupabase = () => {
     date: getTodayLocalDateString()
   });
 
-  // Estados para filtros
+  // Estados para filtros (gastos e ingresos)
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
     paymentMethod: '',
     category: ''
+  });
+
+  // Estados para filtros de reportes (separados)
+  const [reportFilters, setReportFilters] = useState({
+    startDate: '',
+    endDate: ''
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -249,6 +287,12 @@ const AppSupabase = () => {
     darkMode 
       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+  }`;
+
+  const selectClasses = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+    darkMode 
+      ? 'bg-gray-700 border-gray-600 text-white [&>option]:bg-gray-700 [&>option]:text-white' 
+      : 'bg-white border-gray-300 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900'
   }`;
 
   // Función para limpiar mensajes
@@ -561,6 +605,36 @@ const AppSupabase = () => {
       if (income.notes && income.notes.toLowerCase().includes(searchLower)) return true;
       
       return false;
+    });
+  };
+
+  // Funciones específicas para filtros de reportes
+  const getReportFilteredExpenses = () => {
+    return expenses.filter(expense => {
+      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+      const assignmentDateObj = new Date(assignmentDate);
+      
+      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
+      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
+      
+      if (startDate && assignmentDateObj < startDate) return false;
+      if (endDate && assignmentDateObj > endDate) return false;
+      
+      return true;
+    });
+  };
+
+  const getReportFilteredIncomes = () => {
+    return incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
+      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
+      
+      if (startDate && incomeDate < startDate) return false;
+      if (endDate && incomeDate > endDate) return false;
+      
+      return true;
     });
   };
 
@@ -1026,6 +1100,8 @@ const AppSupabase = () => {
                 onSignIn={() => setShowAuthModal(true)}
                 onSignOut={handleSignOut}
                 loading={loading}
+                darkMode={darkMode}
+                isMobile={false}
               />
             </div>
             
@@ -1145,6 +1221,8 @@ const AppSupabase = () => {
                   }}
                   onSignOut={handleSignOut}
                   loading={loading}
+                  darkMode={darkMode}
+                  isMobile={true}
                 />
               </div>
             </div>
@@ -1218,7 +1296,7 @@ const AppSupabase = () => {
                   <select
                     value={newBudget.categoryId}
                     onChange={(e) => setNewBudget({...newBudget, categoryId: e.target.value})}
-                    className={inputClasses}
+                    className={selectClasses}
                   >
                     <option value="">Seleccionar categoría</option>
                     {categories.map(category => (
@@ -1411,7 +1489,10 @@ const AppSupabase = () => {
                         step="0.01"
                         min="0"
                         value={exchangeRate}
-                        onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 3.75)}
+                        onChange={(e) => {
+                          const newRate = parseFloat(e.target.value) || 3.75;
+                          saveExchangeRate(newRate);
+                        }}
                         className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white' 
@@ -2470,8 +2551,8 @@ const AppSupabase = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
                         type="date"
-                        value={filters.startDate}
-                        onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                        value={reportFilters.startDate}
+                        onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -2480,8 +2561,8 @@ const AppSupabase = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
                       <input
                         type="date"
-                        value={filters.endDate}
-                        onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                        value={reportFilters.endDate}
+                        onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -2598,9 +2679,9 @@ const AppSupabase = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                   {(() => {
                     // Obtener resumen financiero que incluye gastos recurrentes para el período filtrado
-                    const summary = getFinancialSummary(filters.startDate, filters.endDate);
-                    const filteredExpenses = getFilteredExpenses();
-                    const filteredIncomes = getFilteredIncomes();
+                    const summary = getFinancialSummary(reportFilters.startDate, reportFilters.endDate);
+                    const filteredExpenses = getReportFilteredExpenses();
+                    const filteredIncomes = getReportFilteredIncomes();
                     const totalExpenses = summary.total_expenses;
                     const totalIncomes = summary.total_incomes;
                     const balance = summary.balance;
@@ -2641,9 +2722,9 @@ const AppSupabase = () => {
                           <div className="text-center">
                             <p className="text-sm font-medium text-gray-600">Promedio Diario</p>
                             <p className="text-lg font-bold text-blue-600">
-                              ${(() => {
-                                const days = filters.startDate && filters.endDate 
-                                  ? Math.max(1, Math.ceil((new Date(filters.endDate) - new Date(filters.startDate)) / (1000 * 60 * 60 * 24)) + 1)
+                              S/. {(() => {
+                                const days = reportFilters.startDate && reportFilters.endDate 
+                                  ? Math.max(1, Math.ceil((new Date(reportFilters.endDate) - new Date(reportFilters.startDate)) / (1000 * 60 * 60 * 24)) + 1)
                                   : 30;
                                 return (totalExpenses / days).toFixed(2);
                               })()}
@@ -2663,10 +2744,10 @@ const AppSupabase = () => {
                     <h3 className="text-lg font-semibold mb-4">Gastos por Categoría</h3>
                     
                     {(() => {
-                      const filteredExpenses = getFilteredExpenses();
+                      const filteredExpenses = getReportFilteredExpenses();
                       
                       // Generar gastos recurrentes para el período filtrado
-                      const recurringExpensesInPeriod = generateRecurringExpenses(filters.startDate, filters.endDate);
+                      const recurringExpensesInPeriod = generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate);
                       
                       const categoryStats = categories.map(category => {
                         const categoryExpenses = filteredExpenses.filter(expense => expense.category_id === category.id);
@@ -2713,7 +2794,7 @@ const AppSupabase = () => {
                                       <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                   </Pie>
-                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
                                 </PieChart>
                               )}
                               
@@ -2733,7 +2814,7 @@ const AppSupabase = () => {
                                       <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                   </Pie>
-                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
                                 </PieChart>
                               )}
                               
@@ -2742,7 +2823,7 @@ const AppSupabase = () => {
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="name" />
                                   <YAxis />
-                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
                                   <Bar dataKey="value" fill="#3B82F6">
                                     {categoryStats.map((entry, index) => (
                                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -2756,7 +2837,7 @@ const AppSupabase = () => {
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="name" />
                                   <YAxis />
-                                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Total']} />
+                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
                                   <Area 
                                     type="monotone" 
                                     dataKey="value" 
@@ -2785,7 +2866,7 @@ const AppSupabase = () => {
                                   <span>{category.name}</span>
                                 </div>
                                 <div className="text-right">
-                                  <div className="font-medium">${category.value.toFixed(2)}</div>
+                                  <div className="font-medium">S/. {category.value.toFixed(2)}</div>
                                   <div className="text-gray-500">{category.count} gastos</div>
                                 </div>
                               </div>
@@ -2847,7 +2928,7 @@ const AppSupabase = () => {
                                   <span>{method.name}</span>
                                 </div>
                                 <div className="text-right">
-                                  <div className="font-medium">${method.value.toFixed(2)}</div>
+                                  <div className="font-medium">S/. {method.value.toFixed(2)}</div>
                                   <div className="text-gray-500">{method.count} gastos</div>
                                 </div>
                               </div>
@@ -3425,7 +3506,7 @@ const AppSupabase = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-600">Ingresos del Mes</p>
                               <p className="text-2xl font-bold text-green-600">
-                                ${totalIncomes.toFixed(2)}
+                                S/. {totalIncomes.toFixed(2)}
                               </p>
                             </div>
                             <TrendingUp className="h-8 w-8 text-green-500" />
@@ -3437,7 +3518,7 @@ const AppSupabase = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-600">Gastos del Mes</p>
                               <p className="text-2xl font-bold text-red-600">
-                                ${totalExpenses.toFixed(2)}
+                                S/. {totalExpenses.toFixed(2)}
                               </p>
                             </div>
                             <TrendingDown className="h-8 w-8 text-red-500" />
@@ -3474,7 +3555,7 @@ const AppSupabase = () => {
                         <XAxis dataKey="month" />
                         <YAxis />
                         <Tooltip 
-                          formatter={(value, name) => [`$${Number(value).toFixed(2)}`, name === 'gastos' ? 'Gastos' : name === 'ingresos' ? 'Ingresos' : 'Balance']}
+                          formatter={(value, name) => [`S/. ${Number(value).toFixed(2)}`, name === 'gastos' ? 'Gastos' : name === 'ingresos' ? 'Ingresos' : 'Balance']}
                           labelFormatter={(label) => `Mes: ${label}`}
                         />
                         <Legend />
@@ -3548,7 +3629,7 @@ const AppSupabase = () => {
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cantidad']} />
+                              <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Cantidad']} />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -3588,7 +3669,7 @@ const AppSupabase = () => {
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="name" />
                               <YAxis />
-                              <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cantidad']} />
+                              <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Cantidad']} />
                               <Bar dataKey="value" fill="#10B981" />
                             </BarChart>
                           </ResponsiveContainer>
