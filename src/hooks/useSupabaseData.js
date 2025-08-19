@@ -203,7 +203,9 @@ export const useSupabaseData = () => {
     date_format: 'YYYY-MM-DD',
     show_json_export: false,
     theme: 'light',
-    language: 'es'
+    language: 'es',
+    salary_day: 28,
+    exchange_rate: 3.8
   });
 
   // ==============================================

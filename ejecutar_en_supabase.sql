@@ -101,6 +101,9 @@ SELECT
 -- PASO 7: Agregar salary_day a la tabla user_settings existente
 ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS salary_day INTEGER DEFAULT 28;
 
+-- PASO 7B: Agregar exchange_rate a la tabla user_settings
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS exchange_rate DECIMAL(10,4) DEFAULT 3.8000;
+
 -- PASO 8: Modificar tabla recurring_expenses para incluir ingresos recurrentes
 ALTER TABLE recurring_expenses ADD COLUMN IF NOT EXISTS transaction_type VARCHAR(10) DEFAULT 'expense' CHECK (transaction_type IN ('expense', 'income'));
 
@@ -142,7 +145,18 @@ FROM information_schema.columns
 WHERE table_name = 'user_settings' 
 ORDER BY ordinal_position;
 
--- PASO 15: Verificar que salary_day se agregó correctamente
-SELECT 'Campo salary_day agregado correctamente' as status,
+-- PASO 15: Verificar que salary_day y exchange_rate se agregaron correctamente
+SELECT 'Campos salary_day y exchange_rate agregados correctamente' as status,
        COUNT(*) as usuarios_existentes
 FROM user_settings;
+
+-- PASO 16: Verificar estructura completa de user_settings
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'user_settings' 
+AND column_name IN ('salary_day', 'exchange_rate')
+ORDER BY column_name;
