@@ -671,38 +671,6 @@ const AppSupabase = () => {
     });
   };
 
-  // Funciones específicas para filtros de reportes
-  const getReportFilteredExpenses = () => {
-    return expenses.filter(expense => {
-      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
-      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
-      const assignmentDateObj = new Date(assignmentDate);
-      
-      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
-      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
-      
-      if (startDate && assignmentDateObj < startDate) return false;
-      if (endDate && assignmentDateObj > endDate) return false;
-      if (reportFilters.paymentMethod && expense.payment_method_id !== reportFilters.paymentMethod) return false;
-      if (reportFilters.category && expense.category_id !== reportFilters.category) return false;
-      
-      return true;
-    });
-  };
-
-  const getReportFilteredIncomes = () => {
-    return incomes.filter(income => {
-      const incomeDate = new Date(income.date);
-      const startDate = reportFilters.startDate ? new Date(reportFilters.startDate) : null;
-      const endDate = reportFilters.endDate ? new Date(reportFilters.endDate) : null;
-      
-      if (startDate && incomeDate < startDate) return false;
-      if (endDate && incomeDate > endDate) return false;
-      // Los ingresos no tienen categoría ni método de pago, así que no aplicamos esos filtros
-      
-      return true;
-    });
-  };
 
   // Funciones utilitarias para monedas
   const convertToSoles = (amount, currency) => {
