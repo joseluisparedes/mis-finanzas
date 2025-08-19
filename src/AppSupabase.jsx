@@ -379,7 +379,13 @@ const AppSupabase = () => {
   const addExpense = async () => {
     if (!validateExpenseForm()) return;
     
-    const result = await addExpenseToData(newExpense);
+    // Convertir el monto a soles si es necesario
+    const expenseData = {
+      ...newExpense,
+      amount: convertToSoles(parseFloat(newExpense.amount), newExpense.currency)
+    };
+    
+    const result = await addExpenseToData(expenseData);
     if (result.success) {
       setNewExpense({
         amount: '',
@@ -400,7 +406,13 @@ const AppSupabase = () => {
   const addIncome = async () => {
     if (!validateIncomeForm()) return;
     
-    const result = await addIncomeToData(newIncome);
+    // Convertir el monto a soles si es necesario
+    const incomeData = {
+      ...newIncome,
+      amount: convertToSoles(parseFloat(newIncome.amount), newIncome.currency)
+    };
+    
+    const result = await addIncomeToData(incomeData);
     if (result.success) {
       setNewIncome({
         amount: '',
@@ -826,7 +838,7 @@ const AppSupabase = () => {
     
     const transactionData = {
       description: newRecurringExpense.description,
-      amount: newRecurringExpense.amount,
+      amount: convertToSoles(parseFloat(newRecurringExpense.amount), newRecurringExpense.currency),
       currency: newRecurringExpense.currency,
       frequency: newRecurringExpense.frequency,
       nextDate: newRecurringExpense.nextDate,
