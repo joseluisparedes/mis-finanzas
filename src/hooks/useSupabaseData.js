@@ -524,20 +524,29 @@ export const useSupabaseData = () => {
     try {
       if (!isAuthenticated) throw new Error('Usuario no autenticado');
 
-      const newRecurring = await databaseService.createRecurringExpense({
-        category_id: recurringData.category,
+      const transactionData = {
         description: recurringData.description,
         amount: parseFloat(recurringData.amount),
         currency: recurringData.currency,
         frequency: recurringData.frequency,
-        next_date: recurringData.nextDate
-      });
+        next_date: recurringData.nextDate,
+        transaction_type: recurringData.transaction_type || 'expense'
+      };
+
+      // Agregar el campo específico según el tipo
+      if (recurringData.transaction_type === 'income') {
+        transactionData.income_type_id = recurringData.incomeType;
+      } else {
+        transactionData.category_id = recurringData.category;
+      }
+
+      const newRecurring = await databaseService.createRecurringExpense(transactionData);
 
       setRecurringExpenses(prev => [newRecurring, ...prev]);
       return { success: true, data: newRecurring };
 
     } catch (error) {
-      console.error('Error adding recurring expense:', error);
+      console.error('Error adding recurring transaction:', error);
       setError(error.message);
       return { success: false, error: error.message };
     }
@@ -659,13 +668,27 @@ export const useSupabaseData = () => {
     const virtualExpenses = [];
     
     recurringExpenses.forEach(recurring => {
-      if (recurring.is_active) {
+      if (recurring.is_active && recurring.transaction_type === 'expense') {
         const occurrences = getRecurringOccurrences(recurring, startDate, endDate);
         virtualExpenses.push(...occurrences);
       }
     });
 
     return virtualExpenses;
+  }, [recurringExpenses, getRecurringOccurrences]);
+
+  // Generar ingresos recurrentes virtuales para un período
+  const generateRecurringIncomes = useCallback((startDate, endDate) => {
+    const virtualIncomes = [];
+    
+    recurringExpenses.forEach(recurring => {
+      if (recurring.is_active && recurring.transaction_type === 'income') {
+        const occurrences = getRecurringOccurrences(recurring, startDate, endDate);
+        virtualIncomes.push(...occurrences);
+      }
+    });
+
+    return virtualIncomes;
   }, [recurringExpenses, getRecurringOccurrences]);
 
   // ==============================================
@@ -686,6 +709,7 @@ export const useSupabaseData = () => {
     
     const closingDay = paymentMethod.cc_closing_day;
     const paymentDay = paymentMethod.cc_payment_day;
+    const salaryDay = settings?.salary_day || 28; // Usar salary_day de configuración
 
     // Determinar el mes de cierre al que pertenece este gasto
     let closingMonth, closingYear;
@@ -712,10 +736,24 @@ export const useSupabaseData = () => {
       paymentYear++;
     }
 
-    // El gasto se asigna al mes de PAGO, no al mes de cierre
-    // Esto significa que aparecerá en el balance del mes cuando realmente pagas
-    return new Date(paymentYear, paymentMonth, 1).toISOString().split('T')[0];
-  }, []);
+    // NUEVA LÓGICA: Considerar salary_day para determinar con qué sueldo se paga
+    // Si el pago es ANTES del día de sueldo, usa el sueldo del mes anterior
+    if (paymentDay < salaryDay) {
+      // El pago es antes del sueldo del mes de pago
+      // Por lo tanto se paga con el sueldo del mes anterior
+      let salaryMonth = paymentMonth - 1;
+      let salaryYear = paymentYear;
+      if (salaryMonth < 0) {
+        salaryMonth = 11;
+        salaryYear--;
+      }
+      return new Date(salaryYear, salaryMonth, 1).toISOString().split('T')[0];
+    } else {
+      // El pago es después del sueldo del mes de pago
+      // Por lo tanto se paga con el sueldo del mismo mes de pago
+      return new Date(paymentYear, paymentMonth, 1).toISOString().split('T')[0];
+    }
+  }, [settings]);
 
   // ==============================================
   // FUNCIONES DE ANÁLISIS
@@ -740,17 +778,23 @@ export const useSupabaseData = () => {
       // Generar gastos recurrentes virtuales para el período
       const recurringExpensesInPeriod = generateRecurringExpenses(start, end);
 
+      // Generar ingresos recurrentes virtuales para el período
+      const recurringIncomesInPeriod = generateRecurringIncomes(start, end);
+
       // Combinar gastos normales y recurrentes
       const allExpenses = [...filteredExpenses, ...recurringExpensesInPeriod];
 
-      // Filtrar ingresos
+      // Filtrar ingresos normales
       const filteredIncomes = incomes.filter(income => {
         const incomeDate = new Date(income.date);
         return incomeDate >= start && incomeDate <= end;
       });
 
+      // Combinar ingresos normales y recurrentes
+      const allIncomes = [...filteredIncomes, ...recurringIncomesInPeriod];
+
       const totalExpenses = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-      const totalIncomes = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+      const totalIncomes = allIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
       const balance = totalIncomes - totalExpenses;
 
       return {
@@ -758,12 +802,14 @@ export const useSupabaseData = () => {
         total_incomes: totalIncomes,
         balance: balance,
         expense_count: allExpenses.length,
-        income_count: filteredIncomes.length,
+        income_count: allIncomes.length,
         savings_rate: totalIncomes > 0 ? ((balance / totalIncomes) * 100) : 0,
         average_expense: allExpenses.length > 0 ? totalExpenses / allExpenses.length : 0,
-        average_income: filteredIncomes.length > 0 ? totalIncomes / filteredIncomes.length : 0,
+        average_income: allIncomes.length > 0 ? totalIncomes / allIncomes.length : 0,
         recurring_expenses: recurringExpensesInPeriod.length,
-        regular_expenses: filteredExpenses.length
+        recurring_incomes: recurringIncomesInPeriod.length,
+        regular_expenses: filteredExpenses.length,
+        regular_incomes: filteredIncomes.length
       };
 
     } catch (error) {
@@ -779,7 +825,7 @@ export const useSupabaseData = () => {
         regular_expenses: 0
       };
     }
-  }, [expenses, incomes, paymentMethods, generateRecurringExpenses, getCreditCardAssignmentMonth]);
+  }, [expenses, incomes, paymentMethods, generateRecurringExpenses, generateRecurringIncomes, getCreditCardAssignmentMonth]);
 
   // ==============================================
   // FUNCIONES DE AUTENTICACIÓN
@@ -900,6 +946,7 @@ export const useSupabaseData = () => {
     updateRecurringExpense,
     deleteRecurringExpense,
     generateRecurringExpenses,
+    generateRecurringIncomes,
 
     // Funciones de tarjetas de crédito
     getCreditCardAssignmentMonth,
