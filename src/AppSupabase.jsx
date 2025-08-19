@@ -2283,7 +2283,7 @@ const AppSupabase = () => {
                                       {category?.name} • {paymentMethod?.name}
                                       {paymentMethod?.payment_type === 'credit_card' && (
                                         <span className="text-blue-600">
-                                          {' '}• Cierre: {new Date(getCreditCardAssignmentMonth(expense.date, paymentMethod)).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                                          {' '}• Cierre: {new Date(getCreditCardAssignmentMonth(expense.date, paymentMethod) + 'T12:00:00').toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
                                         </span>
                                       )}
                                       {' '}• {formatDateForDisplay(expense.date)}
