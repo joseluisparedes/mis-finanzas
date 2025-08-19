@@ -2621,37 +2621,6 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                    <button
-                      onClick={() => setFilters({
-                        startDate: '',
-                        endDate: '',
-                        paymentMethod: '',
-                        category: ''
-                      })}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                      <span>Limpiar Filtros</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        const today = new Date();
-                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                        setFilters({
-                          ...filters,
-                          startDate: formatDateToLocalString(firstDay),
-                          endDate: formatDateToLocalString(today)
-                        });
-                      }}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Este Mes</span>
-                    </button>
-                  </div>
-                  
                   {/* Selector de tipo de gráfico */}
                   <div className="mt-4 border-t pt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Gráfico:</label>
