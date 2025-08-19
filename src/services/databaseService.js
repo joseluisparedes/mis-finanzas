@@ -34,14 +34,28 @@ class DatabaseService {
   convertToLocalDate(dateString) {
     if (!dateString) return dateString;
     
+    console.log('🕐 convertToLocalDate - Input:', dateString);
+    
     // Si ya es una fecha completa, devolverla tal como está
     if (dateString.includes('T') || dateString.includes(' ')) {
+      console.log('🕐 convertToLocalDate - Output (ya tenía tiempo):', dateString);
       return dateString;
     }
     
-    // Para fechas en formato "YYYY-MM-DD", agregarle la hora local
-    // Esto evita que Supabase la interprete como UTC
-    return `${dateString}T12:00:00`;
+    // Enfoque más agresivo: crear una fecha explícitamente local
+    // Intentemos diferentes formatos para ver cuál funciona
+    
+    // Opción 1: Con zona horaria de Lima/Perú (-05:00)
+    const convertedDate1 = `${dateString}T12:00:00-05:00`;
+    
+    // Opción 2: Como DATE literal de PostgreSQL
+    const convertedDate2 = dateString; // Mantener como string simple
+    
+    // Por ahora, vamos a probar el formato sin zona horaria pero con hora
+    const convertedDate = `${dateString}T00:00:00`;
+    
+    console.log('🕐 convertToLocalDate - Output (medianoche local):', convertedDate);
+    return convertedDate;
   }
 
   // Manejo genérico de errores
@@ -376,6 +390,10 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      console.log('💰 createExpense - Fecha original:', expense.date);
+      const convertedDate = this.convertToLocalDate(expense.date);
+      console.log('💰 createExpense - Fecha convertida:', convertedDate);
+      
       const { data, error } = await supabase
         .from('expenses')
         .insert([{
@@ -384,7 +402,7 @@ class DatabaseService {
           payment_method_id: expense.payment_method_id,
           amount: parseFloat(expense.amount),
           description: expense.description,
-          date: this.convertToLocalDate(expense.date),
+          date: convertedDate,
           notes: expense.notes,
           tags: expense.tags || [],
           is_recurring: expense.is_recurring || false,
@@ -399,6 +417,8 @@ class DatabaseService {
 
       if (error) throw error;
 
+      console.log('💰 createExpense - Resultado de BD:', data);
+      console.log('💰 createExpense - Fecha en resultado:', data?.date);
       return data;
     } catch (error) {
       this.handleError(error, 'createExpense');
@@ -493,6 +513,10 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      console.log('💵 createIncome - Fecha original:', income.date);
+      const convertedDate = this.convertToLocalDate(income.date);
+      console.log('💵 createIncome - Fecha convertida:', convertedDate);
+      
       const { data, error } = await supabase
         .from('incomes')
         .insert([{
@@ -500,7 +524,7 @@ class DatabaseService {
           income_type_id: income.income_type_id,
           amount: parseFloat(income.amount),
           description: income.description,
-          date: this.convertToLocalDate(income.date),
+          date: convertedDate,
           notes: income.notes,
           tags: income.tags || [],
           is_recurring: income.is_recurring || false,
@@ -514,6 +538,8 @@ class DatabaseService {
 
       if (error) throw error;
 
+      console.log('💵 createIncome - Resultado de BD:', data);
+      console.log('💵 createIncome - Fecha en resultado:', data?.date);
       return data;
     } catch (error) {
       this.handleError(error, 'createIncome');
