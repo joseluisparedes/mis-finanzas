@@ -34,18 +34,18 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, loading }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validar email
+    // Validar email con límites de seguridad
     if (!formData.email) {
       newErrors.email = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Formato de email inválido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) || formData.email.length > 254) {
+      newErrors.email = 'Formato de email inválido o muy largo';
     }
 
-    // Validar contraseña
+    // Validar contraseña con mejores requisitos
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (formData.password.length < 6 || formData.password.length > 128) {
+      newErrors.password = 'La contraseña debe tener entre 6 y 128 caracteres';
     }
 
     // Validaciones específicas para registro

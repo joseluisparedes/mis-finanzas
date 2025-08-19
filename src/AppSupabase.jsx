@@ -9,6 +9,53 @@ import FinancialDashboard from './components/FinancialDashboard';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
 
+// Funciones de utilidad de seguridad
+const securityUtils = {
+  // Sanitizar texto de entrada
+  sanitizeText: (input) => {
+    if (typeof input !== 'string') return '';
+    return input.trim().slice(0, 255).replace(/[<>]/g, '');
+  },
+  
+  // Validar monto con límites seguros
+  validateAmount: (amount) => {
+    const num = parseFloat(amount);
+    return !isNaN(num) && num > 0 && num <= 999999.99;
+  },
+  
+  // Validar email básico
+  validateEmail: (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+  },
+  
+  // Validar texto requerido
+  validateRequiredText: (text, minLength = 1, maxLength = 255) => {
+    if (typeof text !== 'string') return false;
+    const cleaned = text.trim();
+    return cleaned.length >= minLength && cleaned.length <= maxLength;
+  },
+  
+  // Rate limiting simple
+  rateLimiter: (() => {
+    const limits = {};
+    return (key, maxAttempts = 3, windowMs = 2000) => {
+      const now = Date.now();
+      if (!limits[key]) limits[key] = [];
+      
+      // Limpiar intentos antiguos
+      limits[key] = limits[key].filter(time => now - time < windowMs);
+      
+      if (limits[key].length >= maxAttempts) {
+        return false; // Rate limited
+      }
+      
+      limits[key].push(now);
+      return true; // Permitido
+    };
+  })()
+};
+
 const AppSupabase = () => {
   // Funciones auxiliares para manejar fechas sin problemas de zona horaria
   const formatDateToLocalString = (date) => {
@@ -339,14 +386,25 @@ const AppSupabase = () => {
   // Funciones para validar formularios
   const validateExpenseForm = () => {
     clearMessages();
-    if (!newExpense.amount || parseFloat(newExpense.amount) <= 0) {
-      setExpenseError('El monto debe ser mayor a 0');
+    
+    // Rate limiting
+    if (!securityUtils.rateLimiter('expense', 3, 2000)) {
+      setExpenseError('Demasiados intentos. Espera un momento.');
       return false;
     }
-    if (!newExpense.description.trim()) {
-      setExpenseError('La descripción es obligatoria');
+    
+    // Validar monto con límites seguros
+    if (!securityUtils.validateAmount(newExpense.amount)) {
+      setExpenseError('El monto debe ser mayor a 0 y menor a 999,999.99');
       return false;
     }
+    
+    // Validar descripción
+    if (!securityUtils.validateRequiredText(newExpense.description, 1, 255)) {
+      setExpenseError('La descripción es obligatoria (máx. 255 caracteres)');
+      return false;
+    }
+    
     if (!newExpense.category) {
       setExpenseError('Debe seleccionar una categoría');
       return false;
@@ -360,14 +418,25 @@ const AppSupabase = () => {
 
   const validateIncomeForm = () => {
     clearMessages();
-    if (!newIncome.amount || parseFloat(newIncome.amount) <= 0) {
-      setIncomeError('El monto debe ser mayor a 0');
+    
+    // Rate limiting
+    if (!securityUtils.rateLimiter('income', 3, 2000)) {
+      setIncomeError('Demasiados intentos. Espera un momento.');
       return false;
     }
-    if (!newIncome.description.trim()) {
-      setIncomeError('La descripción es obligatoria');
+    
+    // Validar monto con límites seguros
+    if (!securityUtils.validateAmount(newIncome.amount)) {
+      setIncomeError('El monto debe ser mayor a 0 y menor a 999,999.99');
       return false;
     }
+    
+    // Validar descripción
+    if (!securityUtils.validateRequiredText(newIncome.description, 1, 255)) {
+      setIncomeError('La descripción es obligatoria (máx. 255 caracteres)');
+      return false;
+    }
+    
     if (!newIncome.type) {
       setIncomeError('Debe seleccionar un tipo de ingreso');
       return false;
@@ -379,10 +448,12 @@ const AppSupabase = () => {
   const addExpense = async () => {
     if (!validateExpenseForm()) return;
     
-    // Convertir el monto a soles si es necesario
+    // Convertir el monto a soles si es necesario y sanitizar datos
     const expenseData = {
       ...newExpense,
-      amount: convertToSoles(parseFloat(newExpense.amount), newExpense.currency)
+      amount: convertToSoles(parseFloat(newExpense.amount), newExpense.currency),
+      description: securityUtils.sanitizeText(newExpense.description),
+      notes: newExpense.notes ? securityUtils.sanitizeText(newExpense.notes) : null
     };
     
     const result = await addExpenseToData(expenseData);
@@ -406,10 +477,12 @@ const AppSupabase = () => {
   const addIncome = async () => {
     if (!validateIncomeForm()) return;
     
-    // Convertir el monto a soles si es necesario
+    // Convertir el monto a soles si es necesario y sanitizar datos
     const incomeData = {
       ...newIncome,
-      amount: convertToSoles(parseFloat(newIncome.amount), newIncome.currency)
+      amount: convertToSoles(parseFloat(newIncome.amount), newIncome.currency),
+      description: securityUtils.sanitizeText(newIncome.description),
+      notes: newIncome.notes ? securityUtils.sanitizeText(newIncome.notes) : null
     };
     
     const result = await addIncomeToData(incomeData);
@@ -830,14 +903,39 @@ const AppSupabase = () => {
 
   // Funciones para gastos recurrentes
   const addRecurringExpense = async () => {
+    // Rate limiting
+    if (!securityUtils.rateLimiter('recurring', 3, 2000)) {
+      setError('Demasiados intentos. Espera un momento.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
     // Validar campos según el tipo de transacción
     const isExpense = recurringTransactionType === 'expense';
     const requiredField = isExpense ? newRecurringExpense.category : newRecurringExpense.incomeType;
     
-    if (!newRecurringExpense.description || !newRecurringExpense.amount || !requiredField) return;
+    // Validar monto
+    if (!securityUtils.validateAmount(newRecurringExpense.amount)) {
+      setError('El monto debe ser mayor a 0 y menor a 999,999.99');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
+    // Validar descripción
+    if (!securityUtils.validateRequiredText(newRecurringExpense.description, 1, 255)) {
+      setError('La descripción es obligatoria (máx. 255 caracteres)');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
+    if (!requiredField) {
+      setError(`Debe seleccionar ${isExpense ? 'una categoría' : 'un tipo de ingreso'}`);
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
     
     const transactionData = {
-      description: newRecurringExpense.description,
+      description: securityUtils.sanitizeText(newRecurringExpense.description),
       amount: convertToSoles(parseFloat(newRecurringExpense.amount), newRecurringExpense.currency),
       currency: newRecurringExpense.currency,
       frequency: newRecurringExpense.frequency,
