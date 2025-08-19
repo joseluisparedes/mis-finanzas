@@ -98,42 +98,8 @@ SELECT
 -- NUEVAS FUNCIONALIDADES: SALARY_DAY E INGRESOS RECURRENTES
 -- =======================================================================
 
--- PASO 7A: Crear tabla settings si no existe
-CREATE TABLE IF NOT EXISTS settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    exchange_rate DECIMAL(8,4) DEFAULT 3.75,
-    salary_day INTEGER DEFAULT 28,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id)
-);
-
--- PASO 7B: Crear índice para user_id si no existe
-CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
-
--- PASO 7C: Crear trigger para updated_at si no existe
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER IF NOT EXISTS update_settings_updated_at 
-    BEFORE UPDATE ON settings 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- PASO 7D: Insertar configuración predeterminada para usuarios existentes
-INSERT INTO settings (user_id, exchange_rate, salary_day)
-SELECT 
-    id as user_id, 
-    3.75 as exchange_rate,
-    28 as salary_day
-FROM auth.users 
-WHERE id NOT IN (SELECT user_id FROM settings)
-ON CONFLICT (user_id) DO NOTHING;
+-- PASO 7: Agregar salary_day a la tabla user_settings existente
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS salary_day INTEGER DEFAULT 28;
 
 -- PASO 8: Modificar tabla recurring_expenses para incluir ingresos recurrentes
 ALTER TABLE recurring_expenses ADD COLUMN IF NOT EXISTS transaction_type VARCHAR(10) DEFAULT 'expense' CHECK (transaction_type IN ('expense', 'income'));
@@ -166,17 +132,17 @@ FROM information_schema.columns
 WHERE table_name = 'recurring_expenses' 
 ORDER BY ordinal_position;
 
--- PASO 14: Verificar settings actualizada
+-- PASO 14: Verificar user_settings actualizada
 SELECT 
     column_name, 
     data_type, 
     is_nullable, 
     column_default
 FROM information_schema.columns 
-WHERE table_name = 'settings' 
+WHERE table_name = 'user_settings' 
 ORDER BY ordinal_position;
 
--- PASO 15: Verificar que todo se creó correctamente
-SELECT 'Tabla settings creada correctamente' as status,
-       COUNT(*) as usuarios_con_settings
-FROM settings;
+-- PASO 15: Verificar que salary_day se agregó correctamente
+SELECT 'Campo salary_day agregado correctamente' as status,
+       COUNT(*) as usuarios_existentes
+FROM user_settings;
