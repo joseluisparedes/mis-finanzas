@@ -3914,6 +3914,20 @@ const AppSupabase = () => {
                   <h3 className="text-lg font-semibold mb-4">Detalle de Balance</h3>
                   
                   {(() => {
+                    const [expandedSections, setExpandedSections] = useState({
+                      regularIncomes: false,
+                      recurringIncomes: false,
+                      regularExpenses: false,
+                      recurringExpenses: false
+                    });
+                    
+                    const toggleSection = (section) => {
+                      setExpandedSections(prev => ({
+                        ...prev,
+                        [section]: !prev[section]
+                      }));
+                    };
+                    
                     const { 
                       monthExpenses, 
                       monthIncomes, 
@@ -3967,20 +3981,27 @@ const AppSupabase = () => {
                                 {monthIncomes.length === 0 ? (
                                   <p className="text-xs text-green-600">Sin ingresos regulares</p>
                                 ) : (
-                                  monthIncomes.slice(0, 3).map(income => {
-                                    const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
-                                    return (
-                                      <div key={income.id} className="flex justify-between text-xs text-green-700">
-                                        <span className="truncate mr-2">{income.description}</span>
-                                        <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
-                                      </div>
-                                    );
-                                  })
-                                )}
-                                {monthIncomes.length > 3 && (
-                                  <p className="text-xs text-green-600 italic">
-                                    ...y {monthIncomes.length - 3} más
-                                  </p>
+                                  <>
+                                    {(expandedSections.regularIncomes ? monthIncomes : monthIncomes.slice(0, 3)).map(income => {
+                                      const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
+                                      return (
+                                        <div key={income.id} className="flex justify-between text-xs text-green-700">
+                                          <span className="truncate mr-2">{income.description}</span>
+                                          <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                        </div>
+                                      );
+                                    })}
+                                    {monthIncomes.length > 3 && (
+                                      <button
+                                        onClick={() => toggleSection('regularIncomes')}
+                                        className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
+                                      >
+                                        {expandedSections.regularIncomes 
+                                          ? 'Mostrar menos' 
+                                          : `...y ${monthIncomes.length - 3} más`}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -4000,20 +4021,27 @@ const AppSupabase = () => {
                                 {recurringIncomesInMonth.length === 0 ? (
                                   <p className="text-xs text-green-600">Sin ingresos recurrentes</p>
                                 ) : (
-                                  recurringIncomesInMonth.slice(0, 3).map(income => {
-                                    const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
-                                    return (
-                                      <div key={income.id} className="flex justify-between text-xs text-green-700">
-                                        <span className="truncate mr-2">{income.description}</span>
-                                        <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
-                                      </div>
-                                    );
-                                  })
-                                )}
-                                {recurringIncomesInMonth.length > 3 && (
-                                  <p className="text-xs text-green-600 italic">
-                                    ...y {recurringIncomesInMonth.length - 3} más
-                                  </p>
+                                  <>
+                                    {(expandedSections.recurringIncomes ? recurringIncomesInMonth : recurringIncomesInMonth.slice(0, 3)).map(income => {
+                                      const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
+                                      return (
+                                        <div key={income.id} className="flex justify-between text-xs text-green-700">
+                                          <span className="truncate mr-2">{income.description}</span>
+                                          <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                        </div>
+                                      );
+                                    })}
+                                    {recurringIncomesInMonth.length > 3 && (
+                                      <button
+                                        onClick={() => toggleSection('recurringIncomes')}
+                                        className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
+                                      >
+                                        {expandedSections.recurringIncomes 
+                                          ? 'Mostrar menos' 
+                                          : `...y ${recurringIncomesInMonth.length - 3} más`}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -4039,20 +4067,27 @@ const AppSupabase = () => {
                                 {monthExpenses.length === 0 ? (
                                   <p className="text-xs text-red-600">Sin gastos regulares</p>
                                 ) : (
-                                  monthExpenses.slice(0, 3).map(expense => {
-                                    const category = categories.find(cat => cat.id === expense.category_id);
-                                    return (
-                                      <div key={expense.id} className="flex justify-between text-xs text-red-700">
-                                        <span className="truncate mr-2">{expense.description}</span>
-                                        <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
-                                      </div>
-                                    );
-                                  })
-                                )}
-                                {monthExpenses.length > 3 && (
-                                  <p className="text-xs text-red-600 italic">
-                                    ...y {monthExpenses.length - 3} más
-                                  </p>
+                                  <>
+                                    {(expandedSections.regularExpenses ? monthExpenses : monthExpenses.slice(0, 3)).map(expense => {
+                                      const category = categories.find(cat => cat.id === expense.category_id);
+                                      return (
+                                        <div key={expense.id} className="flex justify-between text-xs text-red-700">
+                                          <span className="truncate mr-2">{expense.description}</span>
+                                          <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
+                                        </div>
+                                      );
+                                    })}
+                                    {monthExpenses.length > 3 && (
+                                      <button
+                                        onClick={() => toggleSection('regularExpenses')}
+                                        className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
+                                      >
+                                        {expandedSections.regularExpenses 
+                                          ? 'Mostrar menos' 
+                                          : `...y ${monthExpenses.length - 3} más`}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -4072,20 +4107,27 @@ const AppSupabase = () => {
                                 {recurringExpensesInMonth.length === 0 ? (
                                   <p className="text-xs text-red-600">Sin gastos recurrentes</p>
                                 ) : (
-                                  recurringExpensesInMonth.slice(0, 3).map(expense => {
-                                    const category = categories.find(cat => cat.id === expense.category_id);
-                                    return (
-                                      <div key={expense.id} className="flex justify-between text-xs text-red-700">
-                                        <span className="truncate mr-2">{expense.description}</span>
-                                        <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
-                                      </div>
-                                    );
-                                  })
-                                )}
-                                {recurringExpensesInMonth.length > 3 && (
-                                  <p className="text-xs text-red-600 italic">
-                                    ...y {recurringExpensesInMonth.length - 3} más
-                                  </p>
+                                  <>
+                                    {(expandedSections.recurringExpenses ? recurringExpensesInMonth : recurringExpensesInMonth.slice(0, 3)).map(expense => {
+                                      const category = categories.find(cat => cat.id === expense.category_id);
+                                      return (
+                                        <div key={expense.id} className="flex justify-between text-xs text-red-700">
+                                          <span className="truncate mr-2">{expense.description}</span>
+                                          <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
+                                        </div>
+                                      );
+                                    })}
+                                    {recurringExpensesInMonth.length > 3 && (
+                                      <button
+                                        onClick={() => toggleSection('recurringExpenses')}
+                                        className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
+                                      >
+                                        {expandedSections.recurringExpenses 
+                                          ? 'Mostrar menos' 
+                                          : `...y ${recurringExpensesInMonth.length - 3} más`}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -4118,19 +4160,41 @@ const AppSupabase = () => {
 
                 {/* Análisis por Categorías del Mes */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Gastos por Categoría */}
+                  {/* Gastos por Categoría (Regulares + Recurrentes) */}
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Gastos por Categoría</h3>
+                    <p className="text-xs text-gray-500 mb-3">Incluye gastos regulares y recurrentes del mes</p>
                     
                     {(() => {
                       const { monthExpenses } = getMonthData();
+                      
+                      // Obtener gastos recurrentes del mes
+                      const [year, month] = reportMonth.split('-');
+                      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                      const endDate = new Date(parseInt(year), parseInt(month), 0);
+                      const recurringExpensesInMonth = generateRecurringExpenses(
+                        formatDateToLocalString(startDate), 
+                        formatDateToLocalString(endDate)
+                      );
+                      
                       const categoryData = categories.map(category => {
-                        const categoryExpenses = monthExpenses.filter(expense => expense.category_id === category.id);
-                        const total = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        // Gastos regulares
+                        const regularExpenses = monthExpenses.filter(expense => expense.category_id === category.id);
+                        const regularTotal = regularExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        
+                        // Gastos recurrentes
+                        const recurringExpenses = recurringExpensesInMonth.filter(expense => expense.category_id === category.id);
+                        const recurringTotal = recurringExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                        
+                        const totalAmount = regularTotal + recurringTotal;
+                        
                         return {
                           name: category.name,
-                          value: total,
-                          color: category.color
+                          value: totalAmount,
+                          regular: regularTotal,
+                          recurring: recurringTotal,
+                          color: category.color,
+                          count: regularExpenses.length + recurringExpenses.length
                         };
                       }).filter(item => item.value > 0);
 
@@ -4160,7 +4224,17 @@ const AppSupabase = () => {
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Cantidad']} />
+                              <Tooltip 
+                                formatter={(value, name, props) => {
+                                  const data = props.payload;
+                                  return [
+                                    `S/. ${Number(value).toFixed(2)} (Total)`,
+                                    `Regulares: S/. ${Number(data.regular || 0).toFixed(2)}`,
+                                    `Recurrentes: S/. ${Number(data.recurring || 0).toFixed(2)}`,
+                                    `${data.count || 0} transacciones`
+                                  ];
+                                }}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -4168,19 +4242,41 @@ const AppSupabase = () => {
                     })()}
                   </div>
 
-                  {/* Ingresos por Tipo */}
+                  {/* Ingresos por Tipo (Regulares + Recurrentes) */}
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Ingresos por Tipo</h3>
+                    <p className="text-xs text-gray-500 mb-3">Incluye ingresos regulares y recurrentes del mes</p>
                     
                     {(() => {
                       const { monthIncomes } = getMonthData();
+                      
+                      // Obtener ingresos recurrentes del mes
+                      const [year, month] = reportMonth.split('-');
+                      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                      const endDate = new Date(parseInt(year), parseInt(month), 0);
+                      const recurringIncomesInMonth = generateRecurringIncomes(
+                        formatDateToLocalString(startDate), 
+                        formatDateToLocalString(endDate)
+                      );
+                      
                       const incomeData = incomeTypes.map(type => {
-                        const typeIncomes = monthIncomes.filter(income => income.income_type_id === type.id);
-                        const total = typeIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                        // Ingresos regulares
+                        const regularIncomes = monthIncomes.filter(income => income.income_type_id === type.id);
+                        const regularTotal = regularIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                        
+                        // Ingresos recurrentes
+                        const recurringIncomes = recurringIncomesInMonth.filter(income => income.income_type_id === type.id);
+                        const recurringTotal = recurringIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                        
+                        const totalAmount = regularTotal + recurringTotal;
+                        
                         return {
                           name: type.name,
-                          value: total,
-                          color: type.color
+                          value: totalAmount,
+                          regular: regularTotal,
+                          recurring: recurringTotal,
+                          color: type.color,
+                          count: regularIncomes.length + recurringIncomes.length
                         };
                       }).filter(item => item.value > 0);
 
@@ -4200,7 +4296,17 @@ const AppSupabase = () => {
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="name" />
                               <YAxis />
-                              <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Cantidad']} />
+                              <Tooltip 
+                                formatter={(value, name, props) => {
+                                  const data = props.payload;
+                                  return [
+                                    `S/. ${Number(value).toFixed(2)} (Total)`,
+                                    `Regulares: S/. ${Number(data.regular || 0).toFixed(2)}`,
+                                    `Recurrentes: S/. ${Number(data.recurring || 0).toFixed(2)}`,
+                                    `${data.count || 0} transacciones`
+                                  ];
+                                }}
+                              />
                               <Bar dataKey="value" fill="#10B981" />
                             </BarChart>
                           </ResponsiveContainer>
