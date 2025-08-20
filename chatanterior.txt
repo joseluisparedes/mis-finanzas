@@ -119,52 +119,51 @@ INSTRUCCIONES PARA NUEVA CONVERSACIÓN:
    - Commit realizado
    - Feedback del usuario
 
-ÚLTIMA ACTUALIZACIÓN: 20/08/2025 - Mejora de UI/UX en cabecera completada
-CONVERSACIÓN ACTUAL: Dark mode completado → Discusión dominio → Archivo continuidad → Mejoras cabecera
+ÚLTIMA ACTUALIZACIÓN: 20/08/2025 - CORRECCIÓN: Reestructuración de layout de cabecera
+CONVERSACIÓN ACTUAL: Dark mode → Dominio → Continuidad → Mejoras cabecera (COLORES) → CORRECCIÓN (LAYOUT)
 
-DESARROLLOS RECIENTES - MEJORA DE CABECERA (20/08/2025):
-======================================================
-PROBLEMA IDENTIFICADO: 
-- Botones de cabecera muy juntos (Excel, Importar, Presupuestos)
-- Título simple sin prominencia visual
-- Falta de estructura visual profesional
+CORRECCIÓN IMPORTANTE - REESTRUCTURACIÓN DE CABECERA (20/08/2025):
+================================================================
+ERROR DE INTERPRETACIÓN ANTERIOR: 
+- Usuario solicitó reorganizar POSICIÓN y LAYOUT, no colores
+- Problema: Título compitiendo por espacio con botones
+- Necesidad: Título en su propio espacio separado
 
-SOLUCIÓN IMPLEMENTADA:
+NUEVA SOLUCIÓN CORRECTA - ESTRUCTURA DE DOS FILAS:
 
-1. TÍTULO REDISEÑADO (AppSupabase.jsx:1192-1206):
-   - Ícono con gradiente en contenedor redondeado
-   - Título con gradiente de color (blue-600 to purple-600)
-   - Subtítulo descriptivo añadido
-   - Mejor espaciado y jerarquía visual
+1. REESTRUCTURACIÓN COMPLETA DEL LAYOUT:
+   - FILA SUPERIOR: Solo título centrado con separador visual
+   - FILA INFERIOR: Distribución de botones en tres grupos
 
-2. NAVEGACIÓN MEJORADA (AppSupabase.jsx:1200+):
-   - Espaciado aumentado de space-x-4 a space-x-6
-   - Botones con gradientes y sombras profesionales
-   - Efectos hover mejorados con transform y shadow
-   - Separadores visuales entre grupos de botones
-   - Agrupación lógica: Tema | Herramientas | Configuración
+2. FILA SUPERIOR - TÍTULO DEDICADO:
+   - Título centrado en su propio espacio
+   - Separador visual (border-bottom) 
+   - Sin competencia con otros elementos
+   - Ícono con gradiente + título + subtítulo
 
-3. BOTONES PROFESIONALES:
-   - Tema: Gradiente yellow/orange (dark) o indigo/purple (light)
-   - Excel: Gradiente green-500 to emerald-600
-   - Importar: Gradiente blue-500 to cyan-600  
-   - Presupuestos: Gradiente purple-500 to pink-600
-   - Config: Gradiente gray-500 to slate-600
-   - Estados activos diferenciados visualmente
+3. FILA INFERIOR - DISTRIBUCIÓN LÓGICA:
+   - IZQUIERDA: Controles (Tema + Estado sincronización)
+   - CENTRO: Herramientas principales (Excel, Importar, Presupuestos, Config)
+   - DERECHA: Usuario (AuthButton)
 
-4. MEJORAS UX:
-   - Efectos hover: shadow + transform translate
-   - Transiciones suaves (duration-200)
-   - Indicador de estado de sincronización mejorado
-   - Bordes separadores entre secciones
+4. SIMPLIFICACIÓN VISUAL:
+   - Removidos gradientes complejos
+   - Colores sólidos más limpios
+   - Mejor responsive para móviles
+   - Espaciado más natural
+
+ESTRUCTURA DEL CÓDIGO:
+- header > div (título centrado) + div (navegación de 3 columnas)
+- Separación clara de responsabilidades
+- Mejor organización visual
 
 ARCHIVOS MODIFICADOS:
-- src/AppSupabase.jsx (líneas 1192-1289)
+- src/AppSupabase.jsx (reestructuración completa de cabecera)
 
 BUILD EXITOSO:
-- CSS aumentó a 40.18 kB (indicando estilos agregados)
-- Sin errores de compilación
-- Listo para commit
+- CSS optimizado a 36.60 kB 
+- Sin errores de sintaxis
+- Layout mejorado con separación clara
 
 ================================================================
 FIN DEL ARCHIVO - ASEGÚRATE DE LEER TODO ANTES DE CONTINUAR
