@@ -182,6 +182,14 @@ const AppSupabase = () => {
   // Estados para tipos de gráficos
   const [chartType, setChartType] = useState('pie');
   
+  // Estados para secciones expandibles en Detalle de Balance
+  const [expandedSections, setExpandedSections] = useState({
+    regularIncomes: false,
+    recurringIncomes: false,
+    regularExpenses: false,
+    recurringExpenses: false
+  });
+  
   // Estado para formulario de método de pago
   const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
     name: '',
@@ -245,6 +253,14 @@ const AppSupabase = () => {
   // Función para alternar el colapso de secciones
   const toggleSection = (section) => {
     setMenuCollapsed(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Función para alternar secciones expandibles en Detalle de Balance
+  const toggleBalanceSection = (section) => {
+    setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
@@ -3914,20 +3930,6 @@ const AppSupabase = () => {
                   <h3 className="text-lg font-semibold mb-4">Detalle de Balance</h3>
                   
                   {(() => {
-                    const [expandedSections, setExpandedSections] = useState({
-                      regularIncomes: false,
-                      recurringIncomes: false,
-                      regularExpenses: false,
-                      recurringExpenses: false
-                    });
-                    
-                    const toggleSection = (section) => {
-                      setExpandedSections(prev => ({
-                        ...prev,
-                        [section]: !prev[section]
-                      }));
-                    };
-                    
                     const { 
                       monthExpenses, 
                       monthIncomes, 
@@ -3993,7 +3995,7 @@ const AppSupabase = () => {
                                     })}
                                     {monthIncomes.length > 3 && (
                                       <button
-                                        onClick={() => toggleSection('regularIncomes')}
+                                        onClick={() => toggleBalanceSection('regularIncomes')}
                                         className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
                                       >
                                         {expandedSections.regularIncomes 
@@ -4033,7 +4035,7 @@ const AppSupabase = () => {
                                     })}
                                     {recurringIncomesInMonth.length > 3 && (
                                       <button
-                                        onClick={() => toggleSection('recurringIncomes')}
+                                        onClick={() => toggleBalanceSection('recurringIncomes')}
                                         className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
                                       >
                                         {expandedSections.recurringIncomes 
@@ -4079,7 +4081,7 @@ const AppSupabase = () => {
                                     })}
                                     {monthExpenses.length > 3 && (
                                       <button
-                                        onClick={() => toggleSection('regularExpenses')}
+                                        onClick={() => toggleBalanceSection('regularExpenses')}
                                         className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
                                       >
                                         {expandedSections.regularExpenses 
@@ -4119,7 +4121,7 @@ const AppSupabase = () => {
                                     })}
                                     {recurringExpensesInMonth.length > 3 && (
                                       <button
-                                        onClick={() => toggleSection('recurringExpenses')}
+                                        onClick={() => toggleBalanceSection('recurringExpenses')}
                                         className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
                                       >
                                         {expandedSections.recurringExpenses 
