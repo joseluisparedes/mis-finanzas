@@ -394,6 +394,7 @@ const AppSupabase = () => {
   const buttonPrimaryClasses = "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 shadow-sm hover:shadow-md";
   const buttonSecondaryClasses = "bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text font-medium py-2 px-4 rounded-md transition-colors duration-200";
   const buttonDangerClasses = "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200";
+  const buttonSuccessClasses = "bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200";
 
   // Función para limpiar mensajes
   const clearMessages = () => {
@@ -1808,7 +1809,7 @@ const AppSupabase = () => {
                           colorInput.value = '#6B7280';
                         }
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      className={buttonSuccessClasses}
                     >
                       Agregar
                     </button>
@@ -2098,7 +2099,7 @@ const AppSupabase = () => {
                           colorInput.value = '#00B894';
                         }
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      className={buttonSuccessClasses}
                     >
                       Agregar
                     </button>
@@ -2215,7 +2216,7 @@ const AppSupabase = () => {
                         handleSignOut();
                       }
                     }}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${buttonDangerClasses}`}
                   >
                     <X className="w-4 h-4" />
                     <span>Cerrar Sesión</span>
@@ -2258,14 +2259,14 @@ const AppSupabase = () => {
             {activeTab === 'gastos' && (
               <div>
                 <div className={`${cardClasses} p-6 mb-6`}>
-                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${textPrimaryClasses}`}>
                     <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
                     Agregar Nuevo Gasto
                   </h2>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2278,7 +2279,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1 lg:col-span-2 xl:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Descripción</label>
                       <input
                         type="text"
                         value={newExpense.description}
@@ -2289,7 +2290,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Categoría</label>
                       <select
                         value={newExpense.category}
                         onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
@@ -2303,7 +2304,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Método de Pago</label>
                       <select
                         value={newExpense.paymentMethod}
                         onChange={(e) => setNewExpense({...newExpense, paymentMethod: e.target.value})}
@@ -2317,7 +2318,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha</label>
                       <input
                         type="date"
                         value={newExpense.date}
@@ -2327,7 +2328,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Moneda</label>
                       <select
                         value={newExpense.currency}
                         onChange={(e) => setNewExpense({...newExpense, currency: e.target.value})}
@@ -2340,7 +2341,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Notas (opcional)</label>
                       <input
                         type="text"
                         value={newExpense.notes || ''}
@@ -2452,7 +2453,7 @@ const AppSupabase = () => {
                 <div className={cardClasses}>
                   <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold">Gastos {searchTerm && `(${getSearchedExpenses().length} resultados)`}</h3>
+                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Gastos {searchTerm && `(${getSearchedExpenses().length} resultados)`}</h3>
                       {searchTerm && (
                         <span className="text-sm text-gray-500">
                           Búsqueda: "{searchTerm}"
@@ -2550,14 +2551,14 @@ const AppSupabase = () => {
             {activeTab === 'ingresos' && (
               <div>
                 <div className={`${cardClasses} p-6 mb-6`}>
-                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${textPrimaryClasses}`}>
                     <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
                     Agregar Nuevo Ingreso
                   </h2>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2570,7 +2571,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1 lg:col-span-2 xl:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Descripción</label>
                       <input
                         type="text"
                         value={newIncome.description}
@@ -2581,7 +2582,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Ingreso</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Tipo de Ingreso</label>
                       <select
                         value={newIncome.type}
                         onChange={(e) => setNewIncome({...newIncome, type: e.target.value})}
@@ -2595,7 +2596,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha</label>
                       <input
                         type="date"
                         value={newIncome.date}
@@ -2605,7 +2606,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Moneda</label>
                       <select
                         value={newIncome.currency}
                         onChange={(e) => setNewIncome({...newIncome, currency: e.target.value})}
@@ -2618,7 +2619,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Notas (opcional)</label>
                       <input
                         type="text"
                         value={newIncome.notes || ''}
@@ -2668,7 +2669,7 @@ const AppSupabase = () => {
                 <div className={cardClasses}>
                   <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold">Ingresos {searchTerm && `(${getSearchedIncomes().length} resultados)`}</h3>
+                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Ingresos {searchTerm && `(${getSearchedIncomes().length} resultados)`}</h3>
                       {searchTerm && (
                         <span className="text-sm text-gray-500">
                           Búsqueda: "{searchTerm}"
@@ -2787,7 +2788,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Categoría</label>
                       <select
                         value={reportFilters.category}
                         onChange={(e) => setReportFilters({...reportFilters, category: e.target.value})}
@@ -2803,7 +2804,7 @@ const AppSupabase = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Método de Pago</label>
                       <select
                         value={reportFilters.paymentMethod}
                         onChange={(e) => setReportFilters({...reportFilters, paymentMethod: e.target.value})}
@@ -3546,13 +3547,9 @@ const AppSupabase = () => {
             {activeTab === 'recurrentes' && (
               <div>
                 {/* Gestión de Gastos Recurrentes */}
-                <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
-                  `${cardClasses} ${textPrimaryClasses}`
-                }`}>
+                <div className={`${cardClasses} p-6 mb-6`}>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className={`text-xl font-semibold flex items-center ${
-                      textPrimaryClasses
-                    }`}>
+                    <h2 className={`text-xl font-semibold flex items-center ${textPrimaryClasses}`}>
                       <Repeat className="w-5 h-5 mr-2 text-blue-500" />
                       Transacciones Recurrentes
                     </h2>
@@ -4498,7 +4495,7 @@ const AppSupabase = () => {
                   <button
                     onClick={handleConfirmExport}
                     disabled={!Object.values(exportSelections).some(Boolean)}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className={`flex-1 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed ${buttonSuccessClasses}`}
                   >
                     Exportar a Excel
                   </button>
