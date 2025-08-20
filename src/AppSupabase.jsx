@@ -3909,6 +3909,213 @@ const AppSupabase = () => {
                   </div>
                 </div>
 
+                {/* Detalle de Balance */}
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                  <h3 className="text-lg font-semibold mb-4">Detalle de Balance</h3>
+                  
+                  {(() => {
+                    const { 
+                      monthExpenses, 
+                      monthIncomes, 
+                      totalExpenses, 
+                      totalIncomes, 
+                      regularExpenses, 
+                      recurringExpenses 
+                    } = getMonthData();
+                    
+                    // Generar gastos recurrentes para el mes seleccionado
+                    const [year, month] = reportMonth.split('-');
+                    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    const endDate = new Date(parseInt(year), parseInt(month), 0);
+                    const recurringExpensesInMonth = generateRecurringExpenses(
+                      formatDateToLocalString(startDate), 
+                      formatDateToLocalString(endDate)
+                    );
+                    
+                    // Generar ingresos recurrentes para el mes seleccionado
+                    const recurringIncomesInMonth = generateRecurringIncomes(
+                      formatDateToLocalString(startDate), 
+                      formatDateToLocalString(endDate)
+                    );
+                    
+                    // Calcular totales regulares
+                    const regularExpensesTotal = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                    const regularIncomesTotal = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                    
+                    // Calcular totales recurrentes
+                    const recurringExpensesTotal = recurringExpensesInMonth.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+                    const recurringIncomesTotal = recurringIncomesInMonth.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                    
+                    return (
+                      <div className="space-y-6">
+                        {/* Sección de Ingresos */}
+                        <div>
+                          <h4 className="text-md font-medium text-green-700 mb-3 flex items-center">
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Ingresos del Mes: {formatCurrency(totalIncomes)}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                            {/* Ingresos Regulares */}
+                            <div className="bg-green-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-sm font-medium text-green-800">Ingresos Regulares</h5>
+                                <span className="text-sm font-bold text-green-600">
+                                  {formatCurrency(regularIncomesTotal)}
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {monthIncomes.length === 0 ? (
+                                  <p className="text-xs text-green-600">Sin ingresos regulares</p>
+                                ) : (
+                                  monthIncomes.slice(0, 3).map(income => {
+                                    const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
+                                    return (
+                                      <div key={income.id} className="flex justify-between text-xs text-green-700">
+                                        <span className="truncate mr-2">{income.description}</span>
+                                        <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                                {monthIncomes.length > 3 && (
+                                  <p className="text-xs text-green-600 italic">
+                                    ...y {monthIncomes.length - 3} más
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Ingresos Recurrentes */}
+                            <div className="bg-green-100 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-sm font-medium text-green-800 flex items-center">
+                                  <Repeat className="w-3 h-3 mr-1" />
+                                  Ingresos Recurrentes
+                                </h5>
+                                <span className="text-sm font-bold text-green-600">
+                                  {formatCurrency(recurringIncomesTotal)}
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {recurringIncomesInMonth.length === 0 ? (
+                                  <p className="text-xs text-green-600">Sin ingresos recurrentes</p>
+                                ) : (
+                                  recurringIncomesInMonth.slice(0, 3).map(income => {
+                                    const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
+                                    return (
+                                      <div key={income.id} className="flex justify-between text-xs text-green-700">
+                                        <span className="truncate mr-2">{income.description}</span>
+                                        <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                                {recurringIncomesInMonth.length > 3 && (
+                                  <p className="text-xs text-green-600 italic">
+                                    ...y {recurringIncomesInMonth.length - 3} más
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Sección de Gastos */}
+                        <div>
+                          <h4 className="text-md font-medium text-red-700 mb-3 flex items-center">
+                            <TrendingDown className="w-4 h-4 mr-2" />
+                            Gastos del Mes: {formatCurrency(totalExpenses)}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                            {/* Gastos Regulares */}
+                            <div className="bg-red-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-sm font-medium text-red-800">Gastos Regulares</h5>
+                                <span className="text-sm font-bold text-red-600">
+                                  {formatCurrency(regularExpensesTotal)}
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {monthExpenses.length === 0 ? (
+                                  <p className="text-xs text-red-600">Sin gastos regulares</p>
+                                ) : (
+                                  monthExpenses.slice(0, 3).map(expense => {
+                                    const category = categories.find(cat => cat.id === expense.category_id);
+                                    return (
+                                      <div key={expense.id} className="flex justify-between text-xs text-red-700">
+                                        <span className="truncate mr-2">{expense.description}</span>
+                                        <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                                {monthExpenses.length > 3 && (
+                                  <p className="text-xs text-red-600 italic">
+                                    ...y {monthExpenses.length - 3} más
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Gastos Recurrentes */}
+                            <div className="bg-red-100 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-sm font-medium text-red-800 flex items-center">
+                                  <Repeat className="w-3 h-3 mr-1" />
+                                  Gastos Recurrentes
+                                </h5>
+                                <span className="text-sm font-bold text-red-600">
+                                  {formatCurrency(recurringExpensesTotal)}
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {recurringExpensesInMonth.length === 0 ? (
+                                  <p className="text-xs text-red-600">Sin gastos recurrentes</p>
+                                ) : (
+                                  recurringExpensesInMonth.slice(0, 3).map(expense => {
+                                    const category = categories.find(cat => cat.id === expense.category_id);
+                                    return (
+                                      <div key={expense.id} className="flex justify-between text-xs text-red-700">
+                                        <span className="truncate mr-2">{expense.description}</span>
+                                        <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                                {recurringExpensesInMonth.length > 3 && (
+                                  <p className="text-xs text-red-600 italic">
+                                    ...y {recurringExpensesInMonth.length - 3} más
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Resumen del Balance */}
+                        <div className="border-t pt-4">
+                          <div className="bg-purple-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <Calendar className="w-5 h-5 text-purple-600 mr-2" />
+                                <div>
+                                  <h5 className="text-sm font-medium text-purple-800">Balance Total del Mes</h5>
+                                  <p className="text-xs text-purple-600">
+                                    ({formatCurrency(regularIncomesTotal + recurringIncomesTotal)} ingresos - {formatCurrency(regularExpensesTotal + recurringExpensesTotal)} gastos)
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`text-lg font-bold ${(totalIncomes - totalExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(totalIncomes - totalExpenses)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 {/* Análisis por Categorías del Mes */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Gastos por Categoría */}
