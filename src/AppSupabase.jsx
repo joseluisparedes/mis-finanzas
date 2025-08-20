@@ -1189,32 +1189,47 @@ const AppSupabase = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${surfaceClasses}`}>
-      <header className={`${cardClasses} shadow-sm border-b-0 rounded-none`}>
+      <header className={`${cardClasses} shadow-lg border-b-2 border-gray-100 dark:border-dark-border rounded-none`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className={`text-xl sm:text-2xl font-bold ${textPrimaryClasses}`}>
-              💰 Gestor Financiero
-            </h1>
+          <div className="flex justify-between items-center py-5">
+            {/* Título mejorado con más prominencia */}
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                <div className="text-white text-xl font-bold">💰</div>
+              </div>
+              <div>
+                <h1 className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
+                  Gestor Financiero
+                </h1>
+                <p className={`text-xs sm:text-sm ${textSecondaryClasses} opacity-75`}>
+                  Control total de tus finanzas
+                </p>
+              </div>
+            </div>
             
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-4">
-              {/* Toggle de modo oscuro */}
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                  darkMode 
-                    ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                <span>Tema</span>
-              </button>
+            {/* Desktop Navigation - Mejorado con mejor espaciado */}
+            <div className="hidden lg:flex items-center space-x-6">
+              {/* Toggle de modo oscuro - mejorado */}
+              <div className="flex items-center border-r border-gray-200 dark:border-dark-border pr-6">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md ${
+                    darkMode 
+                      ? 'bg-gradient-to-r from-yellow-600 to-orange-500 text-white hover:from-yellow-700 hover:to-orange-600' 
+                      : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                  }`}
+                  title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                >
+                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  <span>Tema</span>
+                </button>
+              </div>
               
               {isAuthenticated && (
-                <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-xs transition-colors duration-200 ${
-                  'bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text'
+                <div className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm ${
+                  syncing 
+                    ? 'bg-yellow-50 border border-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300'
+                    : 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300'
                 }`}>
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
                   <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
@@ -1223,57 +1238,59 @@ const AppSupabase = () => {
               
               {isAuthenticated && (
                 <>
-                  <button
-                    onClick={() => setShowExportModal(true)}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors text-sm ${
-                      darkMode 
-                        ? 'bg-green-900 text-green-300 hover:bg-green-800' 
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                    title="Exportar a Excel"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Excel</span>
-                  </button>
+                  {/* Grupo de herramientas principales */}
+                  <div className="flex items-center space-x-4 border-r border-gray-200 dark:border-dark-border pr-6">
+                    <button
+                      onClick={() => setShowExportModal(true)}
+                      className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 ${
+                        'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+                      }`}
+                      title="Exportar a Excel"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Excel</span>
+                    </button>
+                    
+                    <label className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 ${
+                      'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
+                    }`}>
+                      <Upload className="w-4 h-4" />
+                      <span>Importar</span>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleImportFile}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                   
-                  <label className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm ${
-                    darkMode 
-                      ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' 
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  }`}>
-                    <Upload className="w-4 h-4" />
-                    <span>Importar</span>
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={handleImportFile}
-                      className="hidden"
-                    />
-                  </label>
-                  
-                  <button
-                    onClick={() => setShowBudgets(!showBudgets)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                      darkMode 
-                        ? 'bg-purple-900 text-purple-300 hover:bg-purple-800' 
-                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                    }`}
-                  >
-                    <Target className="w-4 h-4" />
-                    <span>Presupuestos</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowConfig(!showConfig)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                      darkMode 
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Config</span>
-                  </button>
+                  {/* Grupo de configuración */}
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setShowBudgets(!showBudgets)}
+                      className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 ${
+                        showBudgets
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                          : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700'
+                      }`}
+                    >
+                      <Target className="w-4 h-4" />
+                      <span>Presupuestos</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowConfig(!showConfig)}
+                      className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5 ${
+                        showConfig
+                          ? 'bg-gradient-to-r from-gray-600 to-slate-600 text-white'
+                          : 'bg-gradient-to-r from-gray-500 to-slate-600 text-white hover:from-gray-600 hover:to-slate-700'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Config</span>
+                    </button>
+                  </div>
                 </>
               )}
               
