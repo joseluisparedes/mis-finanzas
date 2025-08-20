@@ -380,22 +380,20 @@ const AppSupabase = () => {
     }
   }, [darkMode]);
 
-  // Clases helper para tema oscuro
-  const cardClasses = `rounded-lg shadow transition-colors duration-200 ${
-    darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-  }`;
+  // Sistema de clases mejorado para dark mode
+  const cardClasses = "bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg shadow-sm dark:shadow-lg transition-all duration-300";
+  const surfaceClasses = "bg-gray-50 dark:bg-dark-bg";
+  const textPrimaryClasses = "text-gray-900 dark:text-dark-text";
+  const textSecondaryClasses = "text-gray-600 dark:text-dark-text-secondary";
+  const textMutedClasses = "text-gray-500 dark:text-dark-text-muted";
   
-  const inputClasses = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
-    darkMode 
-      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-  }`;
+  const inputClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200";
 
-  const selectClasses = `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
-    darkMode 
-      ? 'bg-gray-700 border-gray-600 text-white [&>option]:bg-gray-700 [&>option]:text-white' 
-      : 'bg-white border-gray-300 text-gray-900 [&>option]:bg-white [&>option]:text-gray-900'
-  }`;
+  const selectClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 [&>option]:bg-white [&>option]:dark:bg-dark-card [&>option]:text-gray-900 [&>option]:dark:text-dark-text";
+  
+  const buttonPrimaryClasses = "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 shadow-sm hover:shadow-md";
+  const buttonSecondaryClasses = "bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text font-medium py-2 px-4 rounded-md transition-colors duration-200";
+  const buttonDangerClasses = "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200";
 
   // Función para limpiar mensajes
   const clearMessages = () => {
@@ -1189,11 +1187,11 @@ const AppSupabase = () => {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <header className={`shadow-sm border-b transition-colors duration-200 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${surfaceClasses}`}>
+      <header className={`${cardClasses} shadow-sm border-b-0 rounded-none`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className={`text-xl sm:text-2xl font-bold transition-colors duration-200 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-xl sm:text-2xl font-bold ${textPrimaryClasses}`}>
               💰 Gestor Financiero
             </h1>
             
@@ -1215,7 +1213,7 @@ const AppSupabase = () => {
               
               {isAuthenticated && (
                 <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-xs transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                  'bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text'
                 }`}>
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
                   <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
@@ -1317,10 +1315,10 @@ const AppSupabase = () => {
           
           {/* Mobile Menu */}
           {showMobileMenu && (
-            <div className={`lg:hidden border-t py-4 space-y-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className={`lg:hidden border-t py-4 space-y-2 ${'border-gray-200 dark:border-dark-border'}`}>
               {isAuthenticated && (
                 <div className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-xs ${
-                  darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                  'bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text'
                 }`}>
                   <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
                   <span>{syncing ? 'Sincronizando...' : 'Sincronizado'}</span>
@@ -1455,11 +1453,11 @@ const AppSupabase = () => {
         ) : showBudgets ? (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Gestión de Presupuestos</h2>
+              <h2 className={`text-xl font-semibold ${textPrimaryClasses}`}>Gestión de Presupuestos</h2>
               <button
                 onClick={() => setShowBudgets(false)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                  buttonPrimaryClasses
                 }`}
               >
                 <X className="w-4 h-4" />
@@ -1476,7 +1474,7 @@ const AppSupabase = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Categoría</label>
+                  <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Categoría</label>
                   <select
                     value={newBudget.categoryId}
                     onChange={(e) => setNewBudget({...newBudget, categoryId: e.target.value})}
@@ -1490,7 +1488,7 @@ const AppSupabase = () => {
                 </div>
                 
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Monto</label>
+                  <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1503,7 +1501,7 @@ const AppSupabase = () => {
                 </div>
                 
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Período</label>
+                  <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Período</label>
                   <select
                     value={newBudget.period}
                     onChange={(e) => setNewBudget({...newBudget, period: e.target.value})}
@@ -1529,7 +1527,7 @@ const AppSupabase = () => {
 
             {/* Lista de presupuestos activos */}
             <div className={cardClasses}>
-              <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                 <h3 className="text-lg font-semibold">Presupuestos Activos</h3>
               </div>
               
@@ -1547,11 +1545,11 @@ const AppSupabase = () => {
                     const isOverBudget = progress.percentage > 100;
                     
                     return (
-                      <div key={budget.id} className={`p-6 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-colors`}>
+                      <div key={budget.id} className={`p-6 hover:bg-gray-50 dark:hover:bg-dark-card transition-colors`}>
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="font-semibold text-lg">{category?.name}</h4>
-                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            <p className={`text-sm ${textMutedClasses}`}>
                               Presupuesto {budget.period === 'monthly' ? 'mensual' : budget.period === 'weekly' ? 'semanal' : 'anual'}
                             </p>
                           </div>
@@ -1585,7 +1583,7 @@ const AppSupabase = () => {
                           </div>
                           
                           <div className="flex justify-between items-center">
-                            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            <span className={`text-xs ${textMutedClasses}`}>
                               {progress.remaining >= 0 ? `Restante: $${progress.remaining.toFixed(2)}` : `Excedido: $${Math.abs(progress.remaining).toFixed(2)}`}
                             </span>
                             {isOverBudget && (
@@ -1648,10 +1646,10 @@ const AppSupabase = () => {
 
               {/* Configuración de Monedas */}
               <div className={`rounded-lg shadow p-6 transition-colors duration-200 ${
-                darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                `${cardClasses} ${textPrimaryClasses}`
               }`}>
                 <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                  darkMode ? 'text-white' : 'text-gray-900'
+                  textPrimaryClasses
                 }`}>
                   <CreditCard className="w-5 h-5 mr-2 text-yellow-500" />
                   Configuración de Monedas
@@ -1660,12 +1658,12 @@ const AppSupabase = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${
-                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                      textSecondaryClasses
                     }`}>
                       Tipo de Cambio USD a PEN
                     </label>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className={`text-sm ${textMutedClasses}`}>
                         US$ 1.00 =
                       </span>
                       <input
@@ -1684,23 +1682,23 @@ const AppSupabase = () => {
                         }`}
                         placeholder="3.75"
                       />
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className={`text-sm ${textMutedClasses}`}>
                         Soles
                       </span>
                     </div>
-                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    <p className={`text-xs mt-2 ${'text-gray-500 dark:text-dark-text-muted'}`}>
                       Actualiza este valor cuando cambien las tasas de cambio
                     </p>
                   </div>
                   
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${
-                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                      textSecondaryClasses
                     }`}>
                       Día del Sueldo
                     </label>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className={`text-sm ${textMutedClasses}`}>
                         Día:
                       </span>
                       <input
@@ -1721,18 +1719,18 @@ const AppSupabase = () => {
                         }`}
                         placeholder="28"
                       />
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className={`text-sm ${textMutedClasses}`}>
                         de cada mes
                       </span>
                     </div>
-                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    <p className={`text-xs mt-2 ${'text-gray-500 dark:text-dark-text-muted'}`}>
                       Usado para calcular cuándo impactan los gastos de TC en tu balance
                     </p>
                   </div>
                   
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${
-                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                      textSecondaryClasses
                     }`}>
                       Monedas Disponibles
                     </label>
@@ -1743,7 +1741,7 @@ const AppSupabase = () => {
                             ? 'border-gray-600 bg-gray-700' 
                             : 'border-gray-200 bg-gray-50'
                         }`}>
-                          <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <span className={`font-medium ${textPrimaryClasses}`}>
                             {currency.name}
                           </span>
                           <span className={`text-sm px-2 py-1 rounded transition-colors duration-200 ${
@@ -2229,7 +2227,7 @@ const AppSupabase = () => {
         ) : (
           <div>
             <nav className={`flex flex-wrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
+              'bg-white dark:bg-dark-surface'
             }`}>
               {[
                 { id: 'gastos', label: 'Gastos', icon: TrendingDown },
@@ -2392,7 +2390,7 @@ const AppSupabase = () => {
                     {/* Filtros avanzados */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
                       <div>
-                        <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
                           Monto mínimo
                         </label>
                         <input
@@ -2407,7 +2405,7 @@ const AppSupabase = () => {
                       </div>
                       
                       <div>
-                        <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
                           Monto máximo
                         </label>
                         <input
@@ -2429,7 +2427,7 @@ const AppSupabase = () => {
                             onChange={(e) => setAdvancedFilters({...advancedFilters, hasNotes: e.target.checked})}
                             className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                           />
-                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Solo con notas</span>
+                          <span className={`text-sm ${textSecondaryClasses}`}>Solo con notas</span>
                         </label>
                       </div>
                     </div>
@@ -2440,7 +2438,7 @@ const AppSupabase = () => {
                         <button
                           onClick={() => setAdvancedFilters({ minAmount: '', maxAmount: '', hasNotes: false })}
                           className={`text-sm px-3 py-1 rounded transition-colors ${
-                            darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                            'text-gray-500 hover:text-gray-700 dark:text-dark-text-muted dark:hover:text-dark-text-secondary'
                           }`}
                         >
                           Limpiar filtros avanzados
@@ -2452,7 +2450,7 @@ const AppSupabase = () => {
 
                 {/* Lista de Gastos */}
                 <div className={cardClasses}>
-                  <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">Gastos {searchTerm && `(${getSearchedExpenses().length} resultados)`}</h3>
                       {searchTerm && (
@@ -2668,7 +2666,7 @@ const AppSupabase = () => {
 
                 {/* Lista de Ingresos */}
                 <div className={cardClasses}>
-                  <div className={`p-6 border-b transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">Ingresos {searchTerm && `(${getSearchedIncomes().length} resultados)`}</h3>
                       {searchTerm && (
@@ -3378,10 +3376,10 @@ const AppSupabase = () => {
               <div>
                 {/* Gestión de Presupuestos */}
                 <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                  `${cardClasses} ${textPrimaryClasses}`
                 }`}>
                   <h2 className={`text-xl font-semibold mb-4 flex items-center ${
-                    darkMode ? 'text-white' : 'text-gray-900'
+                    textPrimaryClasses
                   }`}>
                     <Target className="w-5 h-5 mr-2 text-green-500" />
                     Gestión de Presupuestos
@@ -3391,7 +3389,7 @@ const AppSupabase = () => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Categoría:</label>
                       <select
                         value={newBudget.categoryId}
@@ -3411,7 +3409,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Monto:</label>
                       <input
                         type="number"
@@ -3428,7 +3426,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Período:</label>
                       <select
                         value={newBudget.period}
@@ -3470,17 +3468,17 @@ const AppSupabase = () => {
                         }`}>
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              <h3 className={`font-medium ${textPrimaryClasses}`}>
                                 {categoryName}
                               </h3>
-                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              <p className={`text-sm ${textMutedClasses}`}>
                                 ${budget.amount} {budget.period === 'weekly' ? 'semanal' : budget.period === 'monthly' ? 'mensual' : 'anual'}
                               </p>
                             </div>
                             <button
                               onClick={() => deleteBudget(budget.id)}
                               className={`text-red-500 hover:text-red-700 transition-colors ${
-                                darkMode ? 'hover:text-red-400' : ''
+                                'hover:text-red-500 dark:hover:text-red-400'
                               }`}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -3497,7 +3495,7 @@ const AppSupabase = () => {
                               </span>
                             </div>
                             <div className={`w-full bg-gray-200 rounded-full h-2 ${
-                              darkMode ? 'bg-gray-600' : ''
+                              'hover:bg-gray-100 dark:hover:bg-dark-card'
                             }`}>
                               <div
                                 className={`h-2 rounded-full transition-all duration-300 ${
@@ -3533,7 +3531,7 @@ const AppSupabase = () => {
                     })}
                     
                     {budgets.length === 0 && (
-                      <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`text-center py-8 ${textMutedClasses}`}>
                         <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No hay presupuestos configurados</p>
                         <p className="text-sm">Agrega tu primer presupuesto arriba</p>
@@ -3549,11 +3547,11 @@ const AppSupabase = () => {
               <div>
                 {/* Gestión de Gastos Recurrentes */}
                 <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
-                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                  `${cardClasses} ${textPrimaryClasses}`
                 }`}>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className={`text-xl font-semibold flex items-center ${
-                      darkMode ? 'text-white' : 'text-gray-900'
+                      textPrimaryClasses
                     }`}>
                       <Repeat className="w-5 h-5 mr-2 text-blue-500" />
                       Transacciones Recurrentes
@@ -3561,7 +3559,7 @@ const AppSupabase = () => {
                     
                     {/* Toggle entre Gastos e Ingresos */}
                     <div className={`flex items-center rounded-lg p-1 transition-colors duration-200 ${
-                      darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                      'bg-gray-100 dark:bg-dark-card'
                     }`}>
                       <button
                         onClick={() => handleRecurringTypeChange('expense')}
@@ -3594,7 +3592,7 @@ const AppSupabase = () => {
                   <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Descripción:</label>
                       <input
                         type="text"
@@ -3611,7 +3609,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Monto:</label>
                       <input
                         type="number"
@@ -3631,7 +3629,7 @@ const AppSupabase = () => {
                     {/* Campo condicional: Categoría para gastos, Tipo de ingreso para ingresos */}
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>
                         {recurringTransactionType === 'expense' ? 'Categoría:' : 'Tipo de Ingreso:'}
                       </label>
@@ -3666,7 +3664,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Frecuencia:</label>
                       <select
                         value={newRecurringExpense.frequency}
@@ -3686,7 +3684,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Moneda:</label>
                       <select
                         value={newRecurringExpense.currency}
@@ -3705,7 +3703,7 @@ const AppSupabase = () => {
                     
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                        textSecondaryClasses
                       }`}>Próximo Cobro:</label>
                       <input
                         type="date"
@@ -3738,7 +3736,7 @@ const AppSupabase = () => {
                   {/* Lista de gastos recurrentes */}
                   <div className="space-y-4">
                     {recurringExpenses.length === 0 ? (
-                      <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`text-center py-8 ${textMutedClasses}`}>
                         <Repeat className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p className="text-lg font-medium mb-2">No hay gastos recurrentes</p>
                         <p>Agrega tu primer gasto recurrente usando el formulario de arriba</p>
@@ -3767,13 +3765,13 @@ const AppSupabase = () => {
                                   style={{ backgroundColor: category?.color || '#6B7280' }}
                                 ></div>
                                 <div>
-                                  <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  <h3 className={`font-medium ${textPrimaryClasses}`}>
                                     {recurring.description}
                                   </h3>
-                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  <p className={`text-sm ${textMutedClasses}`}>
                                     {formatCurrency(recurring.amount, recurring.currency, recurring.currency === 'USD')} - {frequencyLabel}
                                   </p>
-                                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  <p className={`text-sm ${textMutedClasses}`}>
                                     {category?.name}
                                   </p>
                                 </div>
@@ -3803,7 +3801,7 @@ const AppSupabase = () => {
                               </div>
                             </div>
                             <div className="flex justify-between items-center">
-                              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              <p className={`text-sm ${textMutedClasses}`}>
                                 Próximo cargo: {nextDueDate}
                               </p>
                               {recurring.currency === 'USD' && (
