@@ -312,13 +312,19 @@ const AppSupabase = () => {
     category: ''
   });
 
-  // Estados para filtros de reportes (separados)
-  const [reportFilters, setReportFilters] = useState({
-    startDate: '',
-    endDate: '',
-    category: '',
-    paymentMethod: '',
-    showRecurring: true
+  // Estados para filtros de reportes (separados) - inicializar con mes actual
+  const [reportFilters, setReportFilters] = useState(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    return {
+      startDate: formatDateToLocalString(firstDay),
+      endDate: formatDateToLocalString(lastDay),
+      category: '',
+      paymentMethod: '',
+      showRecurring: true
+    };
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -2814,22 +2820,6 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Opciones</label>
-                      <div className="flex items-center space-x-2 pt-2">
-                        <input
-                          type="checkbox"
-                          id="showRecurring"
-                          checked={reportFilters.showRecurring}
-                          onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <label htmlFor="showRecurring" className="text-sm text-gray-700 flex items-center space-x-1">
-                          <Repeat className="w-4 h-4 text-purple-600" />
-                          <span>Incluir recurrentes</span>
-                        </label>
-                      </div>
-                    </div>
                     
                     <div className="flex flex-col space-y-2">
                       <button
@@ -2908,9 +2898,27 @@ const AppSupabase = () => {
                   </div>
                 </div>
 
+                {/* Título del período */}
+                <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                  <h3 className="text-lg font-semibold text-blue-800 text-center">
+                    📊 Resumen del Período: {(() => {
+                      const hasDateFilters = reportFilters.startDate && reportFilters.endDate;
+                      if (hasDateFilters) {
+                        const startDate = new Date(reportFilters.startDate + 'T12:00:00');
+                        const endDate = new Date(reportFilters.endDate + 'T12:00:00');
+                        return `${startDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })} - ${endDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+                      }
+                      return 'Mes Actual';
+                    })()}
+                  </h3>
+                </div>
+
                 {/* Resumen Filtrado */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                   {(() => {
+                    // Verificar si hay filtros de fecha aplicados - si no, mostrar resumen del mes actual
+                    const hasDateFilters = reportFilters.startDate && reportFilters.endDate;
+                    
                     // Obtener resumen financiero que incluye gastos recurrentes para el período filtrado
                     const summary = getFinancialSummary(reportFilters.startDate, reportFilters.endDate);
                     const filteredExpenses = getReportFilteredExpenses();
@@ -2918,6 +2926,11 @@ const AppSupabase = () => {
                     const totalExpenses = summary.total_expenses;
                     const totalIncomes = summary.total_incomes;
                     const balance = summary.balance;
+                    
+                    // Obtener periodo para mostrar en el título
+                    const periodText = hasDateFilters 
+                      ? `${reportFilters.startDate} a ${reportFilters.endDate}`
+                      : 'Mes actual';
                     
                     return (
                       <>
@@ -3183,10 +3196,27 @@ const AppSupabase = () => {
                 {/* Transacciones Filtradas */}
                 <div className="bg-white rounded-lg shadow">
                   <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Filter className="w-5 h-5 mr-2" />
-                      Transacciones Filtradas
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <Filter className="w-5 h-5 mr-2" />
+                        Transacciones Filtradas
+                      </h3>
+                      
+                      {/* Filtro incluir recurrentes */}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="showRecurringInList"
+                          checked={reportFilters.showRecurring}
+                          onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="showRecurringInList" className="text-sm text-gray-700 flex items-center space-x-1">
+                          <Repeat className="w-4 h-4 text-purple-600" />
+                          <span>Incluir recurrentes</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
