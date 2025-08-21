@@ -152,6 +152,9 @@ const AppSupabase = () => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [editingRecurring, setEditingRecurring] = useState(null);
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState(null);
+  const [editPaymentFormData, setEditPaymentFormData] = useState({});
   
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
@@ -1957,37 +1960,146 @@ const AppSupabase = () => {
                 
                 {/* Lista de métodos de pago */}
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {paymentMethods.map(method => (
-                    <div key={method.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: method.color }}
-                        ></div>
-                        {editingPayment === method.id ? (
-                          <input
-                            type="text"
-                            defaultValue={method.name}
-                            className="border-none bg-transparent focus:outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
-                            onBlur={(e) => {
-                              if (e.target.value.trim() && e.target.value !== method.name) {
-                                updatePaymentMethod(method.id, { name: e.target.value.trim() });
-                              }
-                              setEditingPayment(null);
-                            }}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                e.target.blur();
-                              }
-                            }}
-                            autoFocus
-                          />
-                        ) : (
+                  {paymentMethods.map(method => {
+                    // Mostrar formulario de edición completo si está siendo editado
+                    if (editingPaymentMethod === method.id) {
+                      return (
+                        <div key={method.id} className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-sm font-medium text-orange-700 mb-1">
+                                  Nombre:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editPaymentFormData.name || ''}
+                                  onChange={(e) => setEditPaymentFormData({...editPaymentFormData, name: e.target.value})}
+                                  className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-orange-700 mb-1">
+                                  Color:
+                                </label>
+                                <input
+                                  type="color"
+                                  value={editPaymentFormData.color || '#74B9FF'}
+                                  onChange={(e) => setEditPaymentFormData({...editPaymentFormData, color: e.target.value})}
+                                  className="w-full h-10 border border-orange-300 rounded-md cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-orange-700 mb-1">
+                                Tipo de Pago:
+                              </label>
+                              <select
+                                value={editPaymentFormData.payment_type || 'cash'}
+                                onChange={(e) => setEditPaymentFormData({
+                                  ...editPaymentFormData, 
+                                  payment_type: e.target.value,
+                                  cc_closing_day: e.target.value !== 'credit_card' ? '' : editPaymentFormData.cc_closing_day,
+                                  cc_payment_day: e.target.value !== 'credit_card' ? '' : editPaymentFormData.cc_payment_day
+                                })}
+                                className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              >
+                                <option value="cash">Efectivo</option>
+                                <option value="debit_card">Tarjeta de Débito</option>
+                                <option value="credit_card">Tarjeta de Crédito</option>
+                              </select>
+                            </div>
+                            {/* Campos específicos para tarjeta de crédito */}
+                            {editPaymentFormData.payment_type === 'credit_card' && (
+                              <div className="grid grid-cols-2 gap-3 p-3 bg-orange-100 rounded-lg border border-orange-200">
+                                <div>
+                                  <label className="block text-sm font-medium text-orange-800 mb-1">
+                                    Día de Cierre (1-31):
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="31"
+                                    value={editPaymentFormData.cc_closing_day || ''}
+                                    onChange={(e) => setEditPaymentFormData({...editPaymentFormData, cc_closing_day: e.target.value})}
+                                    className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="ej. 15"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-orange-800 mb-1">
+                                    Día de Pago (1-31):
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="31"
+                                    value={editPaymentFormData.cc_payment_day || ''}
+                                    onChange={(e) => setEditPaymentFormData({...editPaymentFormData, cc_payment_day: e.target.value})}
+                                    className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="ej. 10"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex space-x-2 pt-2">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const updateData = {
+                                      name: editPaymentFormData.name?.trim(),
+                                      color: editPaymentFormData.color,
+                                      payment_type: editPaymentFormData.payment_type
+                                    };
+                                    
+                                    if (editPaymentFormData.payment_type === 'credit_card') {
+                                      if (!editPaymentFormData.cc_closing_day || !editPaymentFormData.cc_payment_day) {
+                                        setError('Para tarjetas de crédito, las fechas de cierre y pago son obligatorias');
+                                        setTimeout(() => setError(''), 3000);
+                                        return;
+                                      }
+                                      updateData.cc_closing_day = parseInt(editPaymentFormData.cc_closing_day);
+                                      updateData.cc_payment_day = parseInt(editPaymentFormData.cc_payment_day);
+                                    }
+                                    
+                                    await updatePaymentMethod(method.id, updateData);
+                                    setEditingPaymentMethod(null);
+                                    setEditPaymentFormData({});
+                                    setSuccessMessage('Método de pago actualizado exitosamente');
+                                    setTimeout(() => setSuccessMessage(''), 3000);
+                                  } catch (error) {
+                                    setError('Error al actualizar el método de pago');
+                                    setTimeout(() => setError(''), 3000);
+                                  }
+                                }}
+                                className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Guardar
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingPaymentMethod(null);
+                                  setEditPaymentFormData({});
+                                }}
+                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={method.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: method.color }}
+                          ></div>
                           <div className="flex flex-col">
-                            <span 
-                              onClick={() => setEditingPayment(method.id)}
-                              className="font-medium cursor-pointer hover:text-blue-600"
-                            >
+                            <span className="font-medium">
                               {method.name}
                             </span>
                             <div className="flex items-center space-x-2 mt-1">
@@ -2004,35 +2116,46 @@ const AppSupabase = () => {
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
-                                  Efectivo/Débito
+                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                                  {method.payment_type === 'cash' ? 'Efectivo' : 'Débito'}
                                 </span>
                               )}
                             </div>
                           </div>
-                        )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingPaymentMethod(method.id);
+                              setEditPaymentFormData({
+                                name: method.name,
+                                color: method.color,
+                                payment_type: method.payment_type,
+                                cc_closing_day: method.cc_closing_day || '',
+                                cc_payment_day: method.cc_payment_day || ''
+                              });
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                            title="Editar método de pago"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de eliminar este método de pago?')) {
+                                deletePaymentMethod(method.id);
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Eliminar método de pago"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setEditingPayment(editingPayment === method.id ? null : method.id)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('¿Estás seguro de eliminar este método de pago?')) {
-                              deletePaymentMethod(method.id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3894,6 +4017,128 @@ const AppSupabase = () => {
                           yearly: 'Anual'
                         }[recurring.frequency];
                         
+                        // Mostrar formulario de edición si está siendo editado
+                        if (editingRecurring === recurring.id) {
+                          return (
+                            <div key={recurring.id} className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Descripción:
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.description || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Monto:
+                                    </label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={editFormData.amount || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Categoría:
+                                    </label>
+                                    <select
+                                      value={editFormData.category_id || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, category_id: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                      <option value="">Seleccionar categoría</option>
+                                      {categories.map(category => (
+                                        <option key={category.id} value={category.id}>{category.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Frecuencia:
+                                    </label>
+                                    <select
+                                      value={editFormData.frequency || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, frequency: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                      <option value="">Seleccionar frecuencia</option>
+                                      <option value="weekly">Semanal</option>
+                                      <option value="monthly">Mensual</option>
+                                      <option value="quarterly">Trimestral</option>
+                                      <option value="yearly">Anual</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Moneda:
+                                    </label>
+                                    <select
+                                      value={editFormData.currency || 'PEN'}
+                                      onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                      <option value="PEN">PEN (S/.)</option>
+                                      <option value="USD">USD ($)</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-purple-700 mb-1">
+                                      Próxima fecha:
+                                    </label>
+                                    <input
+                                      type="date"
+                                      value={editFormData.next_date || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, next_date: e.target.value})}
+                                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2 pt-2">
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await updateRecurringExpense(recurring.id, editFormData);
+                                        setEditingRecurring(null);
+                                        setEditFormData({});
+                                        setSuccessMessage('Gasto recurrente actualizado exitosamente');
+                                        setTimeout(() => setSuccessMessage(''), 3000);
+                                      } catch (error) {
+                                        setError('Error al actualizar el gasto recurrente');
+                                        setTimeout(() => setError(''), 3000);
+                                      }
+                                    }}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    Guardar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingRecurring(null);
+                                      setEditFormData({});
+                                    }}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div key={recurring.id} className={`p-4 rounded-lg border transition-colors duration-200 ${
                             darkMode 
@@ -3919,6 +4164,23 @@ const AppSupabase = () => {
                                 </div>
                               </div>
                               <div className="flex space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingRecurring(recurring.id);
+                                    setEditFormData({
+                                      description: recurring.description,
+                                      amount: recurring.amount,
+                                      category_id: recurring.category_id,
+                                      frequency: recurring.frequency,
+                                      currency: recurring.currency,
+                                      next_date: recurring.next_date
+                                    });
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                                  title="Editar gasto recurrente"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
                                 <button
                                   onClick={() => toggleRecurringExpense(recurring.id)}
                                   className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
