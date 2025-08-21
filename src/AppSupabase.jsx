@@ -320,6 +320,12 @@ const AppSupabase = () => {
   });
 
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  
+  // Estado para ordenamiento de transacciones en reportes
+  const [transactionSort, setTransactionSort] = useState({
+    field: 'date', // 'date', 'amount', 'description'
+    direction: 'desc' // 'asc', 'desc'
+  });
   const [trendPeriod, setTrendPeriod] = useState('3');
 
   // Estados para configuración
@@ -797,6 +803,35 @@ const AppSupabase = () => {
       regularExpenses: summary.regular_expenses,
       recurringExpenses: summary.recurring_expenses
     };
+  };
+
+  // Función para ordenar transacciones
+  const sortTransactions = (transactions) => {
+    return [...transactions].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (transactionSort.field) {
+        case 'amount':
+          aValue = Math.abs(parseFloat(a.amount));
+          bValue = Math.abs(parseFloat(b.amount));
+          break;
+        case 'description':
+          aValue = a.description.toLowerCase();
+          bValue = b.description.toLowerCase();
+          break;
+        case 'date':
+        default:
+          aValue = new Date(a.date);
+          bValue = new Date(b.date);
+          break;
+      }
+      
+      if (transactionSort.direction === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
   };
 
   // Funciones para manejar presupuestos
@@ -3018,19 +3053,46 @@ const AppSupabase = () => {
                         Transacciones Filtradas
                       </h3>
                       
-                      {/* Filtro incluir recurrentes */}
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="showRecurringInList"
-                          checked={reportFilters.showRecurring}
-                          onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <label htmlFor="showRecurringInList" className="text-sm text-gray-700 flex items-center space-x-1">
-                          <Repeat className="w-4 h-4 text-purple-600" />
-                          <span>Incluir recurrentes</span>
-                        </label>
+                      <div className="flex items-center space-x-4">
+                        {/* Controles de ordenamiento */}
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-700">Ordenar por:</span>
+                          <select
+                            value={transactionSort.field}
+                            onChange={(e) => setTransactionSort({...transactionSort, field: e.target.value})}
+                            className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="date">Fecha</option>
+                            <option value="amount">Monto</option>
+                            <option value="description">Nombre</option>
+                          </select>
+                          <button
+                            onClick={() => setTransactionSort({...transactionSort, direction: transactionSort.direction === 'asc' ? 'desc' : 'asc'})}
+                            className="p-1 rounded hover:bg-gray-100 transition-colors"
+                            title={`Ordenar ${transactionSort.direction === 'asc' ? 'descendente' : 'ascendente'}`}
+                          >
+                            {transactionSort.direction === 'asc' ? (
+                              <ArrowUp className="w-4 h-4 text-gray-600" />
+                            ) : (
+                              <ArrowDown className="w-4 h-4 text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                        
+                        {/* Filtro incluir recurrentes */}
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="showRecurringInList"
+                            checked={reportFilters.showRecurring}
+                            onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <label htmlFor="showRecurringInList" className="text-sm text-gray-700 flex items-center space-x-1">
+                            <Repeat className="w-4 h-4 text-purple-600" />
+                            <span>Incluir recurrentes</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3100,9 +3162,11 @@ const AppSupabase = () => {
                           categoryColor: incomeTypes.find(t => t.id === income.income_type_id)?.color || '#10B981',
                           paymentMethodName: 'N/A'
                         }))
-                      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+                      ];
+                      
+                      const sortedTransactions = sortTransactions(allTransactions);
 
-                      if (allTransactions.length === 0) {
+                      if (sortedTransactions.length === 0) {
                         return (
                           <div className="p-8 text-center text-gray-500">
                             <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -3112,7 +3176,7 @@ const AppSupabase = () => {
                         );
                       }
 
-                      return allTransactions.slice(0, 20).map(transaction => (
+                      return sortedTransactions.slice(0, 20).map(transaction => (
                         <div key={`${transaction.type}-${transaction.id}`} className="p-4 hover:bg-gray-50">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
