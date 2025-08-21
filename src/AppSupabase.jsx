@@ -396,9 +396,9 @@ const AppSupabase = () => {
   const textSecondaryClasses = "text-gray-600 dark:text-dark-text-secondary";
   const textMutedClasses = "text-gray-500 dark:text-dark-text-muted";
   
-  const inputClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200";
+  const inputClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base sm:text-sm";
 
-  const selectClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 [&>option]:bg-white [&>option]:dark:bg-dark-card [&>option]:text-gray-900 [&>option]:dark:text-dark-text";
+  const selectClasses = "w-full px-3 py-2 border rounded-md bg-white dark:bg-dark-card border-gray-300 dark:border-dark-border text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base sm:text-sm [&>option]:bg-white [&>option]:dark:bg-dark-card [&>option]:text-gray-900 [&>option]:dark:text-dark-text";
   
   const buttonPrimaryClasses = "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 shadow-sm hover:shadow-md";
   const buttonSecondaryClasses = "bg-gray-100 hover:bg-gray-200 dark:bg-dark-card dark:hover:bg-dark-border text-gray-700 dark:text-dark-text font-medium py-2 px-4 rounded-md transition-colors duration-200";
@@ -1495,6 +1495,7 @@ const AppSupabase = () => {
                   <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                   <input
                     type="number"
+                  inputMode="decimal"
                     step="0.01"
                     min="0"
                     value={newBudget.amount}
@@ -1672,6 +1673,7 @@ const AppSupabase = () => {
                       </span>
                       <input
                         type="number"
+                  inputMode="decimal"
                         step="0.01"
                         min="0"
                         value={exchangeRate}
@@ -1707,6 +1709,7 @@ const AppSupabase = () => {
                       </span>
                       <input
                         type="number"
+                  inputMode="decimal"
                         min="1"
                         max="31"
                         value={salaryDay}
@@ -1820,7 +1823,7 @@ const AppSupabase = () => {
                 </div>
                 
                 {/* Lista de categorías */}
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-2 max-h-60 overflow-y-auto -mx-1 px-1">
                   {categories.map(category => (
                     <div key={category.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-3">
@@ -1929,6 +1932,7 @@ const AppSupabase = () => {
                           </label>
                           <input
                             type="number"
+                  inputMode="decimal"
                             min="1"
                             max="31"
                             placeholder="Ej: 10"
@@ -1949,6 +1953,7 @@ const AppSupabase = () => {
                           </label>
                           <input
                             type="number"
+                  inputMode="decimal"
                             min="1"
                             max="31"
                             placeholder="Ej: 19"
@@ -1976,7 +1981,7 @@ const AppSupabase = () => {
                 </div>
                 
                 {/* Lista de métodos de pago */}
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-2 max-h-60 overflow-y-auto -mx-1 px-1">
                   {paymentMethods.map(method => {
                     // Mostrar formulario de edición completo si está siendo editado
                     if (editingPaymentMethod === method.id) {
@@ -2035,6 +2040,7 @@ const AppSupabase = () => {
                                   </label>
                                   <input
                                     type="number"
+                  inputMode="decimal"
                                     min="1"
                                     max="31"
                                     value={editPaymentFormData.cc_closing_day || ''}
@@ -2049,6 +2055,7 @@ const AppSupabase = () => {
                                   </label>
                                   <input
                                     type="number"
+                  inputMode="decimal"
                                     min="1"
                                     max="31"
                                     value={editPaymentFormData.cc_payment_day || ''}
@@ -2230,7 +2237,7 @@ const AppSupabase = () => {
                 </div>
                 
                 {/* Lista de tipos de ingresos */}
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-2 max-h-60 overflow-y-auto -mx-1 px-1">
                   {incomeTypes.map(type => (
                     <div key={type.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-3">
@@ -2350,7 +2357,7 @@ const AppSupabase = () => {
           </div>
         ) : (
           <div>
-            <nav className={`flex flex-wrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
+            <nav className={`flex flex-wrap sm:flex-nowrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
               'bg-white dark:bg-dark-surface'
             }`}>
               {[
@@ -2364,7 +2371,7 @@ const AppSupabase = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   title={tab.label}
-                  className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-md transition-colors text-sm whitespace-nowrap ${
+                  className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm whitespace-nowrap min-w-0 ${
                     activeTab === tab.id 
                       ? 'bg-blue-600 text-white' 
                       : darkMode 
@@ -2392,6 +2399,7 @@ const AppSupabase = () => {
                       <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                       <input
                         type="number"
+                  inputMode="decimal"
                         step="0.01"
                         min="0"
                         value={newExpense.amount}
@@ -2533,6 +2541,7 @@ const AppSupabase = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                                     <input
                                       type="number"
+                  inputMode="decimal"
                                       step="0.01"
                                       value={editFormData.amount || ''}
                                       onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
@@ -2596,7 +2605,7 @@ const AppSupabase = () => {
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                                   <button
                                     onClick={async () => {
                                       try {
@@ -2729,6 +2738,7 @@ const AppSupabase = () => {
                       <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                       <input
                         type="number"
+                  inputMode="decimal"
                         step="0.01"
                         min="0"
                         value={newIncome.amount}
@@ -2855,6 +2865,7 @@ const AppSupabase = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                                     <input
                                       type="number"
+                  inputMode="decimal"
                                       step="0.01"
                                       value={editFormData.amount || ''}
                                       onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
@@ -2905,7 +2916,7 @@ const AppSupabase = () => {
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                                   <button
                                     onClick={async () => {
                                       try {
@@ -3699,6 +3710,7 @@ const AppSupabase = () => {
                       }`}>Monto:</label>
                       <input
                         type="number"
+                  inputMode="decimal"
                         value={newBudget.amount}
                         onChange={(e) => setNewBudget({...newBudget, amount: e.target.value})}
                         placeholder="0.00"
@@ -3941,6 +3953,7 @@ const AppSupabase = () => {
                       </label>
                       <input
                         type="number"
+                  inputMode="decimal"
                         step="0.01"
                         min="0"
                         value={newRecurringExpense.amount}
@@ -4235,6 +4248,7 @@ const AppSupabase = () => {
                                     </label>
                                     <input
                                       type="number"
+                  inputMode="decimal"
                                       step="0.01"
                                       value={editFormData.amount || ''}
                                       onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
@@ -4403,7 +4417,7 @@ const AppSupabase = () => {
                               </div>
                               
                               <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                                   <button
                                     onClick={() => {
                                       setEditingRecurring(recurring.id);
@@ -5014,7 +5028,7 @@ const AppSupabase = () => {
 
         {showExportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-lg max-w-lg w-full mx-4 sm:mx-0 max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Seleccionar datos a exportar</h3>
