@@ -1308,50 +1308,75 @@ const AppSupabase = () => {
             
             {/* Herramientas principales - Centro */}
             {isAuthenticated && (
-              <div className="hidden md:flex items-center space-x-3 lg:space-x-4 xl:space-x-6">
-                <button
-                  onClick={() => setShowExportModal(true)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-sm font-medium"
-                  title="Exportar a Excel"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Excel</span>
-                </button>
-                
-                <label className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors cursor-pointer text-sm font-medium">
-                  <Upload className="w-4 h-4" />
-                  <span>Importar</span>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleImportFile}
-                    className="hidden"
-                  />
-                </label>
-                
-                <button
-                  onClick={() => setShowBudgets(!showBudgets)}
-                  className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
-                    showBudgets
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-purple-500 text-white hover:bg-purple-600'
+              <div className="hidden md:flex items-center">
+                {/* Grupo de Datos */}
+                <div className="flex items-center border-r border-gray-200 dark:border-gray-600 pr-4 mr-4">
+                  <button
+                    onClick={() => setShowExportModal(true)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      darkMode
+                        ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 active:bg-gray-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
+                    }`}
+                    title="Exportar datos a Excel"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden lg:inline">Excel</span>
+                  </button>
+                  
+                  <label className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer text-sm font-medium ${
+                    darkMode
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 active:bg-gray-600'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
                   }`}
-                >
-                  <Target className="w-4 h-4" />
-                  <span>Presupuestos</span>
-                </button>
+                  title="Importar datos desde Excel">
+                    <Upload className="w-4 h-4" />
+                    <span className="hidden lg:inline">Importar</span>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleImportFile}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 
-                <button
-                  onClick={() => setShowConfig(!showConfig)}
-                  className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
-                    showConfig
-                      ? 'bg-gray-600 text-white'
-                      : 'bg-gray-500 text-white hover:bg-gray-600'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Config</span>
-                </button>
+                {/* Grupo de Herramientas */}
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setShowBudgets(!showBudgets)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      showBudgets
+                        ? darkMode
+                          ? 'bg-blue-600/90 text-white shadow-lg'
+                          : 'bg-blue-500 text-white shadow-lg'
+                        : darkMode
+                          ? 'text-gray-300 hover:text-white hover:bg-gray-700/80'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    title="Gestionar presupuestos"
+                  >
+                    <Target className="w-4 h-4" />
+                    <span className="hidden lg:inline">Presupuestos</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowConfig(!showConfig)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      showConfig
+                        ? darkMode
+                          ? 'bg-blue-600/90 text-white shadow-lg'
+                          : 'bg-blue-500 text-white shadow-lg'
+                        : darkMode
+                          ? 'text-gray-300 hover:text-white hover:bg-gray-700/80'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    title="Configuración"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden lg:inline">Config</span>
+                  </button>
+                </div>
               </div>
             )}
               
@@ -1406,70 +1431,96 @@ const AppSupabase = () => {
                 </div>
               )}
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Menú móvil reorganizado */}
+              <div className="space-y-3">
                 {isAuthenticated && (
                   <>
-                    <button
-                      onClick={() => {
-                        setShowExportModal(true);
-                        setShowMobileMenu(false);
-                      }}
-                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        darkMode 
-                          ? 'bg-green-900 text-green-300 hover:bg-green-800' 
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                      }`}
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Exportar</span>
-                    </button>
+                    {/* Grupo de Datos - Móvil */}
+                    <div className="space-y-2">
+                      <h3 className={`text-xs font-semibold uppercase tracking-wider px-3 ${textMutedClasses}`}>
+                        Datos
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setShowExportModal(true);
+                            setShowMobileMenu(false);
+                          }}
+                          className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
+                            darkMode 
+                              ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 border border-gray-600'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Excel</span>
+                        </button>
+                        
+                        <label className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 cursor-pointer text-sm font-medium ${
+                          darkMode 
+                            ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 border border-gray-600'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                        }`}>
+                          <Upload className="w-4 h-4" />
+                          <span>Importar</span>
+                          <input
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={(e) => {
+                              handleImportFile(e);
+                              setShowMobileMenu(false);
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
                     
-                    <label className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors cursor-pointer text-sm ${
-                      darkMode 
-                        ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' 
-                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                    }`}
-                      onClick={() => setShowMobileMenu(false)}
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>Importar</span>
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={handleImportFile}
-                        className="hidden"
-                      />
-                    </label>
-                    
-                    <button
-                      onClick={() => {
-                        setShowBudgets(!showBudgets);
-                        setShowMobileMenu(false);
-                      }}
-                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        darkMode 
-                          ? 'bg-purple-900 text-purple-300 hover:bg-purple-800' 
-                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                      }`}
-                    >
-                      <Target className="w-4 h-4" />
-                      <span>Presupuestos</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        setShowConfig(!showConfig);
-                        setShowMobileMenu(false);
-                      }}
-                      className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        darkMode 
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Configuración</span>
-                    </button>
+                    {/* Grupo de Herramientas - Móvil */}
+                    <div className="space-y-2">
+                      <h3 className={`text-xs font-semibold uppercase tracking-wider px-3 ${textMutedClasses}`}>
+                        Herramientas
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setShowBudgets(!showBudgets);
+                            setShowMobileMenu(false);
+                          }}
+                          className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
+                            showBudgets
+                              ? darkMode
+                                ? 'bg-blue-600/90 text-white border border-blue-500'
+                                : 'bg-blue-500 text-white border border-blue-400'
+                              : darkMode
+                                ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 border border-gray-600'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          <Target className="w-4 h-4" />
+                          <span>Presupuestos</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setShowConfig(!showConfig);
+                            setShowMobileMenu(false);
+                          }}
+                          className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
+                            showConfig
+                              ? darkMode
+                                ? 'bg-blue-600/90 text-white border border-blue-500'
+                                : 'bg-blue-500 text-white border border-blue-400'
+                              : darkMode
+                                ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 border border-gray-600'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Config</span>
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
