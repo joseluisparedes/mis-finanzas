@@ -772,11 +772,13 @@ const AppSupabase = () => {
     // Obtener resumen financiero que incluye gastos recurrentes
     const summary = getFinancialSummary(formatDateToLocalString(startDate), formatDateToLocalString(endDate));
     
-    // Filtrar gastos e ingresos regulares del mes
+    // Filtrar gastos e ingresos regulares del mes por fecha de asignación al balance
     const monthExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate.getFullYear() === parseInt(year) && 
-             expenseDate.getMonth() === parseInt(month) - 1;
+      const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
+      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+      const assignmentDateObj = new Date(assignmentDate);
+      return assignmentDateObj.getFullYear() === parseInt(year) && 
+             assignmentDateObj.getMonth() === parseInt(month) - 1;
     });
     
     const monthIncomes = incomes.filter(income => {
