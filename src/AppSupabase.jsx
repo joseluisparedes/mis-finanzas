@@ -148,6 +148,11 @@ const AppSupabase = () => {
   // Estados para búsqueda
   const [showAllExpenses, setShowAllExpenses] = useState(false);
   
+  // Estados para edición
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [editingIncome, setEditingIncome] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
   const [budgets, setBudgets] = useState([]);
@@ -332,7 +337,6 @@ const AppSupabase = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
-  const [editingIncome, setEditingIncome] = useState(null);
   
   // Estados para modal de exportación
   const [showExportModal, setShowExportModal] = useState(false);
@@ -2370,6 +2374,124 @@ const AppSupabase = () => {
                         const category = categories.find(c => c.id === expense.category_id);
                         const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
                         
+                        if (editingExpense === expense.id) {
+                          // Formulario de edición
+                          return (
+                            <div key={expense.id} className="p-4 bg-blue-50 border border-blue-200">
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.description || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={editFormData.amount || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                    <select
+                                      value={editFormData.category_id || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, category_id: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                      <option value="">Seleccionar categoría</option>
+                                      {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+                                    <select
+                                      value={editFormData.payment_method_id || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, payment_method_id: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                      <option value="">Seleccionar método</option>
+                                      {paymentMethods.map(method => (
+                                        <option key={method.id} value={method.id}>{method.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                    <input
+                                      type="date"
+                                      value={editFormData.date || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                                    <select
+                                      value={editFormData.currency || 'PEN'}
+                                      onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                      <option value="PEN">PEN (S/)</option>
+                                      <option value="USD">USD ($)</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                                  <textarea
+                                    value={editFormData.notes || ''}
+                                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                                    rows="2"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Notas adicionales (opcional)"
+                                  />
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await updateExpense(expense.id, editFormData);
+                                        setEditingExpense(null);
+                                        setEditFormData({});
+                                        setSuccessMessage('Gasto actualizado exitosamente');
+                                        setTimeout(() => setSuccessMessage(''), 3000);
+                                      } catch (error) {
+                                        setError('Error al actualizar el gasto');
+                                        setTimeout(() => setError(''), 3000);
+                                      }
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    <Save className="w-4 h-4 inline mr-1" />
+                                    Guardar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingExpense(null);
+                                      setEditFormData({});
+                                    }}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    <X className="w-4 h-4 inline mr-1" />
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Vista normal
                         return (
                           <div key={expense.id} className="p-4 hover:bg-gray-50">
                             <div className="flex justify-between items-start">
@@ -2402,8 +2524,27 @@ const AppSupabase = () => {
                                   -{formatCurrency(Number(expense.amount), expense.currency)}
                                 </span>
                                 <button
+                                  onClick={() => {
+                                    setEditingExpense(expense.id);
+                                    setEditFormData({
+                                      description: expense.description,
+                                      amount: expense.amount,
+                                      category_id: expense.category_id,
+                                      payment_method_id: expense.payment_method_id,
+                                      date: expense.date,
+                                      notes: expense.notes || '',
+                                      currency: expense.currency
+                                    });
+                                  }}
+                                  className="text-gray-400 hover:text-blue-600 transition-colors"
+                                  title="Editar gasto"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
                                   onClick={() => deleteExpense(expense.id)}
                                   className="text-gray-400 hover:text-red-600 transition-colors"
+                                  title="Eliminar gasto"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -2555,6 +2696,111 @@ const AppSupabase = () => {
                       return searchedIncomes.slice(0, 10).map(income => {
                         const incomeType = incomeTypes.find(t => t.id === income.income_type_id);
                         
+                        if (editingIncome === income.id) {
+                          // Formulario de edición
+                          return (
+                            <div key={income.id} className="p-4 bg-green-50 border border-green-200">
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                    <input
+                                      type="text"
+                                      value={editFormData.description || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={editFormData.amount || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de ingreso</label>
+                                    <select
+                                      value={editFormData.income_type_id || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, income_type_id: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    >
+                                      <option value="">Seleccionar tipo</option>
+                                      {incomeTypes.map(type => (
+                                        <option key={type.id} value={type.id}>{type.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                    <input
+                                      type="date"
+                                      value={editFormData.date || ''}
+                                      onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                                    <select
+                                      value={editFormData.currency || 'PEN'}
+                                      onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    >
+                                      <option value="PEN">PEN (S/)</option>
+                                      <option value="USD">USD ($)</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                                  <textarea
+                                    value={editFormData.notes || ''}
+                                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                                    rows="2"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    placeholder="Notas adicionales (opcional)"
+                                  />
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await updateIncome(income.id, editFormData);
+                                        setEditingIncome(null);
+                                        setEditFormData({});
+                                        setSuccessMessage('Ingreso actualizado exitosamente');
+                                        setTimeout(() => setSuccessMessage(''), 3000);
+                                      } catch (error) {
+                                        setError('Error al actualizar el ingreso');
+                                        setTimeout(() => setError(''), 3000);
+                                      }
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    <Save className="w-4 h-4 inline mr-1" />
+                                    Guardar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingIncome(null);
+                                      setEditFormData({});
+                                    }}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  >
+                                    <X className="w-4 h-4 inline mr-1" />
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Vista normal
                         return (
                           <div key={income.id} className="p-4 hover:bg-gray-50">
                             <div className="flex justify-between items-start">
@@ -2581,8 +2827,26 @@ const AppSupabase = () => {
                                   +{formatCurrency(Number(income.amount), income.currency)}
                                 </span>
                                 <button
+                                  onClick={() => {
+                                    setEditingIncome(income.id);
+                                    setEditFormData({
+                                      description: income.description,
+                                      amount: income.amount,
+                                      income_type_id: income.income_type_id,
+                                      date: income.date,
+                                      notes: income.notes || '',
+                                      currency: income.currency
+                                    });
+                                  }}
+                                  className="text-gray-400 hover:text-blue-600 transition-colors"
+                                  title="Editar ingreso"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
                                   onClick={() => deleteIncome(income.id)}
                                   className="text-gray-400 hover:text-red-600 transition-colors"
+                                  title="Eliminar ingreso"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
