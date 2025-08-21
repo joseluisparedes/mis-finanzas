@@ -204,7 +204,7 @@ const AppSupabase = () => {
   });
   
   // Estados para monedas y tipo de cambio
-  const [exchangeRate, setExchangeRate] = useState(3.75); // Tipo de cambio USD a PEN
+  const [exchangeRate, setExchangeRate] = useState(3.78); // Tipo de cambio USD a PEN actualizado
   const [salaryDay, setSalaryDay] = useState(28); // Día del mes que recibes tu sueldo
   const [currencies] = useState([
     { id: 'PEN', name: 'Soles (S/.)', symbol: 'S/.' },
@@ -215,7 +215,11 @@ const AppSupabase = () => {
   useEffect(() => {
     if (settings) {
       if (settings.exchange_rate) {
-        setExchangeRate(settings.exchange_rate);
+        const rate = Number(settings.exchange_rate);
+        if (!isNaN(rate) && rate > 0) {
+          console.log('Cargando tipo de cambio desde configuración:', rate);
+          setExchangeRate(rate);
+        }
       }
       if (settings.salary_day) {
         setSalaryDay(settings.salary_day);
@@ -226,8 +230,14 @@ const AppSupabase = () => {
   // Función para guardar tipo de cambio
   const saveExchangeRate = async (newRate) => {
     try {
-      await updateSettings({ exchange_rate: newRate });
-      setExchangeRate(newRate);
+      const rate = Number(newRate);
+      if (isNaN(rate) || rate <= 0) {
+        console.warn('Tipo de cambio inválido:', newRate);
+        return;
+      }
+      console.log('Guardando nuevo tipo de cambio:', rate);
+      await updateSettings({ exchange_rate: rate });
+      setExchangeRate(rate);
     } catch (error) {
       console.error('Error guardando tipo de cambio:', error);
     }
@@ -727,9 +737,12 @@ const AppSupabase = () => {
   // Funciones utilitarias para monedas
   const convertToSoles = (amount, currency) => {
     if (currency === 'USD') {
-      return amount * exchangeRate;
+      const rate = Number(exchangeRate) || 3.78;
+      const result = Number(amount) * rate;
+      console.log(`Conversión USD→PEN: $${amount} × ${rate} = S/.${result.toFixed(2)}`);
+      return result;
     }
-    return amount; // Ya está en soles
+    return Number(amount); // Ya está en soles
   };
 
   const formatCurrency = (amount, currency = 'PEN', showOriginal = false) => {
@@ -1678,8 +1691,10 @@ const AppSupabase = () => {
                         min="0"
                         value={exchangeRate}
                         onChange={(e) => {
-                          const newRate = parseFloat(e.target.value) || 3.75;
-                          saveExchangeRate(newRate);
+                          const newRate = parseFloat(e.target.value);
+                          if (!isNaN(newRate) && newRate > 0 && newRate <= 10) {
+                            saveExchangeRate(newRate);
+                          }
                         }}
                         className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
                           darkMode 
