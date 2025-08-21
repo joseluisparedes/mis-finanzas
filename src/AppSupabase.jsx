@@ -149,12 +149,6 @@ const AppSupabase = () => {
   });
   
   // Estados para búsqueda
-  const [searchTerm, setSearchTerm] = useState('');
-  const [advancedFilters, setAdvancedFilters] = useState({
-    minAmount: '',
-    maxAmount: '',
-    hasNotes: false
-  });
   
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
@@ -659,50 +653,9 @@ const AppSupabase = () => {
     });
   };
 
-  // Función para búsqueda inteligente en gastos con filtros avanzados
+  // Función simplificada para obtener gastos filtrados
   const getSearchedExpenses = () => {
-    let filtered = getFilteredExpenses();
-    
-    // Aplicar filtros avanzados
-    if (advancedFilters.minAmount) {
-      filtered = filtered.filter(expense => parseFloat(expense.amount) >= parseFloat(advancedFilters.minAmount));
-    }
-    if (advancedFilters.maxAmount) {
-      filtered = filtered.filter(expense => parseFloat(expense.amount) <= parseFloat(advancedFilters.maxAmount));
-    }
-    if (advancedFilters.hasNotes) {
-      filtered = filtered.filter(expense => expense.notes && expense.notes.trim());
-    }
-    
-    // Aplicar búsqueda por texto
-    if (!searchTerm.trim()) return filtered;
-
-    return filtered.filter(expense => {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Buscar en descripción
-      if (expense.description.toLowerCase().includes(searchLower)) return true;
-      
-      // Buscar en monto
-      if (expense.amount.toString().includes(searchTerm)) return true;
-      
-      // Buscar en fecha
-      const formattedDate = formatDateForDisplay(expense.date);
-      if (formattedDate.includes(searchTerm)) return true;
-      
-      // Buscar en categoría
-      const category = categories.find(c => c.id === expense.category_id);
-      if (category && category.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Buscar en método de pago
-      const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
-      if (paymentMethod && paymentMethod.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Buscar en notas
-      if (expense.notes && expense.notes.toLowerCase().includes(searchLower)) return true;
-      
-      return false;
-    });
+    return getFilteredExpenses();
   };
 
   const getFilteredIncomes = () => {
@@ -2482,17 +2435,10 @@ const AppSupabase = () => {
                         return (
                           <div className="p-8 text-center text-gray-500">
                             <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            {searchTerm ? (
-                              <>
-                                <p>No se encontraron gastos con "{searchTerm}"</p>
-                                <p className="text-sm">Intenta con otros términos de búsqueda</p>
-                              </>
-                            ) : (
                               <>
                                 <p>No hay gastos registrados</p>
                                 <p className="text-sm">Agrega tu primer gasto usando el formulario de arriba</p>
                               </>
-                            )}
                           </div>
                         );
                       }
