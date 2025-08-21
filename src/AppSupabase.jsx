@@ -81,10 +81,7 @@ const AppSupabase = () => {
     // Crear fecha explícitamente en hora local de Perú
     const now = new Date();
     const peruTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Lima"}));
-    console.log('🌍 getTodayLocalDateString - Fecha original:', now);
-    console.log('🌍 getTodayLocalDateString - Fecha Perú:', peruTime);
     const result = formatDateToLocalString(peruTime);
-    console.log('🌍 getTodayLocalDateString - Resultado:', result);
     return result;
   };
 
@@ -765,13 +762,6 @@ const AppSupabase = () => {
   const getMonthData = () => {
     const [year, month] = reportMonth.split('-');
     
-    console.log('🔍 getMonthData DEBUG:', {
-      reportMonth,
-      year: parseInt(year),
-      month: parseInt(month),
-      targetMonth: parseInt(month) - 1 // Mes objetivo en formato JavaScript (0-11)
-    });
-    
     // Calcular fechas del mes
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0);
@@ -786,20 +776,8 @@ const AppSupabase = () => {
       // Agregar hora para evitar problemas de zona horaria
       const assignmentDateObj = new Date(assignmentDate + 'T12:00:00');
       
-      const shouldInclude = assignmentDateObj.getFullYear() === parseInt(year) && 
-                           assignmentDateObj.getMonth() === parseInt(month) - 1;
-      
-      console.log('🔍 Filtro gasto CORREGIDO:', {
-        expenseDescription: expense.description,
-        expenseDate: expense.date,
-        assignmentDate,
-        assignmentDateObj: assignmentDateObj.toISOString(),
-        assignmentMonth: assignmentDateObj.getMonth(),
-        targetMonth: parseInt(month) - 1,
-        shouldInclude
-      });
-      
-      return shouldInclude;
+      return assignmentDateObj.getFullYear() === parseInt(year) && 
+             assignmentDateObj.getMonth() === parseInt(month) - 1;
     });
     
     const monthIncomes = incomes.filter(income => {

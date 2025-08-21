@@ -34,18 +34,14 @@ class DatabaseService {
   convertToLocalDate(dateString) {
     if (!dateString) return dateString;
     
-    console.log('🕐 convertToLocalDate - Input:', dateString);
-    console.log('🕐 convertToLocalDate - Tipo:', typeof dateString);
     
     // Si ya es una fecha completa, devolverla tal como está
     if (dateString.includes('T') || dateString.includes(' ')) {
-      console.log('🕐 convertToLocalDate - Output (ya tenía tiempo):', dateString);
       return dateString;
     }
     
     // PRUEBA SIMPLIFICADA: Solo enviar la fecha como está
     // PostgreSQL debería interpretar DATE '2025-08-18' correctamente
-    console.log('🕐 convertToLocalDate - Output (fecha simple):', dateString);
     return dateString;
   }
 
@@ -381,7 +377,6 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
-      console.log('💰 createExpense - Fecha original:', expense.date);
       
       // SOLUCIÓN DEFINITIVA: Usar función SQL DATE() para forzar interpretación local
       const { data, error } = await supabase
@@ -399,7 +394,6 @@ class DatabaseService {
         });
 
       if (error) {
-        console.log('💰 Error con función SQL, usando método tradicional...');
         // Fallback al método tradicional con zona horaria explícita
         const convertedDate = `${expense.date}T12:00:00-05:00`;
         
@@ -426,11 +420,9 @@ class DatabaseService {
 
         if (fallbackError) throw fallbackError;
         
-        console.log('💰 createExpense - Resultado fallback:', fallbackData);
         return fallbackData;
       }
 
-      console.log('💰 createExpense - Resultado con función SQL:', data);
       
       // Obtener el registro creado con las relaciones
       const { data: expenseWithRelations, error: selectError } = await supabase
@@ -539,7 +531,6 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
-      console.log('💵 createIncome - Fecha original:', income.date);
       
       // SOLUCIÓN DEFINITIVA: Usar función SQL DATE() para forzar interpretación local
       const { data, error } = await supabase
@@ -556,7 +547,6 @@ class DatabaseService {
         });
 
       if (error) {
-        console.log('💵 Error con función SQL, usando método tradicional...');
         // Fallback al método tradicional con zona horaria explícita
         const convertedDate = `${income.date}T12:00:00-05:00`;
         
@@ -581,11 +571,9 @@ class DatabaseService {
 
         if (fallbackError) throw fallbackError;
         
-        console.log('💵 createIncome - Resultado fallback:', fallbackData);
         return fallbackData;
       }
 
-      console.log('💵 createIncome - Resultado con función SQL:', data);
       
       // Obtener el registro creado con las relaciones
       const { data: incomeWithRelations, error: selectError } = await supabase
@@ -774,7 +762,6 @@ class DatabaseService {
   async getUserSettings() {
     try {
       const userId = this.getCurrentUserId();
-      console.log('Obteniendo configuración para usuario:', userId);
       
       const { data, error } = await supabase
         .from('user_settings')
@@ -792,7 +779,6 @@ class DatabaseService {
         throw error;
       }
 
-      console.log('Configuración obtenida:', data);
       return data || null;
     } catch (error) {
       console.error('Error en getUserSettings:', error);

@@ -45,12 +45,10 @@ export const useSupabaseData = () => {
           setUser(authEvent.user);
           setIsAuthenticated(true);
           setError(null); // Limpiar errores previos
-          console.log('Usuario autenticado, cargando datos...');
           await loadAllData();
           break;
           
         case 'SIGNED_OUT':
-          console.log('Usuario cerró sesión, limpiando datos...');
           setUser(null);
           setIsAuthenticated(false);
           clearData();
@@ -59,7 +57,6 @@ export const useSupabaseData = () => {
           
         case 'TOKEN_REFRESHED':
         case 'USER_UPDATED':
-          console.log('Token actualizado o usuario modificado');
           setUser(authEvent.user);
           break;
       }
@@ -74,39 +71,33 @@ export const useSupabaseData = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Inicializando datos...');
 
       // Verificar si el usuario ya está autenticado
       const currentUser = authService.getCurrentUser();
-      console.log('Usuario actual:', currentUser?.email || 'No autenticado');
       
       if (currentUser) {
         setUser(currentUser);
         setIsAuthenticated(true);
         await loadAllData();
       } else {
-        console.log('Usuario no autenticado, mostrando pantalla de login');
       }
     } catch (err) {
       console.error('Error initializing data:', err);
       setError('Error de inicialización: ' + err.message);
     } finally {
       setLoading(false);
-      console.log('Inicialización completada');
     }
   };
 
   // Cargar todos los datos del usuario
   const loadAllData = async () => {
     if (!authService.isUserAuthenticated()) {
-      console.log('Usuario no autenticado, saltando carga de datos');
       return;
     }
 
     try {
       setSyncing(true);
       setError(null);
-      console.log('Iniciando carga de datos del usuario...');
 
       const [
         categoriesData,
@@ -147,14 +138,6 @@ export const useSupabaseData = () => {
         })
       ]);
 
-      console.log('Datos cargados:', {
-        categorias: categoriesData?.length || 0,
-        metodosPago: paymentMethodsData?.length || 0,
-        tiposIngreso: incomeTypesData?.length || 0,
-        gastos: expensesData?.length || 0,
-        ingresos: incomesData?.length || 0,
-        gastosRecurrentes: recurringExpensesData?.length || 0
-      });
 
       setCategories(categoriesData || []);
       setPaymentMethods(paymentMethodsData || []);
@@ -183,7 +166,6 @@ export const useSupabaseData = () => {
 
   // Limpiar datos al cerrar sesión
   const clearData = () => {
-    console.log('Limpiando datos de sesión...');
     setCategories([]);
     setPaymentMethods([]);
     setIncomeTypes([]);
@@ -713,17 +695,6 @@ export const useSupabaseData = () => {
     const paymentDay = paymentMethod.cc_payment_day;
     const salaryDay = settings?.salary_day || 28; // Usar salary_day de configuración
 
-    // DEBUG: Log para verificar valores
-    console.log('🔍 getCreditCardAssignmentMonth DEBUG:', {
-      expenseDate,
-      expDay,
-      expMonth: expMonth + 1, // +1 para mostrar mes humano
-      closingDay,
-      paymentDay,
-      salaryDay,
-      paymentMethodName: paymentMethod.name
-    });
-
     // Determinar el mes de cierre al que pertenece este gasto
     let closingMonth, closingYear;
     
@@ -768,16 +739,7 @@ export const useSupabaseData = () => {
       finalYear = paymentYear;
     }
 
-    const result = new Date(finalYear, finalMonth, 1).toISOString().split('T')[0];
-    
-    console.log('🔍 Resultado final:', {
-      closingMonth: closingMonth + 1,
-      paymentMonth: paymentMonth + 1,
-      finalMonth: finalMonth + 1,
-      result
-    });
-
-    return result;
+    return new Date(finalYear, finalMonth, 1).toISOString().split('T')[0];
   }, [settings]);
 
   // ==============================================
