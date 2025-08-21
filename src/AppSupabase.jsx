@@ -870,28 +870,36 @@ const AppSupabase = () => {
     });
   };
 
-  // Funciones para manejar presupuestos
-  const addBudget = () => {
-    if (!newBudget.categoryId || !newBudget.amount) return;
-    
-    const budget = {
-      id: Date.now().toString(),
+  // Funciones para manejar presupuestos (conectadas con hook)
+  const addBudget = async () => {
+    if (!newBudget.categoryId || !newBudget.amount) {
+      setError('Debe seleccionar una categoría y especificar un monto');
+      return;
+    }
+
+    const result = await addBudgetToData({
       categoryId: newBudget.categoryId,
-      amount: parseFloat(newBudget.amount),
-      period: newBudget.period,
-      createdAt: new Date().toISOString()
-    };
-    
-    setBudgets([...budgets, budget]);
-    setNewBudget({ categoryId: '', amount: '', period: 'monthly' });
-    setSuccessMessage('Presupuesto agregado exitosamente');
-    setTimeout(() => setSuccessMessage(''), 3000);
+      amount: newBudget.amount,
+      period: newBudget.period
+    });
+
+    if (result.success) {
+      setNewBudget({ categoryId: '', amount: '', period: 'monthly' });
+      setSuccessMessage('Presupuesto agregado exitosamente');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
   };
 
-  const deleteBudget = (budgetId) => {
-    setBudgets(budgets.filter(b => b.id !== budgetId));
-    setSuccessMessage('Presupuesto eliminado');
-    setTimeout(() => setSuccessMessage(''), 3000);
+  const deleteBudget = async (budgetId) => {
+    const result = await deleteBudgetFromData(budgetId);
+    if (result.success) {
+      setSuccessMessage('Presupuesto eliminado');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(result.error);
+    }
   };
 
   const getBudgetProgress = (budget) => {
@@ -907,18 +915,20 @@ const AppSupabase = () => {
       startDate.setDate(now.getDate() - dayOfWeek);
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
-    } else { // yearly
+    } else if (budget.period === 'yearly') {
       startDate = new Date(now.getFullYear(), 0, 1);
       endDate = new Date(now.getFullYear(), 11, 31);
     }
     
     const periodExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      return expense.category_id === budget.categoryId &&
+      return expense.category_id === budget.category_id &&
              expenseDate >= startDate && expenseDate <= endDate;
     });
     
-    const spent = periodExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const spent = periodExpenses.reduce((sum, expense) => {
+      return sum + convertToSoles(parseFloat(expense.amount), expense.currency || 'PEN');
+    }, 0);
     const percentage = (spent / budget.amount) * 100;
     
     return { spent, percentage, remaining: budget.amount - spent };
