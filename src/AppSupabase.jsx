@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import AuthModal from './components/Auth/AuthModal';
@@ -3814,68 +3814,114 @@ const AppSupabase = () => {
             {/* Sección de Gastos Recurrentes */}
             {activeTab === 'recurrentes' && (
               <div>
-                {/* Gestión de Gastos Recurrentes */}
+                {/* Cabecera con estadísticas */}
                 <div className={`${cardClasses} p-6 mb-6`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className={`text-xl font-semibold flex items-center ${textPrimaryClasses}`}>
-                      <Repeat className="w-5 h-5 mr-2 text-blue-500" />
-                      Transacciones Recurrentes
-                    </h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h1 className={`text-2xl font-bold ${textPrimaryClasses} flex items-center`}>
+                        <Repeat className="w-6 h-6 mr-3 text-indigo-600" />
+                        Transacciones Recurrentes
+                      </h1>
+                      <p className={`text-sm mt-1 ${textMutedClasses}`}>
+                        Gestiona tus ingresos y gastos automáticos
+                      </p>
+                    </div>
                     
-                    {/* Toggle entre Gastos e Ingresos */}
-                    <div className={`flex items-center rounded-lg p-1 transition-colors duration-200 ${
-                      'bg-gray-100 dark:bg-dark-card'
-                    }`}>
-                      <button
-                        onClick={() => handleRecurringTypeChange('expense')}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
-                          recurringTransactionType === 'expense'
-                            ? 'bg-red-500 text-white'
-                            : darkMode 
-                              ? 'text-gray-300 hover:text-white' 
-                              : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        💸 Gastos
-                      </button>
-                      <button
-                        onClick={() => handleRecurringTypeChange('income')}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
-                          recurringTransactionType === 'income'
-                            ? 'bg-green-500 text-white'
-                            : darkMode 
-                              ? 'text-gray-300 hover:text-white' 
-                              : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        💰 Ingresos
-                      </button>
+                    {/* Estadísticas rápidas */}
+                    <div className="flex space-x-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {recurringIncomes.filter(r => r.is_active).length}
+                        </div>
+                        <div className="text-xs text-gray-500">Ingresos Activos</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-red-600">
+                          {recurringExpenses.filter(r => r.is_active).length}
+                        </div>
+                        <div className="text-xs text-gray-500">Gastos Activos</div>
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Formulario para nueva transacción recurrente */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-                    <div>
-                      <label className={`block text-sm font-medium mb-1 ${
-                        textSecondaryClasses
-                      }`}>Descripción:</label>
+                  {/* Toggle tipo de transacción mejorado */}
+                  <div className="flex justify-center mb-6">
+                    <div className={`inline-flex rounded-lg p-1 ${
+                      darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <button
+                        onClick={() => handleRecurringTypeChange('expense')}
+                        className={`flex items-center space-x-2 px-6 py-3 rounded-md font-medium transition-all duration-200 ${
+                          recurringTransactionType === 'expense'
+                            ? 'bg-red-500 text-white shadow-lg transform scale-105'
+                            : darkMode 
+                              ? 'text-gray-300 hover:text-white hover:bg-gray-600' 
+                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        <TrendingDown className="w-4 h-4" />
+                        <span>Gastos Recurrentes</span>
+                        <span className="bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs">
+                          {recurringExpenses.length}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => handleRecurringTypeChange('income')}
+                        className={`flex items-center space-x-2 px-6 py-3 rounded-md font-medium transition-all duration-200 ${
+                          recurringTransactionType === 'income'
+                            ? 'bg-green-500 text-white shadow-lg transform scale-105'
+                            : darkMode 
+                              ? 'text-gray-300 hover:text-white hover:bg-gray-600' 
+                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        <span>Ingresos Recurrentes</span>
+                        <span className="bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs">
+                          {recurringIncomes.length}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Formulario para nueva transacción mejorado */}
+                <div className={`${cardClasses} p-6 mb-6`}>
+                  <div className="flex items-center mb-4">
+                    <PlusCircle className={`w-5 h-5 mr-2 ${
+                      recurringTransactionType === 'expense' ? 'text-red-500' : 'text-green-500'
+                    }`} />
+                    <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>
+                      Agregar {recurringTransactionType === 'expense' ? 'Gasto' : 'Ingreso'} Recurrente
+                    </h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <div className="xl:col-span-2">
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                        Descripción
+                      </label>
                       <input
                         type="text"
                         value={newRecurringExpense.description}
                         onChange={(e) => setNewRecurringExpense({...newRecurringExpense, description: e.target.value})}
-                        placeholder={recurringTransactionType === 'expense' ? 'ej. Netflix, Spotify...' : 'ej. Sueldo, Freelance...'}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                        placeholder="Ej. Netflix, Salario, etc."
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors duration-200 ${
+                          recurringTransactionType === 'expense'
+                            ? 'focus:ring-red-500 focus:border-red-500'
+                            : 'focus:ring-green-500 focus:border-green-500'
+                        } ${
                           darkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-black'
                         }`}
                       />
                     </div>
                     
                     <div>
-                      <label className={`block text-sm font-medium mb-1 ${
-                        textSecondaryClasses
-                      }`}>Monto:</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                        Monto
+                      </label>
                       <input
                         type="number"
                         step="0.01"
@@ -3883,10 +3929,14 @@ const AppSupabase = () => {
                         value={newRecurringExpense.amount}
                         onChange={(e) => setNewRecurringExpense({...newRecurringExpense, amount: e.target.value})}
                         placeholder="0.00"
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors duration-200 ${
+                          recurringTransactionType === 'expense'
+                            ? 'focus:ring-red-500 focus:border-red-500'
+                            : 'focus:ring-green-500 focus:border-green-500'
+                        } ${
                           darkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-black'
                         }`}
                       />
                     </div>
@@ -3990,25 +4040,133 @@ const AppSupabase = () => {
                           !newRecurringExpense.amount || 
                           (recurringTransactionType === 'expense' ? !newRecurringExpense.category : !newRecurringExpense.incomeType)
                         }
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className={`w-full font-medium py-2 px-4 rounded-md transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                          recurringTransactionType === 'expense'
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
                       >
-                        <PlusCircle className="w-4 h-4 inline mr-1" />
-                        {recurringTransactionType === 'expense' ? 'Agregar Gasto' : 'Agregar Ingreso'}
+                        <PlusCircle className="w-4 h-4" />
+                        <span>Agregar</span>
                       </button>
                     </div>
                   </div>
                   
-                  {/* Lista de gastos recurrentes */}
+                </div>
+
+                {/* Lista de transacciones */}
+                <div className={`${cardClasses} p-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-semibold ${textPrimaryClasses} flex items-center`}>
+                      {recurringTransactionType === 'expense' ? (
+                        <>
+                          <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
+                          Gastos Recurrentes
+                        </>
+                      ) : (
+                        <>
+                          <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                          Ingresos Recurrentes
+                        </>
+                      )}
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                        recurringTransactionType === 'expense'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {recurringTransactionType === 'expense' ? recurringExpenses.length : recurringIncomes.length}
+                      </span>
+                    </h3>
+                  </div>
+                  
+                  {/* Estadísticas de resumen */}
+                  <div className={`${cardClasses} p-4 mb-6`}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className={`text-center p-3 rounded-lg ${
+                        recurringTransactionType === 'expense' 
+                          ? 'bg-red-50 dark:bg-red-900/20' 
+                          : 'bg-green-50 dark:bg-green-900/20'
+                      }`}>
+                        <div className={`text-2xl font-bold ${
+                          recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {recurringTransactionType === 'expense' ? recurringExpenses.filter(r => r.is_active).length : recurringIncomes.filter(r => r.is_active).length}
+                        </div>
+                        <div className={`text-sm ${textMutedClasses}`}>Activos</div>
+                      </div>
+                      <div className={`text-center p-3 rounded-lg ${
+                        recurringTransactionType === 'expense' 
+                          ? 'bg-red-50 dark:bg-red-900/20' 
+                          : 'bg-green-50 dark:bg-green-900/20'
+                      }`}>
+                        <div className={`text-2xl font-bold ${
+                          recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {(() => {
+                            const active = recurringTransactionType === 'expense' 
+                              ? recurringExpenses.filter(r => r.is_active)
+                              : recurringIncomes.filter(r => r.is_active);
+                            const monthlyEstimate = active.reduce((sum, item) => {
+                              const amount = parseFloat(item.amount);
+                              switch (item.frequency) {
+                                case 'weekly': return sum + (amount * 4.33);
+                                case 'monthly': return sum + amount;
+                                case 'quarterly': return sum + (amount / 3);
+                                case 'yearly': return sum + (amount / 12);
+                                default: return sum;
+                              }
+                            }, 0);
+                            return formatCurrency(monthlyEstimate);
+                          })()}
+                        </div>
+                        <div className={`text-sm ${textMutedClasses}`}>Estimado Mensual</div>
+                      </div>
+                      <div className={`text-center p-3 rounded-lg ${
+                        recurringTransactionType === 'expense' 
+                          ? 'bg-red-50 dark:bg-red-900/20' 
+                          : 'bg-green-50 dark:bg-green-900/20'
+                      }`}>
+                        <div className={`text-2xl font-bold ${
+                          recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {(() => {
+                            const items = recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes;
+                            const today = new Date();
+                            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                            return items.filter(item => {
+                              if (!item.is_active) return false;
+                              const nextDate = new Date(item.next_date + 'T00:00:00');
+                              return nextDate <= nextWeek;
+                            }).length;
+                          })()}
+                        </div>
+                        <div className={`text-sm ${textMutedClasses}`}>Próximos 7 días</div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
-                    {recurringExpenses.length === 0 ? (
-                      <div className={`text-center py-8 ${textMutedClasses}`}>
-                        <Repeat className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium mb-2">No hay gastos recurrentes</p>
-                        <p>Agrega tu primer gasto recurrente usando el formulario de arriba</p>
+                    {(recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes).length === 0 ? (
+                      <div className={`text-center py-12 ${textMutedClasses}`}>
+                        <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                          recurringTransactionType === 'expense'
+                            ? 'bg-red-50 text-red-400'
+                            : 'bg-green-50 text-green-400'
+                        }`}>
+                          <Repeat className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-medium mb-2">
+                          No hay {recurringTransactionType === 'expense' ? 'gastos' : 'ingresos'} recurrentes
+                        </h3>
+                        <p className="text-sm">
+                          Agrega tu primer {recurringTransactionType === 'expense' ? 'gasto' : 'ingreso'} recurrente usando el formulario de arriba
+                        </p>
                       </div>
                     ) : (
-                      recurringExpenses.map(recurring => {
-                        const category = categories.find(c => c.id === recurring.category_id);
+                      (recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes).map(recurring => {
+                        const category = recurringTransactionType === 'expense' 
+                          ? categories.find(c => c.id === recurring.category_id)
+                          : incomeTypes.find(t => t.id === recurring.income_type_id);
                         const nextDueDate = formatDateForDisplay(recurring.next_date);
                         const frequencyLabel = {
                           weekly: 'Semanal',
@@ -4016,6 +4174,26 @@ const AppSupabase = () => {
                           quarterly: 'Trimestral',
                           yearly: 'Anual'
                         }[recurring.frequency];
+
+                        const frequencyIcons = {
+                          weekly: '📅',
+                          monthly: '📆',
+                          quarterly: '🗓️',
+                          yearly: '📋'
+                        };
+
+                        const getDaysTillNext = (nextDate) => {
+                          const today = new Date();
+                          const next = new Date(nextDate + 'T00:00:00');
+                          const diffTime = next - today;
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          return diffDays;
+                        };
+
+                        const daysTillNext = getDaysTillNext(recurring.next_date);
+                        
+                        const isUpcoming = daysTillNext <= 7;
+                        const isOverdue = daysTillNext < 0;
                         
                         // Mostrar formulario de edición si está siendo editado
                         if (editingRecurring === recurring.id) {
@@ -4140,68 +4318,123 @@ const AppSupabase = () => {
                         }
 
                         return (
-                          <div key={recurring.id} className={`p-4 rounded-lg border transition-colors duration-200 ${
-                            darkMode 
-                              ? 'bg-gray-700 border-gray-600' 
-                              : 'bg-gray-50 border-gray-200'
+                          <div key={recurring.id} className={`${cardClasses} p-5 border-l-4 ${
+                            recurring.is_active 
+                              ? recurringTransactionType === 'expense' 
+                                ? 'border-l-red-500' 
+                                : 'border-l-green-500'
+                              : 'border-l-gray-400'
+                          } ${
+                            isOverdue && recurring.is_active ? 'ring-2 ring-red-200 dark:ring-red-800' : ''
+                          } ${
+                            isUpcoming && recurring.is_active && !isOverdue ? 'ring-2 ring-yellow-200 dark:ring-yellow-800' : ''
                           }`}>
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center space-x-3">
-                                <div 
-                                  className="w-3 h-3 rounded-full flex-shrink-0" 
-                                  style={{ backgroundColor: category?.color || '#6B7280' }}
-                                ></div>
-                                <div>
-                                  <h3 className={`font-medium ${textPrimaryClasses}`}>
-                                    {recurring.description}
-                                  </h3>
-                                  <p className={`text-sm ${textMutedClasses}`}>
-                                    {formatCurrency(recurring.amount, recurring.currency, recurring.currency === 'USD')} - {frequencyLabel}
-                                  </p>
-                                  <p className={`text-sm ${textMutedClasses}`}>
-                                    {category?.name}
-                                  </p>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="flex items-start space-x-4">
+                                <div className={`p-3 rounded-full ${
+                                  recurring.is_active 
+                                    ? recurringTransactionType === 'expense' 
+                                      ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' 
+                                      : 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
+                                    : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+                                }`}>
+                                  <div className="text-lg">{frequencyIcons[recurring.frequency]}</div>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>
+                                      {recurring.description}
+                                    </h3>
+                                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                      recurring.is_active 
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                    }`}>
+                                      {recurring.is_active ? (
+                                        <><Play className="w-3 h-3 inline mr-1" />Activo</>
+                                      ) : (
+                                        <><Pause className="w-3 h-3 inline mr-1" />Pausado</>
+                                      )}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className={`text-xl font-bold mb-2 ${
+                                    recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
+                                  }`}>
+                                    {formatCurrency(recurring.amount, recurring.currency, recurring.currency === 'USD')}
+                                    {recurring.currency === 'USD' && (
+                                      <span className="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                        USD
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className={`flex items-center space-x-4 text-sm ${textSecondaryClasses}`}>
+                                    <div className="flex items-center space-x-2">
+                                      <div 
+                                        className="w-3 h-3 rounded-full" 
+                                        style={{ backgroundColor: category?.color || '#6B7280' }}
+                                      ></div>
+                                      <span>{category?.name}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <Calendar className="w-4 h-4" />
+                                      <span>{frequencyLabel}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => {
-                                    setEditingRecurring(recurring.id);
-                                    setEditFormData({
-                                      description: recurring.description,
-                                      amount: recurring.amount,
-                                      category_id: recurring.category_id,
-                                      frequency: recurring.frequency,
-                                      currency: recurring.currency,
-                                      next_date: recurring.next_date
-                                    });
-                                  }}
-                                  className="text-blue-600 hover:text-blue-800 transition-colors"
-                                  title="Editar gasto recurrente"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => toggleRecurringExpense(recurring.id)}
-                                  className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${
-                                    recurring.is_active 
-                                      ? darkMode 
-                                        ? 'bg-green-900 text-green-200 hover:bg-green-800' 
-                                        : 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : darkMode 
-                                        ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' 
-                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                  }`}
-                                >
-                                  {recurring.is_active ? 'Activo' : 'Pausado'}
-                                </button>
-                                <button
-                                  onClick={() => deleteRecurringExpense(recurring.id)}
-                                  className="text-red-500 hover:text-red-700 transition-colors"
-                                  title="Eliminar gasto recurrente"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                              
+                              <div className="flex flex-col space-y-2">
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingRecurring(recurring.id);
+                                      setEditFormData({
+                                        description: recurring.description,
+                                        amount: recurring.amount,
+                                        category_id: recurring.category_id,
+                                        frequency: recurring.frequency,
+                                        currency: recurring.currency,
+                                        next_date: recurring.next_date
+                                      });
+                                    }}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                    title="Editar"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (recurringTransactionType === 'expense') {
+                                        toggleRecurringExpense(recurring.id);
+                                      } else {
+                                        toggleRecurringIncome(recurring.id);
+                                      }
+                                    }}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      recurring.is_active 
+                                        ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20' 
+                                        : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                    }`}
+                                    title={recurring.is_active ? 'Pausar' : 'Activar'}
+                                  >
+                                    {recurring.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (recurringTransactionType === 'expense') {
+                                        deleteRecurringExpense(recurring.id);
+                                      } else {
+                                        deleteRecurringIncome(recurring.id);
+                                      }
+                                    }}
+                                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                             <div className="flex justify-between items-center">
