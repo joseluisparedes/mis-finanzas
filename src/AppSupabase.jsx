@@ -146,6 +146,7 @@ const AppSupabase = () => {
   });
   
   // Estados para búsqueda
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
   
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
@@ -2330,7 +2331,7 @@ const AppSupabase = () => {
                         );
                       }
                       
-                      return searchedExpenses.slice(0, 10).map(expense => {
+                      return (showAllExpenses ? searchedExpenses : searchedExpenses.slice(0, 10)).map(expense => {
                         const category = categories.find(c => c.id === expense.category_id);
                         const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
                         
@@ -2383,8 +2384,13 @@ const AppSupabase = () => {
                     const searchedExpenses = getSearchedExpenses();
                     return searchedExpenses.length > 10 && (
                       <div className="p-4 text-center border-t border-gray-200">
-                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                          Ver todos los gastos ({searchedExpenses.length})
+                        <button 
+                          onClick={() => setShowAllExpenses(!showAllExpenses)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          {showAllExpenses 
+                            ? 'Mostrar menos gastos' 
+                            : `Ver todos los gastos (${searchedExpenses.length})`}
                         </button>
                       </div>
                     );
