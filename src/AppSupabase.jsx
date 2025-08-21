@@ -783,15 +783,17 @@ const AppSupabase = () => {
     const monthExpenses = expenses.filter(expense => {
       const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
       const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
-      const assignmentDateObj = new Date(assignmentDate);
+      // Agregar hora para evitar problemas de zona horaria
+      const assignmentDateObj = new Date(assignmentDate + 'T12:00:00');
       
       const shouldInclude = assignmentDateObj.getFullYear() === parseInt(year) && 
                            assignmentDateObj.getMonth() === parseInt(month) - 1;
       
-      console.log('🔍 Filtro gasto:', {
+      console.log('🔍 Filtro gasto CORREGIDO:', {
         expenseDescription: expense.description,
         expenseDate: expense.date,
         assignmentDate,
+        assignmentDateObj: assignmentDateObj.toISOString(),
         assignmentMonth: assignmentDateObj.getMonth(),
         targetMonth: parseInt(month) - 1,
         shouldInclude
