@@ -713,6 +713,17 @@ export const useSupabaseData = () => {
     const paymentDay = paymentMethod.cc_payment_day;
     const salaryDay = settings?.salary_day || 28; // Usar salary_day de configuración
 
+    // DEBUG: Log para verificar valores
+    console.log('🔍 getCreditCardAssignmentMonth DEBUG:', {
+      expenseDate,
+      expDay,
+      expMonth: expMonth + 1, // +1 para mostrar mes humano
+      closingDay,
+      paymentDay,
+      salaryDay,
+      paymentMethodName: paymentMethod.name
+    });
+
     // Determinar el mes de cierre al que pertenece este gasto
     let closingMonth, closingYear;
     
@@ -738,23 +749,35 @@ export const useSupabaseData = () => {
       paymentYear++;
     }
 
-    // NUEVA LÓGICA: Considerar salary_day para determinar con qué sueldo se paga
-    // Si el pago es ANTES del día de sueldo, usa el sueldo del mes anterior
+    // LÓGICA: Considerar salary_day para determinar con qué sueldo se paga
+    // Si el pago es ANTES del día de sueldo, se paga con el sueldo del mes anterior al pago
+    let finalMonth, finalYear;
     if (paymentDay < salaryDay) {
       // El pago es antes del sueldo del mes de pago
-      // Por lo tanto se paga con el sueldo del mes anterior
-      let salaryMonth = paymentMonth - 1;
-      let salaryYear = paymentYear;
-      if (salaryMonth < 0) {
-        salaryMonth = 11;
-        salaryYear--;
+      // Se paga con el sueldo del mes anterior al mes de pago
+      finalMonth = paymentMonth - 1;
+      finalYear = paymentYear;
+      if (finalMonth < 0) {
+        finalMonth = 11;
+        finalYear--;
       }
-      return new Date(salaryYear, salaryMonth, 1).toISOString().split('T')[0];
     } else {
       // El pago es después del sueldo del mes de pago
-      // Por lo tanto se paga con el sueldo del mismo mes de pago
-      return new Date(paymentYear, paymentMonth, 1).toISOString().split('T')[0];
+      // Se paga con el sueldo del mismo mes de pago
+      finalMonth = paymentMonth;
+      finalYear = paymentYear;
     }
+
+    const result = new Date(finalYear, finalMonth, 1).toISOString().split('T')[0];
+    
+    console.log('🔍 Resultado final:', {
+      closingMonth: closingMonth + 1,
+      paymentMonth: paymentMonth + 1,
+      finalMonth: finalMonth + 1,
+      result
+    });
+
+    return result;
   }, [settings]);
 
   // ==============================================
