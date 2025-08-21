@@ -1231,7 +1231,7 @@ const AppSupabase = () => {
             
             {/* Herramientas principales - Centro */}
             {isAuthenticated && (
-              <div className="hidden md:flex items-center space-x-6">
+              <div className="hidden md:flex items-center space-x-3 lg:space-x-4 xl:space-x-6">
                 <button
                   onClick={() => setShowExportModal(true)}
                   className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-sm font-medium"
@@ -1254,7 +1254,7 @@ const AppSupabase = () => {
                 
                 <button
                   onClick={() => setShowBudgets(!showBudgets)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                  className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
                     showBudgets
                       ? 'bg-purple-600 text-white'
                       : 'bg-purple-500 text-white hover:bg-purple-600'
@@ -1266,7 +1266,7 @@ const AppSupabase = () => {
                 
                 <button
                   onClick={() => setShowConfig(!showConfig)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                  className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
                     showConfig
                       ? 'bg-gray-600 text-white'
                       : 'bg-gray-500 text-white hover:bg-gray-600'
@@ -1278,8 +1278,8 @@ const AppSupabase = () => {
               </div>
             )}
               
-            {/* Usuario - Lado derecho */}
-            <div className="flex items-center">
+            {/* Usuario - Lado derecho (Solo Desktop) */}
+            <div className="hidden lg:flex items-center">
               <AuthButton
                 isAuthenticated={isAuthenticated}
                 user={user}
@@ -1329,7 +1329,7 @@ const AppSupabase = () => {
                 </div>
               )}
               
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {isAuthenticated && (
                   <>
                     <button
@@ -1416,7 +1416,7 @@ const AppSupabase = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 xl:py-8">
         {successMessage && <MessageAlert message={successMessage} type="success" />}
         {(dataError || expenseError || incomeError) && (
           <MessageAlert 
@@ -1437,7 +1437,7 @@ const AppSupabase = () => {
                   <p className="text-gray-600">Inicia sesión para gestionar tus finanzas de forma segura en la nube.</p>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <button
                     onClick={() => setShowAuthModal(true)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
@@ -1883,7 +1883,7 @@ const AppSupabase = () => {
                 
                 {/* Agregar nuevo método de pago */}
                 <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Campos básicos */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <input
@@ -2596,7 +2596,7 @@ const AppSupabase = () => {
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
-                                <div className="flex space-x-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                   <button
                                     onClick={async () => {
                                       try {
@@ -2905,7 +2905,7 @@ const AppSupabase = () => {
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
-                                <div className="flex space-x-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                   <button
                                     onClick={async () => {
                                       try {
@@ -3741,7 +3741,7 @@ const AppSupabase = () => {
                   </div>
                   
                   {/* Lista de presupuestos */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {budgets.map(budget => {
                       const categoryName = categories.find(c => c.id === budget.categoryId)?.name || 'Sin categoría';
                       const progress = getBudgetProgress(budget);
@@ -4097,8 +4097,8 @@ const AppSupabase = () => {
                   </div>
                   
                   {/* Estadísticas de resumen */}
-                  <div className={`${cardClasses} p-4 mb-6`}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={`${cardClasses} p-3 sm:p-4 mb-6`}>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                       <div className={`text-center p-3 rounded-lg ${
                         recurringTransactionType === 'expense' 
                           ? 'bg-red-50 dark:bg-red-900/20' 
@@ -4162,7 +4162,7 @@ const AppSupabase = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {(recurringTransactionType === 'expense' ? actualRecurringExpenses : recurringIncomes).length === 0 ? (
                       <div className={`text-center py-12 ${textMutedClasses}`}>
                         <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
@@ -4346,9 +4346,9 @@ const AppSupabase = () => {
                           } ${
                             isUpcoming && recurring.is_active && !isOverdue ? 'ring-2 ring-yellow-200 dark:ring-yellow-800' : ''
                           }`}>
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex items-start space-x-4">
-                                <div className={`p-3 rounded-full ${
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
+                              <div className="flex items-start space-x-4 flex-1 min-w-0">
+                                <div className={`p-3 rounded-full flex-shrink-0 ${
                                   recurring.is_active 
                                     ? recurringTransactionType === 'expense' 
                                       ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' 
@@ -4357,12 +4357,12 @@ const AppSupabase = () => {
                                 }`}>
                                   <div className="text-lg">{frequencyIcons[recurring.frequency]}</div>
                                 </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                    <h3 className={`text-lg font-semibold truncate ${textPrimaryClasses}`}>
                                       {recurring.description}
                                     </h3>
-                                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                    <span className={`px-2 py-1 text-xs rounded-full font-medium flex-shrink-0 ${
                                       recurring.is_active 
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
@@ -4386,24 +4386,24 @@ const AppSupabase = () => {
                                     )}
                                   </div>
 
-                                  <div className={`flex items-center space-x-4 text-sm ${textSecondaryClasses}`}>
+                                  <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm ${textSecondaryClasses}`}>
                                     <div className="flex items-center space-x-2">
                                       <div 
-                                        className="w-3 h-3 rounded-full" 
+                                        className="w-3 h-3 rounded-full flex-shrink-0" 
                                         style={{ backgroundColor: category?.color || '#6B7280' }}
                                       ></div>
-                                      <span>{category?.name}</span>
+                                      <span className="truncate">{category?.name}</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
-                                      <Calendar className="w-4 h-4" />
+                                      <Calendar className="w-4 h-4 flex-shrink-0" />
                                       <span>{frequencyLabel}</span>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                               
-                              <div className="flex flex-col space-y-2">
-                                <div className="flex space-x-2">
+                              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                   <button
                                     onClick={() => {
                                       setEditingRecurring(recurring.id);
@@ -4416,7 +4416,7 @@ const AppSupabase = () => {
                                         next_date: recurring.next_date
                                       });
                                     }}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
                                     title="Editar"
                                   >
                                     <Edit2 className="w-4 h-4" />
@@ -4429,7 +4429,7 @@ const AppSupabase = () => {
                                         toggleRecurringIncome(recurring.id);
                                       }
                                     }}
-                                    className={`p-2 rounded-lg transition-colors ${
+                                    className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
                                       recurring.is_active 
                                         ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20' 
                                         : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
@@ -4446,7 +4446,7 @@ const AppSupabase = () => {
                                         deleteRecurringIncome(recurring.id);
                                       }
                                     }}
-                                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
                                     title="Eliminar"
                                   >
                                     <Trash2 className="w-4 h-4" />
