@@ -703,33 +703,9 @@ const AppSupabase = () => {
     });
   };
 
-  // Función para búsqueda inteligente en ingresos
+  // Función simplificada para obtener ingresos filtrados
   const getSearchedIncomes = () => {
-    const filtered = getFilteredIncomes();
-    if (!searchTerm.trim()) return filtered;
-
-    return filtered.filter(income => {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Buscar en descripción
-      if (income.description.toLowerCase().includes(searchLower)) return true;
-      
-      // Buscar en monto
-      if (income.amount.toString().includes(searchTerm)) return true;
-      
-      // Buscar en fecha
-      const formattedDate = formatDateForDisplay(income.date);
-      if (formattedDate.includes(searchTerm)) return true;
-      
-      // Buscar en tipo de ingreso
-      const incomeType = incomeTypes.find(t => t.id === income.income_type_id);
-      if (incomeType && incomeType.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Buscar en notas
-      if (income.notes && income.notes.toLowerCase().includes(searchLower)) return true;
-      
-      return false;
-    });
+    return getFilteredIncomes();
   };
 
 
@@ -2329,102 +2305,12 @@ const AppSupabase = () => {
                   </div>
                 </div>
                 
-                {/* Barra de búsqueda avanzada */}
-                <div className={`${cardClasses} p-4 mb-6`}>
-                  <div className="space-y-4">
-                    {/* Búsqueda principal */}
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Buscar gastos por descripción, monto, fecha, categoría..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
-                      />
-                      {searchTerm && (
-                        <button
-                          onClick={() => setSearchTerm('')}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
-                          <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* Filtros avanzados */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
-                          Monto mínimo
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={advancedFilters.minAmount}
-                          onChange={(e) => setAdvancedFilters({...advancedFilters, minAmount: e.target.value})}
-                          className={inputClasses}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
-                          Monto máximo
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={advancedFilters.maxAmount}
-                          onChange={(e) => setAdvancedFilters({...advancedFilters, maxAmount: e.target.value})}
-                          className={inputClasses}
-                          placeholder="999999.99"
-                        />
-                      </div>
-                      
-                      <div className="flex items-end">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={advancedFilters.hasNotes}
-                            onChange={(e) => setAdvancedFilters({...advancedFilters, hasNotes: e.target.checked})}
-                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                          />
-                          <span className={`text-sm ${textSecondaryClasses}`}>Solo con notas</span>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    {/* Limpiar filtros */}
-                    {(advancedFilters.minAmount || advancedFilters.maxAmount || advancedFilters.hasNotes) && (
-                      <div className="flex justify-end">
-                        <button
-                          onClick={() => setAdvancedFilters({ minAmount: '', maxAmount: '', hasNotes: false })}
-                          className={`text-sm px-3 py-1 rounded transition-colors ${
-                            'text-gray-500 hover:text-gray-700 dark:text-dark-text-muted dark:hover:text-dark-text-secondary'
-                          }`}
-                        >
-                          Limpiar filtros avanzados
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 {/* Lista de Gastos */}
                 <div className={cardClasses}>
                   <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
-                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Gastos {searchTerm && `(${getSearchedExpenses().length} resultados)`}</h3>
-                      {searchTerm && (
-                        <span className="text-sm text-gray-500">
-                          Búsqueda: "{searchTerm}"
-                        </span>
-                      )}
+                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Gastos</h3>
                     </div>
                   </div>
                   
@@ -2600,40 +2486,12 @@ const AppSupabase = () => {
                   </div>
                 </div>
                 
-                {/* Barra de búsqueda para ingresos */}
-                <div className={`${cardClasses} p-4 mb-6`}>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Buscar ingresos por descripción, monto, fecha, tipo..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`pl-10 pr-4 py-2 rounded-lg focus:border-transparent ${inputClasses}`}
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                      </button>
-                    )}
-                  </div>
-                </div>
 
                 {/* Lista de Ingresos */}
                 <div className={cardClasses}>
                   <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
                     <div className="flex justify-between items-center">
-                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Ingresos {searchTerm && `(${getSearchedIncomes().length} resultados)`}</h3>
-                      {searchTerm && (
-                        <span className="text-sm text-gray-500">
-                          Búsqueda: "{searchTerm}"
-                        </span>
-                      )}
+                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Ingresos</h3>
                     </div>
                   </div>
                   
@@ -2644,17 +2502,10 @@ const AppSupabase = () => {
                         return (
                           <div className="p-8 text-center text-gray-500">
                             <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            {searchTerm ? (
-                              <>
-                                <p>No se encontraron ingresos con "{searchTerm}"</p>
-                                <p className="text-sm">Intenta con otros términos de búsqueda</p>
-                              </>
-                            ) : (
                               <>
                                 <p>No hay ingresos registrados</p>
                                 <p className="text-sm">Agrega tu primer ingreso usando el formulario de arriba</p>
                               </>
-                            )}
                           </div>
                         );
                       }
