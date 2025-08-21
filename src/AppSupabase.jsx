@@ -739,7 +739,14 @@ const AppSupabase = () => {
     if (currency === 'USD') {
       const rate = Number(exchangeRate) || 3.78;
       const result = Number(amount) * rate;
-      console.log(`Conversión USD→PEN: $${amount} × ${rate} = S/.${result.toFixed(2)}`);
+      console.log(`CONVERSION DEBUG:`, {
+        amount_input: amount,
+        amount_type: typeof amount,
+        currency: currency,
+        rate: rate,
+        rate_type: typeof rate,
+        result: result.toFixed(2)
+      });
       return result;
     }
     return Number(amount); // Ya está en soles
@@ -960,12 +967,14 @@ const AppSupabase = () => {
     
     const transactionData = {
       description: securityUtils.sanitizeText(newRecurringExpense.description),
-      amount: convertToSoles(parseFloat(newRecurringExpense.amount), newRecurringExpense.currency),
+      amount: parseFloat(newRecurringExpense.amount), // Guardar en moneda original
       currency: newRecurringExpense.currency,
       frequency: newRecurringExpense.frequency,
       nextDate: newRecurringExpense.nextDate,
       transaction_type: recurringTransactionType
     };
+    
+    console.log('GUARDANDO RECURRENTE:', transactionData);
 
     // Agregar el campo específico según el tipo
     if (isExpense) {
@@ -4154,7 +4163,14 @@ const AppSupabase = () => {
                             const monthlyEstimate = active.reduce((sum, item) => {
                               const amount = parseFloat(item.amount);
                               const amountInSoles = convertToSoles(amount, item.currency);
-                              console.log(`Calculando estimado: ${item.description} - ${amount} ${item.currency} = S/.${amountInSoles.toFixed(2)}`);
+                              console.log(`DEBUG RECURRENTE:`, {
+                                description: item.description,
+                                amount_original: item.amount,
+                                amount_parsed: amount,
+                                currency: item.currency,
+                                amountInSoles: amountInSoles.toFixed(2),
+                                exchangeRate: exchangeRate
+                              });
                               switch (item.frequency) {
                                 case 'weekly': return sum + (amountInSoles * 4.33);
                                 case 'monthly': return sum + amountInSoles;
