@@ -886,6 +886,142 @@ class DatabaseService {
   }
 
   // ==============================================
+  // PRESUPUESTOS
+  // ==============================================
+
+  // Obtener todos los presupuestos del usuario
+  async getBudgets() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('budgets')
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            color,
+            icon
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      this.handleError(error, 'getBudgets');
+      throw error;
+    }
+  }
+
+  // Crear un nuevo presupuesto
+  async createBudget(budgetData) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('budgets')
+        .insert({
+          user_id: userId,
+          category_id: budgetData.category_id,
+          amount: budgetData.amount,
+          period: budgetData.period
+        })
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            color,
+            icon
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'createBudget');
+      throw error;
+    }
+  }
+
+  // Actualizar un presupuesto
+  async updateBudget(budgetId, budgetData) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({
+          category_id: budgetData.category_id,
+          amount: budgetData.amount,
+          period: budgetData.period,
+          is_active: budgetData.is_active !== undefined ? budgetData.is_active : true
+        })
+        .eq('id', budgetId)
+        .eq('user_id', userId)
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            color,
+            icon
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'updateBudget');
+      throw error;
+    }
+  }
+
+  // Eliminar un presupuesto
+  async deleteBudget(budgetId) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', budgetId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      this.handleError(error, 'deleteBudget');
+      throw error;
+    }
+  }
+
+  // Obtener progreso de un presupuesto específico
+  async getBudgetProgress(budgetId) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .rpc('get_budget_progress', {
+          budget_uuid: budgetId,
+          user_uuid: userId
+        });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'getBudgetProgress');
+      throw error;
+    }
+  }
+
+  // ==============================================
   // UTILITARIOS
   // ==============================================
 
@@ -908,13 +1044,14 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
-      const [categories, paymentMethods, incomeTypes, expenses, incomes, recurringExpenses, settings] = await Promise.all([
+      const [categories, paymentMethods, incomeTypes, expenses, incomes, recurringExpenses, budgets, settings] = await Promise.all([
         this.getCategories(),
         this.getPaymentMethods(),
         this.getIncomeTypes(),
         this.getExpenses(),
         this.getIncomes(),
         this.getRecurringExpenses(),
+        this.getBudgets(),
         this.getUserSettings()
       ]);
 
@@ -925,6 +1062,7 @@ class DatabaseService {
         expenses,
         incomes,
         recurringExpenses,
+        budgets,
         settings: settings || {}
       };
     } catch (error) {

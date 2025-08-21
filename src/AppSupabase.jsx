@@ -85,6 +85,7 @@ const AppSupabase = () => {
     return result;
   };
 
+
   // Estados principales del hook
   const {
     isAuthenticated,
@@ -97,6 +98,7 @@ const AppSupabase = () => {
     paymentMethods,
     incomeTypes,
     recurringExpenses,
+    budgets,
     totals,
     settings,
     addExpense: addExpenseToData,
@@ -129,6 +131,10 @@ const AppSupabase = () => {
     addIncomeType,
     updateIncomeType,
     deleteIncomeType,
+    addBudget: addBudgetToData,
+    updateBudget: updateBudgetData,
+    deleteBudget: deleteBudgetFromData,
+    getBudgetProgress: getBudgetProgressData,
     lastSync
   } = useSupabaseData();
 
@@ -162,7 +168,6 @@ const AppSupabase = () => {
   
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
-  const [budgets, setBudgets] = useState([]);
   const [newBudget, setNewBudget] = useState({
     categoryId: '',
     amount: '',
@@ -1031,6 +1036,7 @@ const AppSupabase = () => {
     }
   };
 
+
   // Función para agregar método de pago con validación de TC
   const addPaymentMethodWithValidation = async () => {
     setError(''); // Limpiar errores previos
@@ -1567,7 +1573,7 @@ const AppSupabase = () => {
                   </div>
                 ) : (
                   budgets.map(budget => {
-                    const category = categories.find(c => c.id === budget.categoryId);
+                    const category = categories.find(c => c.id === budget.category_id);
                     const progress = getBudgetProgress(budget);
                     const isOverBudget = progress.percentage > 100;
                     

@@ -138,7 +138,24 @@ CREATE TABLE IF NOT EXISTS recurring_expenses (
 );
 
 -- ==============================================
--- 8. TABLA DE BACKUPS (OPCIONAL)
+-- 8. TABLA DE PRESUPUESTOS
+-- ==============================================
+CREATE TABLE IF NOT EXISTS budgets (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE CASCADE NOT NULL,
+    amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
+    period TEXT NOT NULL CHECK (period IN ('weekly', 'monthly', 'yearly')),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- Evitar presupuestos duplicados por categoría y período activos
+    UNIQUE(user_id, category_id, period) DEFERRABLE INITIALLY DEFERRED
+);
+
+-- ==============================================
+-- 9. TABLA DE BACKUPS (OPCIONAL)
 -- ==============================================
 CREATE TABLE IF NOT EXISTS user_backups (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -164,6 +181,10 @@ CREATE INDEX IF NOT EXISTS idx_incomes_type ON incomes(income_type_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_expenses_user ON recurring_expenses(user_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_recurring_expenses_category ON recurring_expenses(category_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_expenses_next_date ON recurring_expenses(next_date);
+
+CREATE INDEX IF NOT EXISTS idx_budgets_user_active ON budgets(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category_id);
+CREATE INDEX IF NOT EXISTS idx_budgets_period ON budgets(period);
 
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_payment_methods_user ON payment_methods(user_id, is_active);
@@ -194,6 +215,7 @@ CREATE TRIGGER update_income_types_updated_at BEFORE UPDATE ON income_types FOR 
 CREATE TRIGGER update_expenses_updated_at BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_incomes_updated_at BEFORE UPDATE ON incomes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_recurring_expenses_updated_at BEFORE UPDATE ON recurring_expenses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_budgets_updated_at BEFORE UPDATE ON budgets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ==============================================
 -- ROW LEVEL SECURITY (RLS)
@@ -207,6 +229,7 @@ ALTER TABLE income_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE incomes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recurring_expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_backups ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de seguridad: Los usuarios solo pueden ver/editar sus propios datos
@@ -244,6 +267,11 @@ CREATE POLICY "Users can view own recurring_expenses" ON recurring_expenses FOR 
 CREATE POLICY "Users can insert own recurring_expenses" ON recurring_expenses FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own recurring_expenses" ON recurring_expenses FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own recurring_expenses" ON recurring_expenses FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own budgets" ON budgets FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own budgets" ON budgets FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own budgets" ON budgets FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own budgets" ON budgets FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view own backups" ON user_backups FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own backups" ON user_backups FOR INSERT WITH CHECK (auth.uid() = user_id);
@@ -294,6 +322,75 @@ BEGIN
         END
     ) INTO result
     FROM expense_summary e, income_summary i;
+    
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Función para obtener progreso de presupuesto
+CREATE OR REPLACE FUNCTION get_budget_progress(
+    budget_uuid UUID,
+    user_uuid UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    budget_record RECORD;
+    start_date DATE;
+    end_date DATE;
+    spent_amount DECIMAL(15,2);
+    percentage DECIMAL(5,2);
+    result JSON;
+BEGIN
+    -- Obtener información del presupuesto
+    SELECT * INTO budget_record 
+    FROM budgets 
+    WHERE id = budget_uuid AND user_id = user_uuid AND is_active = true;
+    
+    IF NOT FOUND THEN
+        RETURN json_build_object('error', 'Budget not found');
+    END IF;
+    
+    -- Calcular período según el tipo
+    CASE budget_record.period
+        WHEN 'weekly' THEN
+            start_date := date_trunc('week', CURRENT_DATE);
+            end_date := start_date + INTERVAL '6 days';
+        WHEN 'monthly' THEN
+            start_date := date_trunc('month', CURRENT_DATE);
+            end_date := (start_date + INTERVAL '1 month - 1 day')::DATE;
+        WHEN 'yearly' THEN
+            start_date := date_trunc('year', CURRENT_DATE);
+            end_date := (start_date + INTERVAL '1 year - 1 day')::DATE;
+    END CASE;
+    
+    -- Calcular gastos del período
+    SELECT COALESCE(SUM(amount), 0) INTO spent_amount
+    FROM expenses 
+    WHERE user_id = user_uuid 
+    AND category_id = budget_record.category_id
+    AND date >= start_date 
+    AND date <= end_date;
+    
+    -- Calcular porcentaje
+    percentage := CASE 
+        WHEN budget_record.amount > 0 THEN 
+            ROUND((spent_amount / budget_record.amount * 100)::numeric, 2)
+        ELSE 0 
+    END;
+    
+    -- Construir resultado
+    SELECT json_build_object(
+        'budget_id', budget_record.id,
+        'category_id', budget_record.category_id,
+        'amount', budget_record.amount,
+        'period', budget_record.period,
+        'spent', spent_amount,
+        'percentage', percentage,
+        'remaining', budget_record.amount - spent_amount,
+        'start_date', start_date,
+        'end_date', end_date,
+        'is_over_budget', spent_amount > budget_record.amount
+    ) INTO result;
     
     RETURN result;
 END;
@@ -351,7 +448,9 @@ COMMENT ON TABLE income_types IS 'Tipos de ingresos personalizados por usuario';
 COMMENT ON TABLE expenses IS 'Registros de gastos del usuario';
 COMMENT ON TABLE incomes IS 'Registros de ingresos del usuario';
 COMMENT ON TABLE recurring_expenses IS 'Gastos recurrentes configurados por el usuario';
+COMMENT ON TABLE budgets IS 'Presupuestos por categoría configurados por el usuario';
 COMMENT ON TABLE user_backups IS 'Backups de datos del usuario en formato JSON';
 
 COMMENT ON FUNCTION get_financial_summary IS 'Obtiene resumen financiero para un período específico';
+COMMENT ON FUNCTION get_budget_progress IS 'Calcula el progreso de un presupuesto específico para el período actual';
 COMMENT ON FUNCTION create_default_user_data IS 'Crea datos iniciales cuando se registra un nuevo usuario';

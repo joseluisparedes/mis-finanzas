@@ -17,6 +17,7 @@ export const useSupabaseData = () => {
   const [expenses, setExpenses] = useState([]);
   const [incomes, setIncomes] = useState([]);
   const [recurringExpenses, setRecurringExpenses] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [settings, setSettings] = useState({});
 
   // Estados de interfaz
@@ -106,6 +107,7 @@ export const useSupabaseData = () => {
         expensesData,
         incomesData,
         recurringExpensesData,
+        budgetsData,
         settingsData
       ] = await Promise.all([
         databaseService.getCategories().catch(err => {
@@ -132,6 +134,10 @@ export const useSupabaseData = () => {
           console.warn('Error cargando gastos recurrentes:', err);
           return [];
         }),
+        databaseService.getBudgets().catch(err => {
+          console.warn('Error cargando presupuestos:', err);
+          return [];
+        }),
         databaseService.getUserSettings().catch(err => {
           console.warn('Error cargando configuración:', err);
           return null;
@@ -145,6 +151,7 @@ export const useSupabaseData = () => {
       setExpenses(expensesData || []);
       setIncomes(incomesData || []);
       setRecurringExpenses(recurringExpensesData || []);
+      setBudgets(budgetsData || []);
       setSettings(settingsData || getDefaultSettings());
       setLastSync(new Date().toISOString());
 
@@ -158,6 +165,7 @@ export const useSupabaseData = () => {
       setExpenses([]);
       setIncomes([]);
       setRecurringExpenses([]);
+      setBudgets([]);
       setSettings(getDefaultSettings());
     } finally {
       setSyncing(false);
@@ -172,6 +180,7 @@ export const useSupabaseData = () => {
     setExpenses([]);
     setIncomes([]);
     setRecurringExpenses([]);
+    setBudgets([]);
     setSettings(getDefaultSettings());
     setLastSync(null);
     setError(null);
@@ -852,6 +861,83 @@ export const useSupabaseData = () => {
   }, []);
 
   // ==============================================
+  // FUNCIONES DE PRESUPUESTOS
+  // ==============================================
+
+  const addBudget = useCallback(async (budgetData) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const newBudget = await databaseService.createBudget({
+        category_id: budgetData.categoryId,
+        amount: parseFloat(budgetData.amount),
+        period: budgetData.period
+      });
+
+      setBudgets(prev => [newBudget, ...prev]);
+      return { success: true, data: newBudget };
+
+    } catch (error) {
+      console.error('Error adding budget:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const updateBudget = useCallback(async (id, updates) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const updatedBudget = await databaseService.updateBudget(id, {
+        category_id: updates.categoryId,
+        amount: updates.amount ? parseFloat(updates.amount) : undefined,
+        period: updates.period,
+        is_active: updates.is_active
+      });
+
+      setBudgets(prev => 
+        prev.map(budget => budget.id === id ? updatedBudget : budget)
+      );
+
+      return { success: true, data: updatedBudget };
+
+    } catch (error) {
+      console.error('Error updating budget:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const deleteBudget = useCallback(async (id) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      await databaseService.deleteBudget(id);
+      setBudgets(prev => prev.filter(budget => budget.id !== id));
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  const getBudgetProgress = useCallback(async (budgetId) => {
+    try {
+      if (!isAuthenticated) throw new Error('Usuario no autenticado');
+
+      const progress = await databaseService.getBudgetProgress(budgetId);
+      return { success: true, data: progress };
+
+    } catch (error) {
+      console.error('Error getting budget progress:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, [isAuthenticated]);
+
+  // ==============================================
   // UTILIDADES
   // ==============================================
 
@@ -898,6 +984,7 @@ export const useSupabaseData = () => {
     expenses,
     incomes,
     recurringExpenses,
+    budgets,
     settings,
 
     // Funciones de gastos
@@ -934,6 +1021,12 @@ export const useSupabaseData = () => {
     deleteRecurringExpense,
     generateRecurringExpenses,
     generateRecurringIncomes,
+
+    // Funciones de presupuestos
+    addBudget,
+    updateBudget,
+    deleteBudget,
+    getBudgetProgress,
 
     // Funciones de tarjetas de crédito
     getCreditCardAssignmentMonth,
