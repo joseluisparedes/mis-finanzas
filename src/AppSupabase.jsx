@@ -1258,13 +1258,14 @@ const AppSupabase = () => {
     <div className={`min-h-screen transition-colors duration-300 ${surfaceClasses}`}>
       <header className={`${cardClasses} shadow-lg border-b-2 border-gray-100 dark:border-dark-border rounded-none`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Título en su propio espacio - Fila superior */}
-          <div className="flex justify-center items-center py-4 border-b border-gray-100 dark:border-dark-border">
+          {/* FILA 1: Título (izquierda) ↔ Usuario + Cerrar sesión (derecha) */}
+          <div className="flex justify-between items-center py-4 border-b border-gray-100 dark:border-dark-border">
+            {/* Título - Izquierda */}
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
                 <div className="text-white text-xl font-bold">💰</div>
               </div>
-              <div className="text-center">
+              <div>
                 <h1 className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
                   Gestor Financiero
                 </h1>
@@ -1273,20 +1274,33 @@ const AppSupabase = () => {
                 </p>
               </div>
             </div>
+            
+            {/* Usuario + Cerrar sesión - Derecha */}
+            <div className="hidden lg:flex items-center">
+              <AuthButton
+                isAuthenticated={isAuthenticated}
+                user={user}
+                onSignIn={() => setShowAuthModal(true)}
+                onSignOut={handleSignOut}
+                loading={loading}
+                darkMode={darkMode}
+                isMobile={false}
+              />
+            </div>
           </div>
           
-          {/* Navegación y controles - Fila inferior */}
+          {/* FILA 2: Tema + Sync (izquierda) ↔ Funcionalidades (derecha) */}
           <div className="flex justify-between items-center py-3">
             
-            {/* Controles del lado izquierdo */}
+            {/* Tema + Sync - Izquierda */}
             <div className="flex items-center space-x-4">
               {/* Toggle de modo oscuro */}
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                  darkMode 
-                    ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
-                    : 'bg-indigo-500 text-white hover:bg-indigo-600'
+                  darkMode
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-700/80'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
                 title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               >
@@ -1306,7 +1320,7 @@ const AppSupabase = () => {
               )}
             </div>
             
-            {/* Herramientas principales - Centro */}
+            {/* Funcionalidades - Derecha */}
             {isAuthenticated && (
               <div className="hidden md:flex items-center">
                 {/* Grupo de Datos */}
@@ -1380,18 +1394,6 @@ const AppSupabase = () => {
               </div>
             )}
               
-            {/* Usuario - Lado derecho (Solo Desktop) */}
-            <div className="hidden lg:flex items-center">
-              <AuthButton
-                isAuthenticated={isAuthenticated}
-                user={user}
-                onSignIn={() => setShowAuthModal(true)}
-                onSignOut={handleSignOut}
-                loading={loading}
-                darkMode={darkMode}
-                isMobile={false}
-              />
-            </div>
           
             {/* Mobile Menu Button */}
             <div className="lg:hidden flex items-center space-x-2">
