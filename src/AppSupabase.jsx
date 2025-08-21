@@ -168,6 +168,7 @@ const AppSupabase = () => {
   
   // Estados para presupuestos
   const [showBudgets, setShowBudgets] = useState(false);
+  const [expandedBudgets, setExpandedBudgets] = useState(new Set());
   const [newBudget, setNewBudget] = useState({
     categoryId: '',
     amount: '',
@@ -934,6 +935,44 @@ const AppSupabase = () => {
     return { spent, percentage, remaining: budget.amount - spent };
   };
 
+  // Funciones para manejar expansión de presupuestos
+  const toggleBudgetExpansion = (budgetId) => {
+    const newExpanded = new Set(expandedBudgets);
+    if (newExpanded.has(budgetId)) {
+      newExpanded.delete(budgetId);
+    } else {
+      newExpanded.add(budgetId);
+    }
+    setExpandedBudgets(newExpanded);
+  };
+
+  const getBudgetExpenses = (budget) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    if (budget.period === 'monthly') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (budget.period === 'weekly') {
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+    } else if (budget.period === 'yearly') {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
+    }
+    
+    return expenses
+      .filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expense.category_id === budget.category_id &&
+               expenseDate >= startDate && expenseDate <= endDate;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
   // Funciones para transacciones recurrentes
   const toggleRecurringIncome = async (id) => {
     const recurring = recurringExpenses.find(r => r.id === id);
@@ -1596,12 +1635,29 @@ const AppSupabase = () => {
                               Presupuesto {budget.period === 'monthly' ? 'mensual' : budget.period === 'weekly' ? 'semanal' : 'anual'}
                             </p>
                           </div>
-                          <button
-                            onClick={() => deleteBudget(budget.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => toggleBudgetExpansion(budget.id)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                expandedBudgets.has(budget.id) 
+                                  ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400'
+                                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                              }`}
+                              title="Ver detalle de gastos"
+                            >
+                              {expandedBudgets.has(budget.id) ? (
+                                <ArrowUp className="w-4 h-4" />
+                              ) : (
+                                <ArrowDown className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => deleteBudget(budget.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -1635,6 +1691,75 @@ const AppSupabase = () => {
                               </span>
                             )}
                           </div>
+                          
+                          {/* Sección expandida con detalle de gastos */}
+                          {expandedBudgets.has(budget.id) && (() => {
+                            const budgetExpenses = getBudgetExpenses(budget);
+                            return (
+                              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-border">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h5 className={`font-medium text-sm ${textSecondaryClasses}`}>
+                                    Detalle de Gastos ({budgetExpenses.length} transacciones)
+                                  </h5>
+                                  <span className={`text-xs ${textMutedClasses}`}>
+                                    {budget.period === 'monthly' ? 'Este mes' : 
+                                     budget.period === 'weekly' ? 'Esta semana' : 'Este año'}
+                                  </span>
+                                </div>
+                                
+                                {budgetExpenses.length === 0 ? (
+                                  <p className={`text-sm text-center py-3 ${textMutedClasses}`}>
+                                    No hay gastos registrados para este período
+                                  </p>
+                                ) : (
+                                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {budgetExpenses.map(expense => {
+                                      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+                                      const amountInSoles = convertToSoles(parseFloat(expense.amount), expense.currency || 'PEN');
+                                      
+                                      return (
+                                        <div key={expense.id} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                          darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'
+                                        }`}>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between">
+                                              <p className={`font-medium truncate ${textPrimaryClasses}`}>
+                                                {expense.description}
+                                              </p>
+                                              <span className={`font-bold ml-2 ${textPrimaryClasses}`}>
+                                                {formatCurrency(amountInSoles)}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center space-x-2 mt-1">
+                                              <span className={`text-xs ${textMutedClasses}`}>
+                                                {formatDateForDisplay(expense.date)}
+                                              </span>
+                                              {paymentMethod && (
+                                                <>
+                                                  <span className={`text-xs ${textMutedClasses}`}>•</span>
+                                                  <span className={`text-xs ${textMutedClasses}`}>
+                                                    {paymentMethod.name}
+                                                  </span>
+                                                </>
+                                              )}
+                                              {expense.currency === 'USD' && (
+                                                <>
+                                                  <span className={`text-xs ${textMutedClasses}`}>•</span>
+                                                  <span className={`text-xs ${textMutedClasses}`}>
+                                                    ${expense.amount} USD
+                                                  </span>
+                                                </>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
