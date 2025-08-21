@@ -4153,11 +4153,13 @@ const AppSupabase = () => {
                               : recurringIncomes.filter(r => r.is_active);
                             const monthlyEstimate = active.reduce((sum, item) => {
                               const amount = parseFloat(item.amount);
+                              const amountInSoles = convertToSoles(amount, item.currency);
+                              console.log(`Calculando estimado: ${item.description} - ${amount} ${item.currency} = S/.${amountInSoles.toFixed(2)}`);
                               switch (item.frequency) {
-                                case 'weekly': return sum + (amount * 4.33);
-                                case 'monthly': return sum + amount;
-                                case 'quarterly': return sum + (amount / 3);
-                                case 'yearly': return sum + (amount / 12);
+                                case 'weekly': return sum + (amountInSoles * 4.33);
+                                case 'monthly': return sum + amountInSoles;
+                                case 'quarterly': return sum + (amountInSoles / 3);
+                                case 'yearly': return sum + (amountInSoles / 12);
                                 default: return sum;
                               }
                             }, 0);
@@ -4665,13 +4667,13 @@ const AppSupabase = () => {
                       formatDateToLocalString(endDate)
                     );
                     
-                    // Calcular totales regulares
-                    const regularExpensesTotal = monthExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                    const regularIncomesTotal = monthIncomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                    // Calcular totales regulares (convertir a soles)
+                    const regularExpensesTotal = monthExpenses.reduce((sum, expense) => sum + convertToSoles(parseFloat(expense.amount), expense.currency), 0);
+                    const regularIncomesTotal = monthIncomes.reduce((sum, income) => sum + convertToSoles(parseFloat(income.amount), income.currency), 0);
                     
-                    // Calcular totales recurrentes
-                    const recurringExpensesTotal = recurringExpensesInMonth.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-                    const recurringIncomesTotal = recurringIncomesInMonth.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+                    // Calcular totales recurrentes (convertir a soles)
+                    const recurringExpensesTotal = recurringExpensesInMonth.reduce((sum, expense) => sum + convertToSoles(parseFloat(expense.amount), expense.currency), 0);
+                    const recurringIncomesTotal = recurringIncomesInMonth.reduce((sum, income) => sum + convertToSoles(parseFloat(income.amount), income.currency), 0);
                     
                     return (
                       <div className="space-y-6">
