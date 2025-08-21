@@ -765,6 +765,13 @@ const AppSupabase = () => {
   const getMonthData = () => {
     const [year, month] = reportMonth.split('-');
     
+    console.log('🔍 getMonthData DEBUG:', {
+      reportMonth,
+      year: parseInt(year),
+      month: parseInt(month),
+      targetMonth: parseInt(month) - 1 // Mes objetivo en formato JavaScript (0-11)
+    });
+    
     // Calcular fechas del mes
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0);
@@ -777,8 +784,20 @@ const AppSupabase = () => {
       const paymentMethod = paymentMethods.find(p => p.id === expense.payment_method_id);
       const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
       const assignmentDateObj = new Date(assignmentDate);
-      return assignmentDateObj.getFullYear() === parseInt(year) && 
-             assignmentDateObj.getMonth() === parseInt(month) - 1;
+      
+      const shouldInclude = assignmentDateObj.getFullYear() === parseInt(year) && 
+                           assignmentDateObj.getMonth() === parseInt(month) - 1;
+      
+      console.log('🔍 Filtro gasto:', {
+        expenseDescription: expense.description,
+        expenseDate: expense.date,
+        assignmentDate,
+        assignmentMonth: assignmentDateObj.getMonth(),
+        targetMonth: parseInt(month) - 1,
+        shouldInclude
+      });
+      
+      return shouldInclude;
     });
     
     const monthIncomes = incomes.filter(income => {
