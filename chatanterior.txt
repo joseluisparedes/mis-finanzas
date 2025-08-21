@@ -119,8 +119,8 @@ INSTRUCCIONES PARA NUEVA CONVERSACIÓN:
    - Commit realizado
    - Feedback del usuario
 
-ÚLTIMA ACTUALIZACIÓN: 20/08/2025 - CORRECCIÓN: Reestructuración de layout de cabecera
-CONVERSACIÓN ACTUAL: Dark mode → Dominio → Continuidad → Mejoras cabecera (COLORES) → CORRECCIÓN (LAYOUT)
+ÚLTIMA ACTUALIZACIÓN: 21/08/2025 - MEJORA: Visibilidad de gastos e ingresos recurrentes
+CONVERSACIÓN ACTUAL: Dark mode → Dominio → Continuidad → Mejoras cabecera (COLORES) → CORRECCIÓN (LAYOUT) → MEJORAS RECURRENTES
 
 CORRECCIÓN IMPORTANTE - REESTRUCTURACIÓN DE CABECERA (20/08/2025):
 ================================================================
@@ -164,6 +164,54 @@ BUILD EXITOSO:
 - CSS optimizado a 36.60 kB 
 - Sin errores de sintaxis
 - Layout mejorado con separación clara
+
+MEJORA DE VISIBILIDAD - GASTOS E INGRESOS RECURRENTES (21/08/2025):
+==================================================================
+PROBLEMA: El usuario reportó que los gastos e ingresos recurrentes se veían mal en una lista simple
+
+ANÁLISIS REALIZADO:
+- La sección recurrentes mostraba información básica en tarjetas simples
+- Faltaba visibilidad de métricas importantes (estimados mensuales, próximos vencimientos)
+- No había diferenciación visual clara del estado activo/pausado
+- Interfaz poco informativa para gestión de transacciones recurrentes
+
+SOLUCIÓN IMPLEMENTADA:
+1. Panel de estadísticas resumidas:
+   - Contador de recurrentes activos
+   - Estimado mensual total calculado por frecuencia
+   - Contador de próximos vencimientos (7 días)
+
+2. Rediseño completo de tarjetas:
+   - Iconos de frecuencia (📅 semanal, 📆 mensual, 🗓️ trimestral, 📋 anual)
+   - Layout mejorado con icono central y información organizada
+   - Bordes laterales de color según tipo (rojo gastos, verde ingresos)
+   - Alertas visuales para transacciones próximas y vencidas
+
+3. Mejoras de estado y acciones:
+   - Indicadores Activo/Pausado con iconos Play/Pause
+   - Botones de acción optimizados con hover mejorado
+   - Estimado mensual individual por transacción
+   - Información de próxima fecha con alertas contextuales
+
+4. Alertas visuales inteligentes:
+   - Ring rojo para transacciones vencidas
+   - Ring amarillo para próximas (7 días)
+   - Badges de estado: "Hoy", "Mañana", "Vencido", "En X días"
+
+ARCHIVOS MODIFICADOS:
+- src/AppSupabase.jsx (mejoras completas en sección recurrentes)
+
+COMMIT REALIZADO:
+- 6a47e18: ✨ NUEVA FUNCIONALIDAD: Mejorar visibilidad y diseño de gastos e ingresos recurrentes
+
+BUILD EXITOSO:
+- CSS optimizado a 40.48 kB
+- Sin errores de build
+- Mejoras de UX significativas implementadas
+
+CAMBIOS SUBIDOS A GITHUB:
+- Rama deploy-web-version actualizada
+- Aplicación en producción con nuevas mejoras
 
 ================================================================
 FIN DEL ARCHIVO - ASEGÚRATE DE LEER TODO ANTES DE CONTINUAR

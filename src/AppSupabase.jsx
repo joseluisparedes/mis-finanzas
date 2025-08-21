@@ -132,6 +132,10 @@ const AppSupabase = () => {
     lastSync
   } = useSupabaseData();
 
+  // Variables derivadas
+  const recurringIncomes = recurringExpenses.filter(r => r.transaction_type === 'income');
+  const actualRecurringExpenses = recurringExpenses.filter(r => r.transaction_type === 'expense');
+
   // Estados para UI
   const [activeTab, setActiveTab] = useState('gastos');
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -895,7 +899,20 @@ const AppSupabase = () => {
     return { spent, percentage, remaining: budget.amount - spent };
   };
 
-  // Funciones para gastos recurrentes
+  // Funciones para transacciones recurrentes
+  const toggleRecurringIncome = async (id) => {
+    const recurring = recurringExpenses.find(r => r.id === id);
+    if (!recurring) return;
+    
+    await updateRecurringExpense(id, {
+      is_active: !recurring.is_active
+    });
+  };
+
+  const deleteRecurringIncome = async (id) => {
+    await deleteRecurringExpenseFromData(id);
+  };
+
   const addRecurringExpense = async () => {
     // Rate limiting
     if (!securityUtils.rateLimiter('recurring', 3, 2000)) {
@@ -4074,7 +4091,7 @@ const AppSupabase = () => {
                           ? 'bg-red-100 text-red-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {recurringTransactionType === 'expense' ? recurringExpenses.length : recurringIncomes.length}
+                        {recurringTransactionType === 'expense' ? actualRecurringExpenses.length : recurringIncomes.length}
                       </span>
                     </h3>
                   </div>
@@ -4090,7 +4107,7 @@ const AppSupabase = () => {
                         <div className={`text-2xl font-bold ${
                           recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
                         }`}>
-                          {recurringTransactionType === 'expense' ? recurringExpenses.filter(r => r.is_active).length : recurringIncomes.filter(r => r.is_active).length}
+                          {recurringTransactionType === 'expense' ? actualRecurringExpenses.filter(r => r.is_active).length : recurringIncomes.filter(r => r.is_active).length}
                         </div>
                         <div className={`text-sm ${textMutedClasses}`}>Activos</div>
                       </div>
@@ -4104,7 +4121,7 @@ const AppSupabase = () => {
                         }`}>
                           {(() => {
                             const active = recurringTransactionType === 'expense' 
-                              ? recurringExpenses.filter(r => r.is_active)
+                              ? actualRecurringExpenses.filter(r => r.is_active)
                               : recurringIncomes.filter(r => r.is_active);
                             const monthlyEstimate = active.reduce((sum, item) => {
                               const amount = parseFloat(item.amount);
@@ -4130,7 +4147,7 @@ const AppSupabase = () => {
                           recurringTransactionType === 'expense' ? 'text-red-600' : 'text-green-600'
                         }`}>
                           {(() => {
-                            const items = recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes;
+                            const items = recurringTransactionType === 'expense' ? actualRecurringExpenses : recurringIncomes;
                             const today = new Date();
                             const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
                             return items.filter(item => {
@@ -4146,7 +4163,7 @@ const AppSupabase = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {(recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes).length === 0 ? (
+                    {(recurringTransactionType === 'expense' ? actualRecurringExpenses : recurringIncomes).length === 0 ? (
                       <div className={`text-center py-12 ${textMutedClasses}`}>
                         <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
                           recurringTransactionType === 'expense'
@@ -4163,7 +4180,7 @@ const AppSupabase = () => {
                         </p>
                       </div>
                     ) : (
-                      (recurringTransactionType === 'expense' ? recurringExpenses : recurringIncomes).map(recurring => {
+                      (recurringTransactionType === 'expense' ? actualRecurringExpenses : recurringIncomes).map(recurring => {
                         const category = recurringTransactionType === 'expense' 
                           ? categories.find(c => c.id === recurring.category_id)
                           : incomeTypes.find(t => t.id === recurring.income_type_id);
