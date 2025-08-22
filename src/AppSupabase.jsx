@@ -1280,15 +1280,21 @@ const AppSupabase = () => {
           <div className="flex justify-between items-center py-4 border-b border-gray-100 dark:border-dark-border">
             {/* Título - Izquierda */}
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                <div className="text-white text-xl font-bold">💰</div>
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-xl">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">$</span>
+                  </div>
+                </div>
+                <div className="absolute -top-0.5 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl -z-10 blur-lg"></div>
               </div>
               <div>
-                <h1 className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-                  Gestor Financiero
+                <h1 className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent`}>
+                  MisFinanzas
                 </h1>
-                <p className={`text-xs sm:text-sm ${textSecondaryClasses} opacity-75`}>
-                  Control total de tus finanzas
+                <p className={`text-xs sm:text-sm ${textSecondaryClasses} opacity-75 font-medium`}>
+                  Tu centro de control financiero
                 </p>
               </div>
             </div>
