@@ -4728,8 +4728,7 @@ const AppSupabase = () => {
                                 </div>
                               </div>
                               
-                              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+                              <div className="flex flex-row gap-2 flex-shrink-0">
                                   <button
                                     onClick={() => {
                                       setEditingRecurring(recurring.id);
@@ -4777,7 +4776,6 @@ const AppSupabase = () => {
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
-                                </div>
                               </div>
                             </div>
                             <div className="flex justify-between items-center">
