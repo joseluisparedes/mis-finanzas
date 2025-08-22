@@ -860,6 +860,17 @@ export const useSupabaseData = () => {
     }
   }, []);
 
+  const googleSignIn = useCallback(async () => {
+    try {
+      setError(null);
+      const result = await authService.signInWithGoogle();
+      return result;
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
   // ==============================================
   // FUNCIONES DE PRESUPUESTOS
   // ==============================================
@@ -1038,6 +1049,7 @@ export const useSupabaseData = () => {
     signIn,
     signUp,
     signOut,
+    googleSignIn,
 
     // Utilidades
     refreshData,

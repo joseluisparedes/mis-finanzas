@@ -137,6 +137,34 @@ class AuthService {
     }
   }
 
+  // Iniciar sesión con Google
+  async signInWithGoogle() {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        throw new Error(this.mapErrorMessage(error.message));
+      }
+
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
   // Cerrar sesión
   async signOut() {
     try {

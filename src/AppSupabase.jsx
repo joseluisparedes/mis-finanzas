@@ -120,6 +120,7 @@ const AppSupabase = () => {
     updateSettings,
     signIn,
     signUp,
+    googleSignIn,
     clearError,
     updateExpense,
     updateIncome,
@@ -583,6 +584,20 @@ const AppSupabase = () => {
       setShowAuthModal(false);
     }
     return result;
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await googleSignIn();
+      if (result.success) {
+        // La redirección se maneja automáticamente por Supabase
+        // No necesitamos cerrar el modal aquí porque la página se recargará
+      }
+      return result;
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   const handleSignOut = async () => {
@@ -5250,6 +5265,7 @@ const AppSupabase = () => {
           onClose={() => setShowAuthModal(false)}
           onSignIn={handleSignIn}
           onSignUp={handleSignUp}
+          onGoogleSignIn={handleGoogleSignIn}
           loading={loading}
         />
 
