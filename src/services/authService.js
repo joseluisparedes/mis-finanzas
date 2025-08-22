@@ -140,10 +140,16 @@ class AuthService {
   // Iniciar sesión con Google
   async signInWithGoogle() {
     try {
+      // Determinar URL de redirección basada en el entorno
+      const isProduction = window.location.hostname === 'joseluisparedes.github.io';
+      const redirectTo = isProduction 
+        ? 'https://joseluisparedes.github.io/mis-finanzas/'
+        : `${window.location.origin}/`;
+        
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectTo
         }
       });
 
