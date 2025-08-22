@@ -3156,31 +3156,31 @@ const AppSupabase = () => {
                               <div className="space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Descripción</label>
                                     <input
                                       type="text"
                                       value={editFormData.description || ''}
                                       onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                      className={inputClasses}
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                                     <input
                                       type="number"
                   inputMode="decimal"
                                       step="0.01"
                                       value={editFormData.amount || ''}
                                       onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                      className={inputClasses}
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de ingreso</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Tipo de ingreso</label>
                                     <select
                                       value={editFormData.income_type_id || ''}
                                       onChange={(e) => setEditFormData({...editFormData, income_type_id: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                      className={selectClasses}
                                     >
                                       <option value="">Seleccionar tipo</option>
                                       {incomeTypes.map(type => (
@@ -3189,20 +3189,20 @@ const AppSupabase = () => {
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha</label>
                                     <input
                                       type="date"
                                       value={editFormData.date || ''}
                                       onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                      className={inputClasses}
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Moneda</label>
                                     <select
                                       value={editFormData.currency || 'PEN'}
                                       onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                      className={selectClasses}
                                     >
                                       <option value="PEN">PEN (S/)</option>
                                       <option value="USD">USD ($)</option>
@@ -3210,12 +3210,12 @@ const AppSupabase = () => {
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                                  <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Notas</label>
                                   <textarea
                                     value={editFormData.notes || ''}
                                     onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
                                     rows="2"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                    className={inputClasses}
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
@@ -3256,7 +3256,7 @@ const AppSupabase = () => {
                         
                         // Vista normal
                         return (
-                          <div key={income.id} className="p-4 hover:bg-gray-50">
+                          <div key={income.id} className="p-4 hover:bg-gray-50 dark:hover:bg-dark-card/50">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -3265,12 +3265,12 @@ const AppSupabase = () => {
                                     style={{ backgroundColor: incomeType?.color || '#10B981' }}
                                   ></div>
                                   <div>
-                                    <p className="font-medium text-gray-900">{income.description}</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className={`font-medium ${textPrimaryClasses}`}>{income.description}</p>
+                                    <p className={`text-sm ${textSecondaryClasses}`}>
                                       {incomeType?.name} • {formatDateForDisplay(income.date)}
                                     </p>
                                     {income.notes && (
-                                      <p className="text-sm text-gray-400 mt-1">{income.notes}</p>
+                                      <p className={`text-sm mt-1 ${textMutedClasses}`}>{income.notes}</p>
                                     )}
                                   </div>
                                 </div>
