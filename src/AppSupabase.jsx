@@ -1574,29 +1574,90 @@ const AppSupabase = () => {
         )}
         
         {!isAuthenticated ? (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Bienvenido!</h2>
-                  <p className="text-gray-600">Inicia sesión para gestionar tus finanzas de forma segura en la nube.</p>
-                </div>
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center px-4">
+            <div className="max-w-lg mx-auto">
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-800/50 p-8 sm:p-12 text-center transform transition-all duration-300 hover:scale-[1.02]">
                 
-                <div className="space-y-3 sm:space-y-4">
+                {/* Logo y branding */}
+                <div className="mb-8">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl transform rotate-3">
+                      <TrendingUp className="w-10 h-10 text-white" />
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">$</span>
+                      </div>
+                    </div>
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl -z-10 blur-xl"></div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent leading-tight">
+                      MisFinanzas
+                    </h1>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                      Tu centro de control financiero
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg max-w-md mx-auto leading-relaxed">
+                      Gestiona tus ingresos, gastos y presupuestos de forma inteligente. 
+                      <span className="text-indigo-600 dark:text-indigo-400 font-medium"> Todo en un solo lugar.</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="space-y-4 mb-8">
                   <button
                     onClick={() => setShowAuthModal(true)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                    className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
                   >
-                    Iniciar Sesión / Registrarse
+                    <User className="w-5 h-5" />
+                    <span>Comenzar ahora</span>
                   </button>
                   
-                  <div className="text-sm text-gray-500">
-                    <p>✓ Datos seguros en la nube</p>
-                    <p>✓ Acceso desde cualquier dispositivo</p>
-                    <p>✓ Backup automático</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Gratis para siempre • Sin tarjeta de crédito
+                  </p>
+                </div>
+
+                {/* Características destacadas */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                      <Settings className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Seguro en la nube</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                      <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Reportes visuales</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                      <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Control de presupuestos</span>
+                  </div>
+                </div>
+
+                {/* Footer elegante */}
+                <div className="mt-12 pt-8 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span>Servidor en línea</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>Datos encriptados</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span>Sincronización automática</span>
+                    </div>
                   </div>
                 </div>
               </div>
