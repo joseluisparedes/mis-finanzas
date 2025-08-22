@@ -119,8 +119,8 @@ INSTRUCCIONES PARA NUEVA CONVERSACIÓN:
    - Commit realizado
    - Feedback del usuario
 
-ÚLTIMA ACTUALIZACIÓN: 21/08/2025 - NUEVA FUNCIONALIDAD: Sistema completo de presupuestos habilitado
-CONVERSACIÓN ACTUAL: Dark mode → Dominio → Continuidad → Mejoras cabecera (COLORES) → CORRECCIÓN (LAYOUT) → MEJORAS RECURRENTES → RESPONSIVE OPTIMIZATION → PRESUPUESTOS COMPLETOS
+ÚLTIMA ACTUALIZACIÓN: 22/08/2025 - NUEVA FUNCIONALIDAD: Autenticación OAuth con Google habilitada
+CONVERSACIÓN ACTUAL: Dark mode → Dominio → Continuidad → Mejoras cabecera (COLORES) → CORRECCIÓN (LAYOUT) → MEJORAS RECURRENTES → RESPONSIVE OPTIMIZATION → PRESUPUESTOS COMPLETOS → OAUTH GOOGLE → UX REDESIGN → DEPLOY OPTIMIZATION
 
 CORRECCIÓN IMPORTANTE - REESTRUCTURACIÓN DE CABECERA (20/08/2025):
 ================================================================
@@ -333,16 +333,104 @@ CAMBIOS SUBIDOS A GITHUB:
 - Aplicación en producción con presupuestos funcionales
 - Base de datos lista para usar (requiere ejecutar schema.sql en Supabase)
 
-ESTADO ACTUAL DEL PROYECTO:
-==========================
+NUEVAS FUNCIONALIDADES IMPLEMENTADAS (22/08/2025):
+==================================================
+
+AUTENTICACIÓN OAUTH CON GOOGLE (22/08/2025):
+---------------------------------------------
+IMPLEMENTACIÓN COMPLETA:
+1. Configuración OAuth en Supabase:
+   - Provider Google habilitado en Supabase Auth
+   - URLs de redirección configuradas para GitHub Pages y localhost
+   - Client ID y Secret configurados en variables de entorno
+
+2. Integración en AuthModal:
+   - Botón "Continuar con Google" agregado
+   - Iconos SVG de Google oficiales
+   - Manejo de estados de loading durante OAuth
+
+3. Detección de Entornos Inteligente:
+   - Auto-detección de localhost vs GitHub Pages
+   - URLs de redirección dinámicas según entorno
+   - Debug logging para troubleshooting OAuth
+
+4. Mejoras de Seguridad y UX:
+   - Procesamiento explícito de tokens OAuth en URL
+   - Limpieza automática de parámetros sensibles de la URL
+   - Manejo robusto de errores de autenticación
+
+ARCHIVOS MODIFICADOS:
+- src/components/Auth/AuthModal.jsx: Botón OAuth Google
+- src/services/authService.js: Lógica OAuth y detección de entorno
+
+COMMITS REALIZADOS:
+- 260cc57: ✨ NUEVA FUNCIONALIDAD: Implementar autenticación OAuth con Google
+- ca54272: 🔧 CORRECCIÓN: Configurar URLs de redirección OAuth para GitHub Pages
+- a870ba2: 🔧 MEJORA: Detección mejorada de entornos para OAuth redirect
+- a20d157: 🔧 CORRECCIÓN: Mejorar manejo de redirección OAuth y debug
+- 70bab98: 🔧 CORRECCIÓN: Procesar tokens OAuth explícitamente en la URL
+- e3ec70c: 🔄 DEPLOY: Forzar actualización de caché en GitHub Pages
+
+REDISEÑO UX COMPLETO DEL MENÚ PRINCIPAL (22/08/2025):
+----------------------------------------------------
+TRANSFORMACIÓN TOTAL DE LA INTERFAZ:
+1. Diseño Minimalista y Elegante:
+   - Header con gradiente sutil y transparencia
+   - Layout de dos filas optimizado para mejor organización
+   - Paleta de colores refinada con acentos purple/blue
+
+2. Navegación Intuitiva:
+   - Botones agrupados lógicamente (controles, herramientas, usuario)
+   - Iconos consistentes con Lucide React
+   - Estados hover y activos mejorados
+   - Indicadores visuales más claros
+
+3. Detalle de Gastos en Presupuestos:
+   - Toggle para mostrar/ocultar gastos detallados por presupuesto
+   - Lista expandible con información de cada gasto
+   - Mejor visibilidad del progreso del presupuesto
+
+ARCHIVOS MODIFICADOS:
+- src/AppSupabase.jsx: Rediseño completo del header y mejoras en presupuestos
+
+COMMITS REALIZADOS:
+- c2c99a0: ✨ NUEVA FUNCIONALIDAD: Agregar toggle de detalle de gastos en presupuestos
+- c037f5a: 🎨 MEJORA UX: Rediseñar completamente el menú principal con diseño minimalista
+- 88bdeb2: 🎨 MEJORA: Reorganizar layout del header en dos filas específicas
+
+OPTIMIZACIÓN DE DEPLOYMENT EN GITHUB PAGES:
+-------------------------------------------
+MEJORAS DE CACHE Y PERFORMANCE:
+- Forzado de actualización de caché en GitHub Pages
+- Optimización de assets estáticos
+- Mejor manejo de rutas para SPA
+
+ESTADO ACTUAL DEL PROYECTO (22/08/2025):
+=======================================
 ✅ Dark mode completamente funcional y consistente
 ✅ Todas las secciones con estilo profesional unificado  
 ✅ Sistema de clases helper implementado
 ✅ Experiencia responsive optimizada para todos los dispositivos
-✅ Sistema de presupuestos completamente funcional
+✅ Sistema de presupuestos completamente funcional con detalle de gastos
 ✅ Base de datos con todas las tablas necesarias
 ✅ CRUD completo para gestión de presupuestos
 ✅ UI intuitiva con progreso visual y alertas
+✅ Autenticación OAuth con Google completamente funcional
+✅ Rediseño UX minimalista y elegante implementado
+✅ Optimización de deployment en GitHub Pages
+✅ Detección inteligente de entornos (localhost/producción)
+
+ARCHIVOS PRINCIPALES ACTUALIZADOS:
+==================================
+- src/AppSupabase.jsx (22/08/2025 01:10) - Rediseño UX y mejoras presupuestos
+- src/hooks/useSupabaseData.js (21/08/2025 19:14) - Hook completo con presupuestos
+- src/services/databaseService.js (21/08/2025 15:32) - CRUD presupuestos
+- src/components/Auth/AuthModal.jsx - OAuth Google
+- src/services/authService.js - Lógica OAuth y entornos
+
+URL DE PRODUCCIÓN:
+==================
+https://joseluisparedes.github.io/mis-finanzas/
 
 ================================================================
 FIN DEL ARCHIVO - ASEGÚRATE DE LEER TODO ANTES DE CONTINUAR

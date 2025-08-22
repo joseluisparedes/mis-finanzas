@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Sparkles, Shield } from 'lucide-react';
 
 const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loading }) => {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
@@ -148,37 +148,48 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 w-full max-w-md transform transition-all duration-300 animate-in slide-in-from-bottom-4">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            {mode === 'signin' ? (
-              <LogIn className="h-6 w-6 text-blue-600" />
-            ) : (
-              <UserPlus className="h-6 w-6 text-green-600" />
-            )}
-            <h2 className="text-xl font-semibold text-gray-800">
-              {mode === 'signin' ? 'Iniciar Sesión' : 'Crear Cuenta'}
-            </h2>
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-indigo-500/20"></div>
+          <div className="relative flex flex-col items-center p-8 pb-6">
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+              {mode === 'signin' ? (
+                <Shield className="h-8 w-8 text-white" />
+              ) : (
+                <Sparkles className="h-8 w-8 text-white" />
+              )}
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+              {mode === 'signin' ? 'Te damos la bienvenida' : 'Únete a MisFinanzas'}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-xs">
+              {mode === 'signin' 
+                ? 'Accede a tu cuenta para gestionar tus finanzas de forma inteligente' 
+                : 'Crea tu cuenta y comienza a tomar el control de tus finanzas'
+              }
+            </p>
           </div>
+          
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5">
           {/* Nombre (solo en registro) */}
           {mode === 'signup' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre completo
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                ¿Cómo te llamas?
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -187,10 +198,10 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                   name="displayName"
                   value={formData.displayName}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 dark:bg-gray-800 dark:text-white ${
                     errors.displayName 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
+                      ? 'border-red-300 focus:ring-red-500 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-200 dark:border-gray-700 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                   placeholder="Tu nombre completo"
                 />
@@ -203,8 +214,8 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Correo electrónico
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -213,12 +224,12 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 dark:bg-gray-800 dark:text-white ${
                   errors.email 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500'
+                    ? 'border-red-300 focus:ring-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 dark:border-gray-700 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
-                placeholder="tu@email.com"
+                placeholder="correo@ejemplo.com"
                 autoComplete="email"
               />
             </div>
@@ -229,8 +240,8 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
 
           {/* Contraseña */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Contraseña segura
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -239,10 +250,10 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full pl-10 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 dark:bg-gray-800 dark:text-white ${
                   errors.password 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500'
+                    ? 'border-red-300 focus:ring-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 dark:border-gray-700 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
                 placeholder="Mínimo 6 caracteres"
                 autoComplete="current-password"
@@ -250,7 +261,7 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -263,8 +274,8 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
           {/* Confirmar contraseña (solo en registro) */}
           {mode === 'signup' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirmar contraseña
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Confirma tu contraseña
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -273,12 +284,12 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 dark:bg-gray-800 dark:text-white ${
                     errors.confirmPassword 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
+                      ? 'border-red-300 focus:ring-red-500 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-200 dark:border-gray-700 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
-                  placeholder="Repite tu contraseña"
+                  placeholder="Escribe tu contraseña nuevamente"
                   autoComplete="new-password"
                 />
               </div>
@@ -290,8 +301,13 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
 
           {/* Error de autenticación */}
           {authError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{authError}</p>
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <p className="text-sm text-red-800 dark:text-red-400 flex items-center">
+                <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {authError}
+              </p>
             </div>
           )}
 
@@ -300,12 +316,12 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading || googleLoading}
-            className="w-full py-2 px-4 rounded-lg font-medium transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 group shadow-sm hover:shadow-md"
           >
             {googleLoading ? (
               <>
                 <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                <span>Conectando con Google...</span>
+                <span>Conectando...</span>
               </>
             ) : (
               <>
@@ -315,18 +331,18 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                <span>Continuar con Google</span>
+                <span className="group-hover:text-gray-800 dark:group-hover:text-white transition-colors">Continuar con Google</span>
               </>
             )}
           </button>
 
           {/* Separador */}
-          <div className="relative">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">o</span>
+              <span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 font-medium">o continúa con</span>
             </div>
           </div>
 
@@ -334,11 +350,11 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+            className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${
               mode === 'signin'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white'
+                : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white'
+            }`}
           >
             {loading ? (
               <div className="flex items-center justify-center space-x-2">
@@ -347,24 +363,24 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
               </div>
             ) : (
               <span>
-                {mode === 'signin' ? 'Iniciar con Email' : 'Crear Cuenta con Email'}
+                {mode === 'signin' ? '🚀 Acceder a mi cuenta' : '✨ Crear mi cuenta'}
               </span>
             )}
           </button>
         </form>
 
         {/* Footer */}
-        <div className="px-6 pb-6">
-          <div className="text-center text-sm text-gray-600">
+        <div className="px-8 pb-8">
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
             {mode === 'signin' ? (
               <span>
                 ¿No tienes cuenta?{' '}
                 <button
                   type="button"
                   onClick={switchMode}
-                  className="text-green-600 hover:text-green-700 font-medium"
+                  className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-semibold transition-colors hover:underline"
                 >
-                  Regístrate aquí
+                  Únete gratis
                 </button>
               </span>
             ) : (
@@ -373,22 +389,25 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
                 <button
                   type="button"
                   onClick={switchMode}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold transition-colors hover:underline"
                 >
-                  Inicia sesión
+                  Accede aquí
                 </button>
               </span>
             )}
           </div>
 
           {mode === 'signin' && (
-            <div className="mt-3 text-center">
+            <div className="mt-4 text-center">
               <button
                 type="button"
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors hover:underline inline-flex items-center"
                 onClick={() => alert('Función de recuperación de contraseña próximamente')}
               >
-                ¿Olvidaste tu contraseña?
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                ¿Problemas para acceder?
               </button>
             </div>
           )}
