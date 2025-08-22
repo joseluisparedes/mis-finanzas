@@ -2707,7 +2707,7 @@ const AppSupabase = () => {
                         min="0"
                         value={newExpense.amount}
                         onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="0.00"
                       />
                     </div>
@@ -2718,7 +2718,7 @@ const AppSupabase = () => {
                         type="text"
                         value={newExpense.description}
                         onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="Descripción del gasto"
                       />
                     </div>
@@ -2728,7 +2728,7 @@ const AppSupabase = () => {
                       <select
                         value={newExpense.category}
                         onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         <option value="">Seleccionar categoría</option>
                         {categories.map(category => (
@@ -2742,7 +2742,7 @@ const AppSupabase = () => {
                       <select
                         value={newExpense.paymentMethod}
                         onChange={(e) => setNewExpense({...newExpense, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         <option value="">Seleccionar método</option>
                         {paymentMethods.map(method => (
@@ -2757,7 +2757,7 @@ const AppSupabase = () => {
                         type="date"
                         value={newExpense.date}
                         onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                       />
                     </div>
                     
@@ -2766,7 +2766,7 @@ const AppSupabase = () => {
                       <select
                         value={newExpense.currency}
                         onChange={(e) => setNewExpense({...newExpense, currency: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         {currencies.map(currency => (
                           <option key={currency.id} value={currency.id}>{currency.name}</option>
@@ -2780,7 +2780,7 @@ const AppSupabase = () => {
                         type="text"
                         value={newExpense.notes || ''}
                         onChange={(e) => setNewExpense({...newExpense, notes: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="Notas adicionales"
                       />
                     </div>
@@ -2806,12 +2806,12 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-200 dark:divide-dark-border">
                     {(() => {
                       const searchedExpenses = getSearchedExpenses();
                       if (searchedExpenses.length === 0) {
                         return (
-                          <div className="p-8 text-center text-gray-500">
+                          <div className={`p-8 text-center ${textMutedClasses}`}>
                             <TrendingDown className="w-12 h-12 mx-auto mb-4 opacity-50" />
                               <>
                                 <p>No hay gastos registrados</p>
@@ -2828,35 +2828,35 @@ const AppSupabase = () => {
                         if (editingExpense === expense.id) {
                           // Formulario de edición
                           return (
-                            <div key={expense.id} className="p-4 bg-blue-50 border border-blue-200">
+                            <div key={expense.id} className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50">
                               <div className="space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Descripción</label>
                                     <input
                                       type="text"
                                       value={editFormData.description || ''}
                                       onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                      className={inputClasses}
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Monto</label>
                                     <input
                                       type="number"
                   inputMode="decimal"
                                       step="0.01"
                                       value={editFormData.amount || ''}
                                       onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                      className={inputClasses}
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Categoría</label>
                                     <select
                                       value={editFormData.category_id || ''}
                                       onChange={(e) => setEditFormData({...editFormData, category_id: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                      className={selectClasses}
                                     >
                                       <option value="">Seleccionar categoría</option>
                                       {categories.map(cat => (
@@ -2865,11 +2865,11 @@ const AppSupabase = () => {
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Método de pago</label>
                                     <select
                                       value={editFormData.payment_method_id || ''}
                                       onChange={(e) => setEditFormData({...editFormData, payment_method_id: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                      className={selectClasses}
                                     >
                                       <option value="">Seleccionar método</option>
                                       {paymentMethods.map(method => (
@@ -2887,11 +2887,11 @@ const AppSupabase = () => {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                                    <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Moneda</label>
                                     <select
                                       value={editFormData.currency || 'PEN'}
                                       onChange={(e) => setEditFormData({...editFormData, currency: e.target.value})}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                      className={selectClasses}
                                     >
                                       <option value="PEN">PEN (S/)</option>
                                       <option value="USD">USD ($)</option>
@@ -2899,12 +2899,12 @@ const AppSupabase = () => {
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                                  <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Notas</label>
                                   <textarea
                                     value={editFormData.notes || ''}
                                     onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
                                     rows="2"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    className={inputClasses}
                                     placeholder="Notas adicionales (opcional)"
                                   />
                                 </div>
@@ -2945,7 +2945,7 @@ const AppSupabase = () => {
                         
                         // Vista normal
                         return (
-                          <div key={expense.id} className="p-4 hover:bg-gray-50">
+                          <div key={expense.id} className="p-4 hover:bg-gray-50 dark:hover:bg-dark-card/50">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -2954,8 +2954,8 @@ const AppSupabase = () => {
                                     style={{ backgroundColor: category?.color || '#6B7280' }}
                                   ></div>
                                   <div>
-                                    <p className="font-medium text-gray-900">{expense.description}</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className={`font-medium ${textPrimaryClasses}`}>{expense.description}</p>
+                                    <p className={`text-sm ${textSecondaryClasses}`}>
                                       {category?.name} • {paymentMethod?.name}
                                       {paymentMethod?.payment_type === 'credit_card' && (
                                         <span className="text-blue-600">
@@ -2965,7 +2965,7 @@ const AppSupabase = () => {
                                       {' '}• {formatDateForDisplay(expense.date)}
                                     </p>
                                     {expense.notes && (
-                                      <p className="text-sm text-gray-400 mt-1">{expense.notes}</p>
+                                      <p className={`text-sm mt-1 ${textMutedClasses}`}>{expense.notes}</p>
                                     )}
                                   </div>
                                 </div>
@@ -3046,7 +3046,7 @@ const AppSupabase = () => {
                         min="0"
                         value={newIncome.amount}
                         onChange={(e) => setNewIncome({...newIncome, amount: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="0.00"
                       />
                     </div>
@@ -3057,7 +3057,7 @@ const AppSupabase = () => {
                         type="text"
                         value={newIncome.description}
                         onChange={(e) => setNewIncome({...newIncome, description: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="Descripción del ingreso"
                       />
                     </div>
@@ -3067,7 +3067,7 @@ const AppSupabase = () => {
                       <select
                         value={newIncome.type}
                         onChange={(e) => setNewIncome({...newIncome, type: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         <option value="">Seleccionar tipo</option>
                         {incomeTypes.map(type => (
@@ -3082,7 +3082,7 @@ const AppSupabase = () => {
                         type="date"
                         value={newIncome.date}
                         onChange={(e) => setNewIncome({...newIncome, date: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                       />
                     </div>
                     
@@ -3091,7 +3091,7 @@ const AppSupabase = () => {
                       <select
                         value={newIncome.currency}
                         onChange={(e) => setNewIncome({...newIncome, currency: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         {currencies.map(currency => (
                           <option key={currency.id} value={currency.id}>{currency.name}</option>
@@ -3105,7 +3105,7 @@ const AppSupabase = () => {
                         type="text"
                         value={newIncome.notes || ''}
                         onChange={(e) => setNewIncome({...newIncome, notes: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                         placeholder="Notas adicionales"
                       />
                     </div>
@@ -3131,12 +3131,12 @@ const AppSupabase = () => {
                     </div>
                   </div>
                   
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-200 dark:divide-dark-border">
                     {(() => {
                       const searchedIncomes = getSearchedIncomes();
                       if (searchedIncomes.length === 0) {
                         return (
-                          <div className="p-8 text-center text-gray-500">
+                          <div className={`p-8 text-center ${textMutedClasses}`}>
                             <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
                               <>
                                 <p>No hay ingresos registrados</p>
