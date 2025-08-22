@@ -3330,30 +3330,30 @@ const AppSupabase = () => {
             {activeTab === 'reportes' && (
               <div>
                 {/* Filtros de Reportes */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <div className={`${cardClasses} p-6 mb-6`}>
+                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${textPrimaryClasses}`}>
                     <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
                     Reportes y Análisis
                   </h2>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha Inicio</label>
                       <input
                         type="date"
                         value={reportFilters.startDate}
                         onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha Fin</label>
                       <input
                         type="date"
                         value={reportFilters.endDate}
                         onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={inputClasses}
                       />
                     </div>
                     
@@ -3362,7 +3362,7 @@ const AppSupabase = () => {
                       <select
                         value={reportFilters.category}
                         onChange={(e) => setReportFilters({...reportFilters, category: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         <option value="">Todas las categorías</option>
                         {categories.map(category => (
@@ -3378,7 +3378,7 @@ const AppSupabase = () => {
                       <select
                         value={reportFilters.paymentMethod}
                         onChange={(e) => setReportFilters({...reportFilters, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={selectClasses}
                       >
                         <option value="">Todos los métodos</option>
                         {paymentMethods.map(method => (
@@ -3390,10 +3390,10 @@ const AppSupabase = () => {
                     </div>
                     
                     
-                    <div className="flex flex-col space-y-2">
+                    <div className="sm:col-span-2 lg:col-span-1 flex flex-col space-y-2">
                       <button
                         onClick={() => setReportFilters({ startDate: '', endDate: '', category: '', paymentMethod: '', showRecurring: true })}
-                        className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                        className={`w-full px-3 py-2 rounded-md transition-colors text-sm ${buttonSecondaryClasses}`}
                       >
                         Limpiar Filtros
                       </button>
@@ -3411,7 +3411,7 @@ const AppSupabase = () => {
                             showRecurring: true
                           });
                         }}
-                        className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm flex items-center justify-center space-x-1"
+                        className={`w-full px-3 py-2 rounded-md transition-colors text-sm flex items-center justify-center space-x-1 ${buttonPrimaryClasses}`}
                       >
                         <Calendar className="w-4 h-4" />
                         <span>Este Mes</span>
