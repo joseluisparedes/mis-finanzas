@@ -14,6 +14,14 @@ class AuthService {
   // Inicializar estado de autenticación
   async initializeAuth() {
     try {
+      // Verificar si hay tokens OAuth en la URL
+      const hashParams = this.parseHashParams();
+      if (hashParams.access_token) {
+        console.log('OAuth tokens detected in URL, processing...');
+        // Limpiar la URL de los tokens
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
       // Obtener sesión actual
       const { data: { session }, error } = await supabase.auth.getSession();
       
@@ -141,18 +149,32 @@ class AuthService {
   async signInWithGoogle() {
     try {
       // Determinar URL de redirección basada en el entorno
-      const isProduction = window.location.hostname === 'joseluisparedes.github.io';
-      const isDevelopment = window.location.hostname === 'localhost';
-      
       let redirectTo;
-      if (isProduction) {
+      
+      const currentUrl = window.location.href;
+      const currentOrigin = window.location.origin;
+      const hostname = window.location.hostname;
+      
+      console.log('OAuth Debug - Current URL:', currentUrl);
+      console.log('OAuth Debug - Hostname:', hostname);
+      console.log('OAuth Debug - Origin:', currentOrigin);
+      
+      if (hostname === 'joseluisparedes.github.io') {
+        // Producción en GitHub Pages
         redirectTo = 'https://joseluisparedes.github.io/mis-finanzas/';
-      } else if (isDevelopment) {
-        redirectTo = `${window.location.origin}/`;
+      } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        // Desarrollo local
+        redirectTo = currentOrigin + '/';
+      } else if (hostname.includes('netlify') || hostname.includes('vercel')) {
+        // Otros servicios de hosting
+        redirectTo = currentOrigin + '/';
       } else {
-        // Para otros entornos (Vite dev server, etc.)
-        redirectTo = window.location.origin + window.location.pathname;
+        // Fallback: usar la URL actual sin parámetros
+        const baseUrl = currentUrl.split('?')[0].split('#')[0];
+        redirectTo = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
       }
+      
+      console.log('OAuth Debug - Redirect URL:', redirectTo);
         
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -349,6 +371,23 @@ class AuthService {
     } catch {
       return false;
     }
+  }
+
+  // Parsear parámetros del hash de la URL
+  parseHashParams() {
+    const hash = window.location.hash.substring(1);
+    const params = {};
+    
+    if (hash) {
+      hash.split('&').forEach(param => {
+        const [key, value] = param.split('=');
+        if (key && value) {
+          params[decodeURIComponent(key)] = decodeURIComponent(value);
+        }
+      });
+    }
+    
+    return params;
   }
 
   // Método para desarrollo: crear usuario de prueba
