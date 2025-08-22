@@ -3771,14 +3771,14 @@ const AppSupabase = () => {
                         Transacciones Filtradas
                       </h3>
                       
-                      <div className="flex items-center space-x-4">
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
                         {/* Controles de ordenamiento */}
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-700">Ordenar por:</span>
+                        <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
+                          <span className={`text-sm ${textSecondaryClasses} whitespace-nowrap`}>Ordenar por:</span>
                           <select
                             value={transactionSort.field}
                             onChange={(e) => setTransactionSort({...transactionSort, field: e.target.value})}
-                            className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                            className={`text-sm rounded px-2 py-1 ${selectClasses}`}
                           >
                             <option value="date">Fecha</option>
                             <option value="amount">Monto</option>
@@ -3786,7 +3786,7 @@ const AppSupabase = () => {
                           </select>
                           <button
                             onClick={() => setTransactionSort({...transactionSort, direction: transactionSort.direction === 'asc' ? 'desc' : 'asc'})}
-                            className="p-1 rounded hover:bg-gray-100 transition-colors"
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
                             title={`Ordenar ${transactionSort.direction === 'asc' ? 'descendente' : 'ascendente'}`}
                           >
                             {transactionSort.direction === 'asc' ? (
@@ -3798,15 +3798,15 @@ const AppSupabase = () => {
                         </div>
                         
                         {/* Filtro incluir recurrentes */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-shrink-0">
                           <input
                             type="checkbox"
                             id="showRecurringInList"
                             checked={reportFilters.showRecurring}
                             onChange={(e) => setReportFilters({...reportFilters, showRecurring: e.target.checked})}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
                           />
-                          <label htmlFor="showRecurringInList" className="text-sm text-gray-700 flex items-center space-x-1">
+                          <label htmlFor="showRecurringInList" className={`text-sm ${textSecondaryClasses} flex items-center space-x-1 whitespace-nowrap`}>
                             <Repeat className="w-4 h-4 text-purple-600" />
                             <span>Incluir recurrentes</span>
                           </label>
