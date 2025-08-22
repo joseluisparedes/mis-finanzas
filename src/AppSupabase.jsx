@@ -588,14 +588,17 @@ const AppSupabase = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('AppSupabase: handleGoogleSignIn called');
+      console.log('AppSupabase: calling googleSignIn...');
       const result = await googleSignIn();
+      console.log('AppSupabase: googleSignIn result:', result);
       if (result.success) {
         // La redirección se maneja automáticamente por Supabase
         // No necesitamos cerrar el modal aquí porque la página se recargará
       }
       return result;
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('AppSupabase: Google sign in error:', error);
       return { success: false, error: error.message };
     }
   };

@@ -18,6 +18,23 @@ class AuthService {
       const hashParams = this.parseHashParams();
       if (hashParams.access_token) {
         console.log('OAuth tokens detected in URL, processing...');
+        
+        // Procesar tokens OAuth explícitamente
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: hashParams.access_token,
+            refresh_token: hashParams.refresh_token
+          });
+          
+          if (error) {
+            console.error('Error setting session from URL tokens:', error);
+          } else {
+            console.log('Session set successfully from URL tokens:', data.user?.email);
+          }
+        } catch (sessionError) {
+          console.error('Error processing OAuth tokens:', sessionError);
+        }
+        
         // Limpiar la URL de los tokens
         window.history.replaceState({}, document.title, window.location.pathname);
       }

@@ -104,17 +104,20 @@ const AuthModal = ({ isOpen, onClose, onSignIn, onSignUp, onGoogleSignIn, loadin
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('AuthModal: handleGoogleSignIn called');
       setGoogleLoading(true);
       setAuthError('');
       
+      console.log('AuthModal: calling onGoogleSignIn...');
       const result = await onGoogleSignIn();
+      console.log('AuthModal: onGoogleSignIn result:', result);
       
       if (!result.success) {
         setAuthError(result.error || 'Error al iniciar sesión con Google');
       }
       // No cerramos el modal aquí porque la redirección manejará el flujo
     } catch (error) {
-      console.error('Error with Google sign in:', error);
+      console.error('AuthModal: Error with Google sign in:', error);
       setAuthError('Error inesperado con Google. Intenta de nuevo.');
     } finally {
       setGoogleLoading(false);
