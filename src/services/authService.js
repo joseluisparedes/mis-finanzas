@@ -142,9 +142,17 @@ class AuthService {
     try {
       // Determinar URL de redirección basada en el entorno
       const isProduction = window.location.hostname === 'joseluisparedes.github.io';
-      const redirectTo = isProduction 
-        ? 'https://joseluisparedes.github.io/mis-finanzas/'
-        : `${window.location.origin}/`;
+      const isDevelopment = window.location.hostname === 'localhost';
+      
+      let redirectTo;
+      if (isProduction) {
+        redirectTo = 'https://joseluisparedes.github.io/mis-finanzas/';
+      } else if (isDevelopment) {
+        redirectTo = `${window.location.origin}/`;
+      } else {
+        // Para otros entornos (Vite dev server, etc.)
+        redirectTo = window.location.origin + window.location.pathname;
+      }
         
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
