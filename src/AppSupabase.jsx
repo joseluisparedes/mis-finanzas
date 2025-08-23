@@ -141,6 +141,8 @@ const AppSupabase = () => {
     updateBudget: updateBudgetData,
     deleteBudget: deleteBudgetFromData,
     getBudgetProgress: getBudgetProgressData,
+    getUserProfile,
+    updateUserProfile,
     lastSync
   } = useSupabaseData();
 

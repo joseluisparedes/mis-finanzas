@@ -1051,6 +1051,10 @@ export const useSupabaseData = () => {
     signOut,
     googleSignIn,
 
+    // Funciones de perfil de usuario
+    getUserProfile: () => databaseService.getUserProfile(),
+    updateUserProfile: (profileData) => databaseService.updateUserProfile(profileData),
+
     // Utilidades
     refreshData,
     checkForDuplicates,
