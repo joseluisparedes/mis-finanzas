@@ -9,6 +9,8 @@ import MigrationBanner from './components/Migration/MigrationBanner';
 import FinancialDashboard from './components/FinancialDashboard';
 import UserManagementPanel from './components/UserManagementPanel';
 import SubscriptionStatus from './components/SubscriptionStatus';
+import ProfileCustomization from './components/ProfileCustomization';
+import Avatar from './components/Avatar';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
 
@@ -161,6 +163,8 @@ const AppSupabase = () => {
   const [activeTab, setActiveTab] = useState('gastos');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
+  const [showProfileCustomization, setShowProfileCustomization] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
   const [menuCollapsed, setMenuCollapsed] = useState({
     gastos: false,
@@ -247,6 +251,29 @@ const AppSupabase = () => {
       }
     }
   }, [settings]);
+
+  // Cargar perfil de usuario cuando esté autenticado
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        if (currentUser) {
+          const profile = await getUserProfile();
+          setUserProfile(profile);
+        } else {
+          setUserProfile(null);
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, [currentUser]);
+
+  // Manejar actualización de perfil
+  const handleProfileUpdate = (newProfile) => {
+    setUserProfile(newProfile);
+  };
 
   // Función para guardar tipo de cambio
   const saveExchangeRate = async (newRate) => {
@@ -2679,6 +2706,53 @@ const AppSupabase = () => {
           </div>
         ) : (
           <div>
+            {/* Header del Usuario */}
+            <div className={`flex items-center justify-between p-4 rounded-lg shadow mb-4 transition-colors duration-200 ${
+              'bg-white dark:bg-dark-surface'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <Avatar
+                  avatar={userProfile?.avatar}
+                  avatarColor={userProfile?.avatar_color}
+                  displayName={userProfile?.display_name || currentUser?.email}
+                  size="lg"
+                  onClick={() => setShowProfileCustomization(true)}
+                />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    ¡Hola, {userProfile?.display_name || currentUser?.email?.split('@')[0] || 'Usuario'}!
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {subscriptionType === 'admin' ? '👑 Administrador' : 
+                     subscriptionType === 'premium' ? '⭐ Premium' : 
+                     subscriptionType === 'family' ? '❤️ Familia' : '🆓 Plan Free'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowProfileCustomization(true)}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  title="Personalizar perfil"
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => {
+                    if (confirm('¿Estás seguro de cerrar sesión?')) {
+                      handleSignOut();
+                    }
+                  }}
+                  className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
             <nav className={`flex flex-wrap sm:flex-nowrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
               'bg-white dark:bg-dark-surface'
             }`}>
@@ -5514,6 +5588,13 @@ const AppSupabase = () => {
           </div>
         )}
       </div>
+      
+      {/* Modal de Personalización de Perfil */}
+      <ProfileCustomization
+        isOpen={showProfileCustomization}
+        onClose={() => setShowProfileCustomization(false)}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };

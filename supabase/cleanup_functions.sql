@@ -42,7 +42,8 @@ RETURNS TABLE (
     early_bird_price DECIMAL,
     notes TEXT,
     created_at TIMESTAMPTZ,
-    users JSONB
+    users JSONB,
+    profile JSONB
 ) AS $$
 BEGIN
     -- Verificar que el usuario actual es admin
@@ -71,9 +72,18 @@ BEGIN
             'id', u.id,
             'email', u.email,
             'created_at', u.created_at
-        ) as users
+        ) as users,
+        COALESCE(
+            jsonb_build_object(
+                'display_name', up.display_name,
+                'avatar', up.avatar,
+                'avatar_color', up.avatar_color
+            ),
+            '{}'::jsonb
+        ) as profile
     FROM user_subscriptions us
     LEFT JOIN auth.users u ON us.user_id = u.id
+    LEFT JOIN user_profiles up ON us.user_id = up.user_id
     ORDER BY us.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

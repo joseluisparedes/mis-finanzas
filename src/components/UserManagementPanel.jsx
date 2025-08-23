@@ -7,6 +7,7 @@ import {
 import { useAdminFunctions } from '../hooks/useUserSubscription';
 import databaseService from '../services/databaseService';
 import { supabase } from '../lib/supabase';
+import Avatar from './Avatar';
 
 const UserManagementPanel = () => {
   const [users, setUsers] = useState([]);
@@ -338,20 +339,24 @@ const UserRow = ({ user, onChangeSubscription, onEditUser, actionLoading }) => {
     <tr className={isChanging ? 'opacity-50' : ''}>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center">
-              <span className="text-white font-medium text-sm">
-                {user.users?.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
+          <div className="flex-shrink-0">
+            <Avatar
+              avatar={user.profile?.avatar || 'person-1'}
+              avatarColor={user.profile?.avatar_color || '#8B5CF6'}
+              displayName={user.profile?.display_name || user.users?.email}
+              size="md"
+            />
           </div>
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900 dark:text-white">
+              {user.profile?.display_name || user.users?.email?.split('@')[0] || 'N/A'}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {user.users?.email || 'N/A'}
             </div>
             {user.notes && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {user.notes}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Nota: {user.notes}
               </div>
             )}
           </div>

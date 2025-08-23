@@ -1440,6 +1440,53 @@ class DatabaseService {
       console.error('Error creating default income types:', error);
     }
   }
+
+  // Obtener perfil personalizado del usuario
+  async getUserProfile() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return null;
+    }
+  }
+
+  // Actualizar perfil personalizado del usuario
+  async updateUserProfile(profileData) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: userId,
+          ...profileData,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ User profile updated:', data);
+      return data;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  }
 }
 
 // Instancia singleton
