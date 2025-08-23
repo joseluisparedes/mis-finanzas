@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext } from 'react';
 import databaseService from '../services/databaseService';
 import authService from '../services/authService';
 
@@ -52,10 +52,10 @@ export const SubscriptionProvider = ({ children }) => {
     loadUserSubscription
   };
 
-  return (
-    <SubscriptionContext.Provider value={contextValue}>
-      {children}
-    </SubscriptionContext.Provider>
+  return React.createElement(
+    SubscriptionContext.Provider,
+    { value: contextValue },
+    children
   );
 };
 
