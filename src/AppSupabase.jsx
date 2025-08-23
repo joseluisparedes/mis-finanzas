@@ -256,7 +256,7 @@ const AppSupabase = () => {
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        if (currentUser) {
+        if (user) {
           const profile = await getUserProfile();
           setUserProfile(profile);
         } else {
@@ -268,7 +268,7 @@ const AppSupabase = () => {
     };
 
     loadUserProfile();
-  }, [currentUser]);
+  }, [user]);
 
   // Manejar actualización de perfil
   const handleProfileUpdate = (newProfile) => {
@@ -2714,13 +2714,13 @@ const AppSupabase = () => {
                 <Avatar
                   avatar={userProfile?.avatar}
                   avatarColor={userProfile?.avatar_color}
-                  displayName={userProfile?.display_name || currentUser?.email}
+                  displayName={userProfile?.display_name || user?.email}
                   size="lg"
                   onClick={() => setShowProfileCustomization(true)}
                 />
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    ¡Hola, {userProfile?.display_name || currentUser?.email?.split('@')[0] || 'Usuario'}!
+                    ¡Hola, {userProfile?.display_name || user?.email?.split('@')[0] || 'Usuario'}!
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {subscriptionType === 'admin' ? '👑 Administrador' : 
