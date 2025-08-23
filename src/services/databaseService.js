@@ -1078,14 +1078,20 @@ class DatabaseService {
   async getUserSubscription(userId = null) {
     try {
       const targetUserId = userId || this.getCurrentUserId();
+      console.log('🔍 DatabaseService: Getting subscription for user ID:', targetUserId);
       
       const { data, error } = await supabase
         .rpc('get_user_subscription_info', { user_uuid: targetUserId });
 
-      if (error) throw error;
+      if (error) {
+        console.error('🚨 DatabaseService: RPC error:', error);
+        throw error;
+      }
+      
+      console.log('✅ DatabaseService: Subscription data:', data);
       return data;
     } catch (error) {
-      console.error('Error getting user subscription:', error);
+      console.error('❌ DatabaseService: Error getting user subscription:', error);
       return null;
     }
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import databaseService from '../services/databaseService';
 import authService from '../services/authService';
+import { supabase } from '../lib/supabase';
 
 // Context para compartir información de suscripción globalmente
 const SubscriptionContext = createContext();
@@ -10,13 +11,71 @@ export const SubscriptionProvider = ({ children }) => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
-  // Cargar información de suscripción al inicializar
+  // Cargar información de suscripción al inicializar y cuando cambie la autenticación
   useEffect(() => {
-    loadUserSubscription();
+    // Función para verificar el estado de autenticación
+    const checkAuthAndLoadSubscription = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Esperar un momento para que Supabase inicialice
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const user = authService.getCurrentUser();
+        console.log('🔍 Checking user:', user ? user.email : 'No user');
+        
+        if (!user) {
+          setSubscription(null);
+          setAuthReady(true);
+          setLoading(false);
+          return;
+        }
+
+        console.log('🔄 Loading subscription for user:', user.email);
+        const subscriptionInfo = await databaseService.getUserSubscription();
+        console.log('📋 Subscription loaded:', subscriptionInfo);
+        
+        setSubscription(subscriptionInfo);
+        setAuthReady(true);
+      } catch (err) {
+        console.error('❌ Error loading subscription:', err);
+        setError(err.message);
+        setSubscription(null);
+        setAuthReady(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndLoadSubscription();
+
+    // Escuchar cambios en el estado de autenticación
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', event, session?.user?.email);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Usuario se ha logueado, recargar suscripción
+          setTimeout(checkAuthAndLoadSubscription, 500);
+        } else if (event === 'SIGNED_OUT') {
+          // Usuario se ha deslogueado
+          setSubscription(null);
+          setAuthReady(false);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Cleanup
+    return () => {
+      authSubscription?.unsubscribe();
+    };
   }, []);
 
-  // Cargar suscripción del usuario actual
+  // Función para recargar suscripción manualmente
   const loadUserSubscription = async () => {
     try {
       setLoading(true);
@@ -28,10 +87,12 @@ export const SubscriptionProvider = ({ children }) => {
         return;
       }
 
+      console.log('🔄 Manual reload subscription for:', user.email);
       const subscriptionInfo = await databaseService.getUserSubscription();
+      console.log('📋 Subscription reloaded:', subscriptionInfo);
       setSubscription(subscriptionInfo);
     } catch (err) {
-      console.error('Error loading subscription:', err);
+      console.error('❌ Error reloading subscription:', err);
       setError(err.message);
       setSubscription(null);
     } finally {

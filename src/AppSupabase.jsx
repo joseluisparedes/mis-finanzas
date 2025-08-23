@@ -143,7 +143,15 @@ const AppSupabase = () => {
   } = useSupabaseData();
 
   // Hook de suscripción para roles
-  const { isAdmin, subscriptionType, loading: subscriptionLoading } = useUserSubscription();
+  const { 
+    isAdmin, 
+    subscriptionType, 
+    loading: subscriptionLoading, 
+    subscription 
+  } = useUserSubscription();
+
+  // Mostrar estado de carga mientras se verifica la suscripción
+  const isSubscriptionReady = !subscriptionLoading && subscription !== undefined;
 
   // Variables derivadas
   const recurringIncomes = recurringExpenses.filter(r => r.transaction_type === 'income');
@@ -2680,7 +2688,7 @@ const AppSupabase = () => {
                 { id: 'recurrentes', label: 'Recurrentes', icon: Repeat },
                 { id: 'balance', label: 'Balance', icon: Calendar },
                 { id: 'reportes', label: 'Reportes', icon: BarChart3 },
-                ...(isAdmin ? [{ id: 'admin', label: 'Administración', icon: Users }] : [])
+                ...(isSubscriptionReady && isAdmin ? [{ id: 'admin', label: 'Administración', icon: Users }] : [])
               ].map(tab => (
                 <button
                   key={tab.id}
