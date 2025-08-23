@@ -1235,46 +1235,38 @@ class DatabaseService {
   // Obtener todas las suscripciones (solo admin)
   async getAllSubscriptions() {
     try {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          users:user_id (
-            email,
-            created_at
-          )
-        `)
-        .order('created_at', { ascending: false });
+      console.log('🔄 Calling RPC function get_all_subscriptions...');
+      const { data, error } = await supabase.rpc('get_all_subscriptions');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ RPC Error:', error);
+        throw error;
+      }
+      
+      console.log('✅ RPC Success:', data);
       return data || [];
     } catch (error) {
       this.handleError(error, 'getAllSubscriptions');
+      throw error;
     }
   }
 
   // Obtener estadísticas de suscripciones (solo admin)
   async getSubscriptionStats() {
     try {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('subscription_type, status, is_early_bird');
+      console.log('🔄 Calling RPC function get_subscription_stats...');
+      const { data, error } = await supabase.rpc('get_subscription_stats');
 
-      if (error) throw error;
-
-      // Procesar estadísticas
-      const stats = {
-        total_users: data.length,
-        free_users: data.filter(s => s.subscription_type === 'free').length,
-        premium_users: data.filter(s => s.subscription_type === 'premium').length,
-        admin_users: data.filter(s => s.subscription_type === 'admin').length,
-        early_bird_users: data.filter(s => s.is_early_bird === true).length,
-        active_subscriptions: data.filter(s => s.status === 'active').length
-      };
-
-      return stats;
+      if (error) {
+        console.error('❌ RPC Error:', error);
+        throw error;
+      }
+      
+      console.log('✅ RPC Stats Success:', data);
+      return data || {};
     } catch (error) {
       this.handleError(error, 'getSubscriptionStats');
+      throw error;
     }
   }
 
