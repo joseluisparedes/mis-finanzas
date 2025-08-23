@@ -1474,6 +1474,8 @@ class DatabaseService {
           user_id: userId,
           ...profileData,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         })
         .select()
         .single();
