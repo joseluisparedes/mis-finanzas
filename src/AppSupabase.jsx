@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
+import { useUserSubscription } from './hooks/useUserSubscription';
 import AuthModal from './components/Auth/AuthModal';
 import AuthButton from './components/Auth/AuthButton';
 import MigrationBanner from './components/Migration/MigrationBanner';
 import FinancialDashboard from './components/FinancialDashboard';
+import UserManagementPanel from './components/UserManagementPanel';
+import SubscriptionStatus from './components/SubscriptionStatus';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
 
@@ -138,6 +141,9 @@ const AppSupabase = () => {
     getBudgetProgress: getBudgetProgressData,
     lastSync
   } = useSupabaseData();
+
+  // Hook de suscripción para roles
+  const { isAdmin, subscriptionType, loading: subscriptionLoading } = useUserSubscription();
 
   // Variables derivadas
   const recurringIncomes = recurringExpenses.filter(r => r.transaction_type === 'income');
@@ -1300,7 +1306,12 @@ const AppSupabase = () => {
             </div>
             
             {/* Usuario + Cerrar sesión - Derecha */}
-            <div className="hidden lg:flex items-center">
+            <div className="hidden lg:flex items-center space-x-3">
+              {/* Estado de suscripción */}
+              {isAuthenticated && !subscriptionLoading && (
+                <SubscriptionStatus compact={true} />
+              )}
+              
               <AuthButton
                 isAuthenticated={isAuthenticated}
                 user={user}
@@ -2668,7 +2679,8 @@ const AppSupabase = () => {
                 { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
                 { id: 'recurrentes', label: 'Recurrentes', icon: Repeat },
                 { id: 'balance', label: 'Balance', icon: Calendar },
-                { id: 'reportes', label: 'Reportes', icon: BarChart3 }
+                { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+                ...(isAdmin ? [{ id: 'admin', label: 'Administración', icon: Users }] : [])
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -5484,6 +5496,13 @@ const AppSupabase = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Sección de Administración (Solo para Admin) */}
+        {activeTab === 'admin' && isAdmin && (
+          <div>
+            <UserManagementPanel />
           </div>
         )}
       </div>

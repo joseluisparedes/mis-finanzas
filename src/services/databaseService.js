@@ -1069,6 +1069,227 @@ class DatabaseService {
       this.handleError(error, 'getAllUserData');
     }
   }
+
+  // ==============================================
+  // FUNCIONES DE SUSCRIPCIONES Y ROLES
+  // ==============================================
+
+  // Obtener información completa de suscripción del usuario
+  async getUserSubscription(userId = null) {
+    try {
+      const targetUserId = userId || this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .rpc('get_user_subscription_info', { user_uuid: targetUserId });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting user subscription:', error);
+      return null;
+    }
+  }
+
+  // Verificar si el usuario puede realizar una acción según sus límites
+  async checkUserLimit(limitType, userId = null) {
+    try {
+      const targetUserId = userId || this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .rpc('check_user_limit', { 
+          user_uuid: targetUserId, 
+          limit_type: limitType 
+        });
+
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error checking user limit:', error);
+      return false;
+    }
+  }
+
+  // Crear nueva suscripción (solo admin)
+  async createSubscription(subscriptionData) {
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert([subscriptionData])
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'createSubscription');
+    }
+  }
+
+  // Actualizar suscripción (solo admin)
+  async updateSubscription(subscriptionId, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update(updates)
+        .eq('id', subscriptionId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'updateSubscription');
+    }
+  }
+
+  // Promover usuario a Premium
+  async upgradeUserToPremium(userId, paymentInfo = {}) {
+    try {
+      const updates = {
+        subscription_type: 'premium',
+        status: 'active',
+        started_at: new Date().toISOString(),
+        expires_at: paymentInfo.billing_period === 'yearly' 
+          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        price_paid: paymentInfo.price || 15.00,
+        currency: paymentInfo.currency || 'PEN',
+        billing_period: paymentInfo.billing_period || 'monthly',
+        payment_method: paymentInfo.payment_method,
+        transaction_id: paymentInfo.transaction_id,
+        is_early_bird: paymentInfo.is_early_bird || false,
+        early_bird_price: paymentInfo.early_bird_price
+      };
+
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update(updates)
+        .eq('user_id', userId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      // Aplicar límites Premium
+      await supabase.rpc('set_subscription_limits', { 
+        sub_type: 'premium', 
+        user_uuid: userId 
+      });
+
+      return data;
+    } catch (error) {
+      this.handleError(error, 'upgradeUserToPremium');
+    }
+  }
+
+  // Cancelar suscripción Premium (volver a Free)
+  async downgradeUserToFree(userId) {
+    try {
+      const updates = {
+        subscription_type: 'free',
+        status: 'active',
+        expires_at: null,
+        cancelled_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update(updates)
+        .eq('user_id', userId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      // Aplicar límites Free
+      await supabase.rpc('set_subscription_limits', { 
+        sub_type: 'free', 
+        user_uuid: userId 
+      });
+
+      return data;
+    } catch (error) {
+      this.handleError(error, 'downgradeUserToFree');
+    }
+  }
+
+  // Promover usuario a Admin
+  async promoteUserToAdmin(userEmail) {
+    try {
+      const { data, error } = await supabase
+        .rpc('promote_user_to_admin', { target_user_email: userEmail });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      this.handleError(error, 'promoteUserToAdmin');
+    }
+  }
+
+  // Obtener todas las suscripciones (solo admin)
+  async getAllSubscriptions() {
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          users:user_id (
+            email,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      this.handleError(error, 'getAllSubscriptions');
+    }
+  }
+
+  // Obtener estadísticas de suscripciones (solo admin)
+  async getSubscriptionStats() {
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('subscription_type, status, is_early_bird');
+
+      if (error) throw error;
+
+      // Procesar estadísticas
+      const stats = {
+        total_users: data.length,
+        free_users: data.filter(s => s.subscription_type === 'free').length,
+        premium_users: data.filter(s => s.subscription_type === 'premium').length,
+        admin_users: data.filter(s => s.subscription_type === 'admin').length,
+        early_bird_users: data.filter(s => s.is_early_bird === true).length,
+        active_subscriptions: data.filter(s => s.status === 'active').length
+      };
+
+      return stats;
+    } catch (error) {
+      this.handleError(error, 'getSubscriptionStats');
+    }
+  }
+
+  // Verificar si el usuario es admin
+  async isUserAdmin(userId = null) {
+    try {
+      const targetUserId = userId || this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('subscription_type')
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (error) return false;
+      return data?.subscription_type === 'admin';
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  }
 }
 
 // Instancia singleton

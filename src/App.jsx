@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from './hooks/useSupabaseData';
+import { SubscriptionProvider } from './hooks/useUserSubscription';
 import AppSupabase from './AppSupabase.jsx';
 import LandingPage from './components/LandingPage.jsx';
 
@@ -55,7 +56,11 @@ const App = () => {
 
   // Render based on current view
   if (currentView === 'app' || (isAuthenticated && currentView !== 'landing')) {
-    return <AppSupabase onNavigateToLanding={handleNavigateToLanding} />;
+    return (
+      <SubscriptionProvider>
+        <AppSupabase onNavigateToLanding={handleNavigateToLanding} />
+      </SubscriptionProvider>
+    );
   }
 
   if (currentView === 'landing' || currentView === 'login') {
