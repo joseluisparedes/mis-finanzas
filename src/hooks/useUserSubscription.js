@@ -35,8 +35,25 @@ export const SubscriptionProvider = ({ children }) => {
         }
 
         console.log('🔄 Loading subscription for user:', user.email);
-        const subscriptionInfo = await databaseService.getUserSubscription();
-        console.log('📋 Subscription loaded:', subscriptionInfo);
+        let subscriptionInfo;
+        
+        try {
+          subscriptionInfo = await databaseService.getUserSubscription();
+          console.log('📋 Subscription loaded:', subscriptionInfo);
+        } catch (subscriptionError) {
+          console.log('⚠️ No subscription found, creating default subscription...');
+          
+          // Si no existe suscripción, crear una por defecto (usuario nuevo)
+          try {
+            await databaseService.createDefaultUserSubscription();
+            subscriptionInfo = await databaseService.getUserSubscription();
+            console.log('✅ Default subscription created:', subscriptionInfo);
+          } catch (createError) {
+            console.error('❌ Error creating default subscription:', createError);
+            // Continuar sin suscripción, se manejará como usuario sin plan
+            subscriptionInfo = null;
+          }
+        }
         
         setSubscription(subscriptionInfo);
         setAuthReady(true);

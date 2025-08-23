@@ -172,19 +172,21 @@ class AuthService {
       const currentOrigin = window.location.origin;
       const hostname = window.location.hostname;
       
-      console.log('OAuth Debug - Current URL:', currentUrl);
-      console.log('OAuth Debug - Hostname:', hostname);
-      console.log('OAuth Debug - Origin:', currentOrigin);
+      console.log('🔍 OAuth Debug - Current URL:', currentUrl);
+      console.log('🔍 OAuth Debug - Hostname:', hostname);
+      console.log('🔍 OAuth Debug - Origin:', currentOrigin);
+      console.log('🔍 OAuth Debug - Hash:', window.location.hash);
+      console.log('🔍 OAuth Debug - Search:', window.location.search);
       
       if (hostname === 'joseluisparedes.github.io') {
         // Producción en GitHub Pages
         redirectTo = 'https://joseluisparedes.github.io/mis-finanzas/';
       } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // Desarrollo local
-        redirectTo = currentOrigin + '/';
+        // Desarrollo local - CORREGIDO: incluir /mis-finanzas/
+        redirectTo = currentOrigin + '/mis-finanzas/';
       } else if (hostname.includes('netlify') || hostname.includes('vercel')) {
         // Otros servicios de hosting
-        redirectTo = currentOrigin + '/';
+        redirectTo = currentOrigin + '/mis-finanzas/';
       } else {
         // Fallback: usar la URL actual sin parámetros
         const baseUrl = currentUrl.split('?')[0].split('#')[0];
@@ -196,7 +198,11 @@ class AuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo
+          redirectTo: redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
 
@@ -390,11 +396,13 @@ class AuthService {
     }
   }
 
-  // Parsear parámetros del hash de la URL
+  // Parsear parámetros del hash de la URL Y query parameters
   parseHashParams() {
     const hash = window.location.hash.substring(1);
+    const search = window.location.search.substring(1);
     const params = {};
     
+    // Parsear hash parameters
     if (hash) {
       hash.split('&').forEach(param => {
         const [key, value] = param.split('=');
@@ -404,6 +412,17 @@ class AuthService {
       });
     }
     
+    // Parsear query parameters también
+    if (search) {
+      search.split('&').forEach(param => {
+        const [key, value] = param.split('=');
+        if (key && value) {
+          params[decodeURIComponent(key)] = decodeURIComponent(value);
+        }
+      });
+    }
+    
+    console.log('🔍 Parsed params from hash and search:', params);
     return params;
   }
 

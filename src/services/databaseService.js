@@ -1288,6 +1288,158 @@ class DatabaseService {
       return false;
     }
   }
+
+  // Crear suscripción por defecto para nuevos usuarios (OAuth)
+  async createDefaultUserSubscription() {
+    try {
+      const userId = this.getCurrentUserId();
+      console.log('🆕 Creating default subscription for user:', userId);
+      
+      // Verificar si ya existe
+      const { data: existing } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      
+      if (existing) {
+        console.log('✅ Subscription already exists');
+        return;
+      }
+      
+      // Crear suscripción FREE por defecto
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          subscription_type: 'free',
+          status: 'active',
+          monthly_transaction_limit: 30,
+          budget_limit: 2,
+          custom_category_limit: 3,
+          custom_payment_method_limit: 2,
+          custom_income_type_limit: 1,
+          recurring_transaction_limit: 5,
+          report_months_limit: 3,
+          multi_currency_enabled: false,
+          excel_export_enabled: false,
+          excel_import_enabled: false,
+          advanced_reports_enabled: false
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Error creating subscription:', error);
+        throw error;
+      }
+      
+      console.log('✅ Default subscription created successfully:', data);
+      
+      // Crear categorías por defecto
+      await this.createDefaultCategories();
+      await this.createDefaultPaymentMethods();
+      await this.createDefaultIncomeTypes();
+      
+      return data;
+    } catch (error) {
+      console.error('Error creating default subscription:', error);
+      throw error;
+    }
+  }
+
+  // Crear categorías por defecto
+  async createDefaultCategories() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const defaultCategories = [
+        { name: 'Comida', color: '#FF6B6B', sort_order: 1 },
+        { name: 'Transporte', color: '#4ECDC4', sort_order: 2 },
+        { name: 'Entretenimiento', color: '#45B7D1', sort_order: 3 },
+        { name: 'Servicios', color: '#96CEB4', sort_order: 4 },
+        { name: 'Compras', color: '#FFEAA7', sort_order: 5 }
+      ];
+      
+      for (const category of defaultCategories) {
+        const { error } = await supabase
+          .from('categories')
+          .insert({
+            user_id: userId,
+            ...category
+          });
+        
+        if (error && !error.message.includes('duplicate key')) {
+          console.error('Error creating category:', category.name, error);
+        }
+      }
+      
+      console.log('✅ Default categories created');
+    } catch (error) {
+      console.error('Error creating default categories:', error);
+    }
+  }
+
+  // Crear métodos de pago por defecto
+  async createDefaultPaymentMethods() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const defaultMethods = [
+        { name: 'Efectivo', color: '#74B9FF', sort_order: 1 },
+        { name: 'Tarjeta de Débito', color: '#0984E3', sort_order: 2 },
+        { name: 'Tarjeta de Crédito', color: '#6C5CE7', sort_order: 3 },
+        { name: 'Transferencia', color: '#A29BFE', sort_order: 4 }
+      ];
+      
+      for (const method of defaultMethods) {
+        const { error } = await supabase
+          .from('payment_methods')
+          .insert({
+            user_id: userId,
+            ...method
+          });
+        
+        if (error && !error.message.includes('duplicate key')) {
+          console.error('Error creating payment method:', method.name, error);
+        }
+      }
+      
+      console.log('✅ Default payment methods created');
+    } catch (error) {
+      console.error('Error creating default payment methods:', error);
+    }
+  }
+
+  // Crear tipos de ingresos por defecto
+  async createDefaultIncomeTypes() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const defaultTypes = [
+        { name: 'Salario Principal', color: '#00B894', sort_order: 1 },
+        { name: 'Salario Secundario', color: '#00CEC9', sort_order: 2 },
+        { name: 'Ingresos Adicionales', color: '#55A3FF', sort_order: 3 }
+      ];
+      
+      for (const type of defaultTypes) {
+        const { error } = await supabase
+          .from('income_types')
+          .insert({
+            user_id: userId,
+            ...type
+          });
+        
+        if (error && !error.message.includes('duplicate key')) {
+          console.error('Error creating income type:', type.name, error);
+        }
+      }
+      
+      console.log('✅ Default income types created');
+    } catch (error) {
+      console.error('Error creating default income types:', error);
+    }
+  }
 }
 
 // Instancia singleton

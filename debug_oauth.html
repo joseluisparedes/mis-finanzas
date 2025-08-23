@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug OAuth - MisFinanzas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin: 10px 0; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug OAuth - MisFinanzas</h1>
+        
+        <h2>Estado Actual:</h2>
+        <div id="status" class="log">Cargando...</div>
+        
+        <h2>URL Actual:</h2>
+        <div id="url" class="log"></div>
+        
+        <h2>Tokens en URL:</h2>
+        <div id="tokens" class="log"></div>
+        
+        <h2>Usuario Actual:</h2>
+        <div id="user" class="log"></div>
+        
+        <h2>Suscripción:</h2>
+        <div id="subscription" class="log"></div>
+        
+        <h2>Acciones:</h2>
+        <button onclick="testGoogleLogin()">🚀 Login con Google</button>
+        <button onclick="getSession()">🔍 Verificar Sesión</button>
+        <button onclick="getSubscription()">📋 Verificar Suscripción</button>
+        <button onclick="createSubscription()">➕ Crear Suscripción</button>
+        <button onclick="forceProcessTokens()">🔧 Procesar Tokens Manualmente</button>
+        <button onclick="logout()">🚪 Cerrar Sesión</button>
+        
+        <h2>Logs:</h2>
+        <div id="logs" class="log" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        // Configurar Supabase (usar las mismas variables que tu app)
+        const SUPABASE_URL = 'https://aimfmouxduklejrejlcq.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpbWZtb3V4ZHVrbGVqcmVqbGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMzNTU3MjQsImV4cCI6MjAzODkzMTcyNH0.CRvDQfNUKJ3iNQNkAmKxCJ8UyGI7JNagq11XvKu_t48'
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        
+        window.supabase = supabase // Global para debugging
+        
+        function log(message, type = 'info') {
+            console.log(message)
+            const logs = document.getElementById('logs')
+            const timestamp = new Date().toLocaleTimeString()
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : ''
+            logs.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`
+            logs.scrollTop = logs.scrollHeight
+        }
+        
+        function updateUI() {
+            // URL actual
+            document.getElementById('url').textContent = window.location.href
+            
+            // Tokens en URL
+            const hashParams = parseHashParams()
+            document.getElementById('tokens').textContent = JSON.stringify(hashParams, null, 2)
+        }
+        
+        function parseHashParams() {
+            const hash = window.location.hash.substring(1)
+            const params = {}
+            if (hash) {
+                hash.split('&').forEach(param => {
+                    const [key, value] = param.split('=')
+                    if (key && value) {
+                        params[decodeURIComponent(key)] = decodeURIComponent(value)
+                    }
+                })
+            }
+            return params
+        }
+        
+        async function testGoogleLogin() {
+            log('🚀 Iniciando login con Google...')
+            try {
+                const redirectTo = window.location.origin + window.location.pathname
+                log(`Redirect URL: ${redirectTo}`)
+                
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: redirectTo
+                    }
+                })
+                
+                if (error) {
+                    log(`❌ Error en OAuth: ${error.message}`, 'error')
+                } else {
+                    log('✅ OAuth iniciado correctamente', 'success')
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+        }
+        
+        async function getSession() {
+            log('🔍 Verificando sesión...')
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession()
+                
+                if (error) {
+                    log(`❌ Error obteniendo sesión: ${error.message}`, 'error')
+                } else if (session?.user) {
+                    log(`✅ Usuario autenticado: ${session.user.email}`, 'success')
+                    document.getElementById('user').textContent = JSON.stringify(session.user, null, 2)
+                } else {
+                    log('❌ No hay sesión activa', 'error')
+                    document.getElementById('user').textContent = 'Sin sesión'
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+        }
+        
+        async function getSubscription() {
+            log('📋 Verificando suscripción...')
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                
+                if (!session?.user) {
+                    log('❌ No hay usuario autenticado', 'error')
+                    return
+                }
+                
+                const { data, error } = await supabase
+                    .from('user_subscriptions')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .single()
+                
+                if (error) {
+                    log(`❌ Error obteniendo suscripción: ${error.message}`, 'error')
+                    document.getElementById('subscription').textContent = 'Sin suscripción'
+                } else {
+                    log(`✅ Suscripción encontrada: ${data.subscription_type}`, 'success')
+                    document.getElementById('subscription').textContent = JSON.stringify(data, null, 2)
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+        }
+        
+        async function createSubscription() {
+            log('➕ Creando suscripción...')
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                
+                if (!session?.user) {
+                    log('❌ No hay usuario autenticado', 'error')
+                    return
+                }
+                
+                const { data, error } = await supabase
+                    .from('user_subscriptions')
+                    .insert({
+                        user_id: session.user.id,
+                        subscription_type: 'free',
+                        status: 'active'
+                    })
+                    .select()
+                
+                if (error) {
+                    log(`❌ Error creando suscripción: ${error.message}`, 'error')
+                } else {
+                    log(`✅ Suscripción creada exitosamente`, 'success')
+                    getSubscription() // Actualizar UI
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+        }
+        
+        async function logout() {
+            log('🚪 Cerrando sesión...')
+            try {
+                const { error } = await supabase.auth.signOut()
+                
+                if (error) {
+                    log(`❌ Error cerrando sesión: ${error.message}`, 'error')
+                } else {
+                    log('✅ Sesión cerrada exitosamente', 'success')
+                    document.getElementById('user').textContent = 'Sin sesión'
+                    document.getElementById('subscription').textContent = 'Sin suscripción'
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+        }
+        
+        async function forceProcessTokens() {
+            log('🔧 Forzando procesamiento de tokens...', 'info')
+            
+            // Verificar si hay tokens en la URL actual
+            const hashParams = parseHashParams()
+            const urlParams = new URLSearchParams(window.location.search)
+            
+            log(`🔍 Hash actual: ${window.location.hash}`)
+            log(`🔍 Search actual: ${window.location.search}`)
+            
+            const accessToken = hashParams.access_token || urlParams.get('access_token')
+            const refreshToken = hashParams.refresh_token || urlParams.get('refresh_token')
+            
+            if (accessToken) {
+                log(`🔑 Token encontrado, procesando...`, 'success')
+                
+                try {
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    })
+                    
+                    if (error) {
+                        log(`❌ Error procesando tokens: ${error.message}`, 'error')
+                    } else {
+                        log(`✅ Tokens procesados para: ${data.user?.email}`, 'success')
+                        getSession()
+                        getSubscription()
+                    }
+                } catch (error) {
+                    log(`❌ Error en setSession: ${error.message}`, 'error')
+                }
+            } else {
+                log('❌ No hay tokens en la URL actual', 'error')
+                log('💡 Intenta hacer login con Google primero', 'info')
+            }
+        }
+        
+        // Inicialización
+        window.testGoogleLogin = testGoogleLogin
+        window.getSession = getSession
+        window.getSubscription = getSubscription
+        window.createSubscription = createSubscription
+        window.forceProcessTokens = forceProcessTokens
+        window.logout = logout
+        
+        // Actualizar UI al cargar
+        updateUI()
+        
+        // Verificar sesión al cargar
+        getSession()
+        
+        // Procesar tokens OAuth si existen
+        const hashParams = parseHashParams()
+        log(`🔍 URL Hash: ${window.location.hash}`)
+        log(`🔍 URL Search: ${window.location.search}`)
+        log(`🔍 Hash Params: ${JSON.stringify(hashParams)}`)
+        
+        if (hashParams.access_token) {
+            log('🔑 Tokens OAuth detectados en hash, procesando...', 'success')
+            
+            supabase.auth.setSession({
+                access_token: hashParams.access_token,
+                refresh_token: hashParams.refresh_token
+            }).then(({ data, error }) => {
+                if (error) {
+                    log(`❌ Error procesando tokens: ${error.message}`, 'error')
+                } else {
+                    log(`✅ Tokens procesados correctamente para: ${data.user?.email}`, 'success')
+                    // Limpiar URL
+                    window.history.replaceState({}, document.title, window.location.pathname)
+                    // Verificar suscripción
+                    setTimeout(() => {
+                        getSession()
+                        getSubscription()
+                    }, 1000)
+                }
+            })
+        } else {
+            // Buscar tokens en query parameters también
+            const urlParams = new URLSearchParams(window.location.search)
+            const accessToken = urlParams.get('access_token')
+            const refreshToken = urlParams.get('refresh_token')
+            
+            if (accessToken) {
+                log('🔑 Tokens OAuth detectados en query params, procesando...', 'success')
+                
+                supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                }).then(({ data, error }) => {
+                    if (error) {
+                        log(`❌ Error procesando tokens query: ${error.message}`, 'error')
+                    } else {
+                        log(`✅ Tokens query procesados correctamente para: ${data.user?.email}`, 'success')
+                        // Limpiar URL
+                        window.history.replaceState({}, document.title, window.location.pathname)
+                        // Verificar suscripción
+                        setTimeout(() => {
+                            getSession()
+                            getSubscription()
+                        }, 1000)
+                    }
+                })
+            } else {
+                log('❌ No se encontraron tokens OAuth en URL')
+            }
+        }
+        
+        document.getElementById('status').textContent = '✅ Debug tool cargado'
+    </script>
+</body>
+</html>
