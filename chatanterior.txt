@@ -737,6 +737,137 @@ debe partir desde este punto de backup.
 
 CALIDAD FINAL: ⭐⭐⭐⭐⭐ PREMIUM - APP LISTA PARA USUARIOS REALES
 
+NUEVA SESIÓN - DISEÑO DE PLANES DE MONETIZACIÓN (22/08/2025):
+==============================================================
+
+ANÁLISIS COMPLETO DE FUNCIONALIDADES ACTUALES:
+----------------------------------------------
+TOTAL: +50 funcionalidades identificadas en AppSupabase.jsx
+
+FUNCIONALIDADES PRINCIPALES EXISTENTES:
+1. ✅ GASTOS: Registro, categorización, multi-moneda PEN/USD, filtros, edición
+2. ✅ INGRESOS: Tipificación, multi-moneda, filtros, edición completa
+3. ✅ RECURRENTES: Gastos/ingresos automáticos, múltiples frecuencias, estimados
+4. ✅ PRESUPUESTOS: Por categoría, períodos, seguimiento tiempo real, alertas
+5. ✅ REPORTES: Filtros avanzados, múltiples gráficos, análisis tendencias
+6. ✅ BALANCE: Dashboard, comparativas, gráficos interactivos
+7. ✅ CONFIGURACIÓN: Categorías, métodos pago, tipos ingreso personalizables
+8. ✅ EXPORTACIÓN: Excel completo, importación, selección granular
+9. ✅ AUTENTICACIÓN: Google OAuth, email/contraseña, gestión sesiones
+10. ✅ UX PREMIUM: Dark mode, responsive, sincronización tiempo real
+
+PROPUESTA FINAL DE PLANES APROBADA POR USUARIO:
+==============================================
+
+🆓 PLAN FREE - "Finanzas Básicas"
+---------------------------------
+LÍMITES INTELIGENTES:
+- ✅ 30 transacciones/mes (gastos + ingresos)
+- ✅ 2 presupuestos activos simultáneos
+- ✅ 3 categorías personalizadas (+ predefinidas básicas)
+- ✅ 2 métodos de pago personalizados
+- ✅ 1 tipo de ingreso personalizado
+- ✅ Reportes últimos 3 meses únicamente
+
+FUNCIONALIDADES INCLUIDAS:
+- ✅ Registro básico gastos e ingresos
+- ✅ Gráficos básicos (pie chart, bar chart)
+- ✅ Dark mode completo
+- ✅ Diseño responsive móvil
+- ✅ 5 transacciones recurrentes (total)
+- ✅ Exportar datos básicos (CSV)
+- ✅ Autenticación Google
+- ✅ Sincronización 1 dispositivo
+
+RESTRICCIONES:
+- ❌ Solo moneda PEN (soles)
+- ❌ Sin análisis tendencias avanzadas
+- ❌ Sin importación Excel
+- ❌ Marca agua "MisFinanzas Free" en reportes
+
+💎 PLAN PREMIUM - "Control Total" 
+---------------------------------
+SIN LÍMITES:
+- ⭐ Transacciones ilimitadas por mes
+- ⭐ Presupuestos ilimitados con alertas inteligentes
+- ⭐ Categorías y métodos pago ilimitados
+- ⭐ Tipos ingresos ilimitados
+- ⭐ Transacciones recurrentes ilimitadas
+- ⭐ Histórico completo sin restricciones temporales
+
+FUNCIONALIDADES PREMIUM EXCLUSIVAS:
+
+📈 ANÁLISIS AVANZADOS:
+- ⭐ Múltiples tipos gráficos (pie, donut, area, bar)
+- ⭐ Análisis tendencias (3, 6, 12 meses)
+- ⭐ Comparativas mensuales automáticas
+- ⭐ Reportes avanzados filtros múltiples
+- ⭐ Promedio diario gastos por período
+
+💰 MULTI-MONEDA AVANZADO:
+- ⭐ Soporte PEN/USD completo
+- ⭐ Tipo cambio configurable
+- ⭐ Conversión automática en reportes
+- ⭐ Vista dual de monedas
+
+🔄 GESTIÓN PREMIUM:
+- ⭐ Categorías colores personalizables
+- ⭐ Métodos pago fechas corte
+- ⭐ Configuración día cobro personalizado
+- ⭐ Gestión completa recurrentes
+
+📊 EXPORTACIÓN/IMPORTACIÓN PRO:
+- ⭐ Exportar Excel (.xlsx) completo
+- ⭐ Importar desde Excel con validación
+- ⭐ Selección granular datos exportar
+- ⭐ Reportes profesionales sin marca agua
+
+📱 EXPERIENCIA PREMIUM:
+- ⭐ Sincronización ilimitada múltiples dispositivos
+- ⭐ Presupuestos detalle gastos
+- ⭐ Alertas visuales exceso presupuesto
+- ⭐ Vista expandible transacciones
+- ⭐ Ordenamiento avanzado (fecha, monto, descripción)
+
+🎁 BONIFICACIONES ESPECIALES:
+- ⭐ Soporte prioritario (WhatsApp directo)
+- ⭐ Backup automático datos
+- ⭐ Acceso anticipado nuevas funciones
+- ⭐ Dashboard financiero personalizado
+
+ESTRATEGIA DE PRECIOS APROBADA:
+===============================
+
+🔥 EARLY BIRD - Primeros 50 usuarios:
+- S/ 5.00/mes - PRECIO FUNDADOR
+- ✨ Se mantiene PARA SIEMPRE
+- 🏆 Badge "Fundador MisFinanzas"
+
+💎 PRECIO REGULAR POST-LANZAMIENTO:
+- S/ 15.00/mes
+- S/ 150.00/año (ahorro S/ 30)
+
+JUSTIFICACIÓN ESTRATÉGICA:
+=========================
+- 30 transacciones/mes FREE: Cubre uso básico sin competir Premium
+- Solo PEN en FREE: Simplifica UX usuarios casuales peruanos
+- 3 meses historial FREE: Suficiente probar valor, incentiva upgrade
+- 1 dispositivo FREE: Fuerza decisión Premium usuarios multi-device
+- Premium S/ 15: Justificado por +50 funcionalidades vs competencia
+- Multi-moneda Premium: Esencial peruanos manejan USD
+- Excel integration: Funcionalidad profesional valorada
+- Early Bird S/ 5: Crea urgencia y exclusividad
+
+ESTRATEGIA DE CONVERSIÓN:
+========================
+Usuario prueba Free → Llega a límite → Ve valor → Upgrade Premium
+Oferta Early Bird S/ 5 crea urgencia y exclusividad
+
+ESTADO ACTUAL: PROPUESTA APROBADA POR USUARIO
+PRÓXIMOS PASOS: Landing page comercial + sistema suscripciones
+
+ACTUALIZACIÓN: 22 Agosto 2025 - Planes de monetización definidos y aprobados
+
 ================================================================
 FIN DEL ARCHIVO - ASEGÚRATE DE LEER TODO ANTES DE CONTINUAR
 ================================================================
