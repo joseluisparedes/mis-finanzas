@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export const useErrorHandler = () => {
   const [error, setError] = useState(null);
@@ -24,7 +24,19 @@ export const useErrorHandler = () => {
   const clearError = () => {
     setError(null);
     setLastErrorMessage(null);
+    setCurrentErrorId(null);
   };
+
+  // Auto-limpiar errores después de 10 segundos como fallback
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const improveErrorMessage = (message) => {
     // Mapear errores comunes a mensajes más amigables

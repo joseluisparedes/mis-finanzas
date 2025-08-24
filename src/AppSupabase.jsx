@@ -465,13 +465,27 @@ const AppSupabase = () => {
   const [incomeError, setIncomeError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Limpiar errores automáticamente después de 5 segundos
+  // Limpiar errores locales automáticamente después de 5 segundos
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (expenseError) {
+      const timer = setTimeout(() => setExpenseError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [expenseError]);
+
+  useEffect(() => {
+    if (incomeError) {
+      const timer = setTimeout(() => setIncomeError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [incomeError]);
   
   // Estados para formularios
   const [newExpense, setNewExpense] = useState({
@@ -1571,7 +1585,7 @@ const AppSupabase = () => {
                   <button
                     onClick={() => {
                       if (!canExportExcel()) {
-                        setExpenseError('Plan Free: Solo CSV básico disponible. Upgrade a Premium para Excel completo.');
+                        showError('Plan Free: Solo CSV básico disponible. Upgrade a Premium para Excel completo.');
                         return;
                       }
                       setShowExportModal(true);
@@ -1615,7 +1629,7 @@ const AppSupabase = () => {
                     </label>
                   ) : (
                     <button
-                      onClick={() => setExpenseError('Plan Free: Importar Excel no disponible. Upgrade a Premium.')}
+                      onClick={() => showError('Plan Free: Importar Excel no disponible. Upgrade a Premium.')}
                       disabled={true}
                       className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-not-allowed text-sm font-medium text-gray-400 opacity-60"
                       title="Plan Free: Importar Excel no disponible - Upgrade a Premium"
@@ -2906,7 +2920,7 @@ const AppSupabase = () => {
                     <button
                       onClick={(e) => {
                         if (!canCreateIncomeType()) {
-                          setExpenseError('Plan Free: Límite de 1 tipo de ingreso alcanzado. Upgrade a Premium.');
+                          showError('Plan Free: Límite de 1 tipo de ingreso alcanzado. Upgrade a Premium.');
                           return;
                         }
                         const nameInput = e.target.parentElement.querySelector('input[type="text"]');

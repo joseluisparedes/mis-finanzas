@@ -4,12 +4,12 @@ import { X, AlertCircle, ExternalLink, Crown } from 'lucide-react';
 const ErrorMessage = ({ message, onClose, autoClose = true }) => {
   const [isVisible, setIsVisible] = React.useState(true);
 
-  // Auto close después de 5 segundos para errores normales
+  // Auto close después de 8 segundos para TODOS los errores
   React.useEffect(() => {
-    if (autoClose && !isUpgradeError(message)) {
+    if (autoClose) {
       const timer = setTimeout(() => {
         handleClose();
-      }, 5000);
+      }, 8000); // 8 segundos para que el usuario pueda leer el mensaje
       
       return () => clearTimeout(timer);
     }
