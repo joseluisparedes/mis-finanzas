@@ -2817,9 +2817,9 @@ const AppSupabase = () => {
                 <Avatar
                   avatar={userProfile?.avatar}
                   avatarColor={userProfile?.avatar_color}
-                  displayName={userProfile?.display_name || user?.email}
                   size="lg"
                   onClick={() => setShowProfileCustomization(true)}
+                  className="cursor-pointer hover:scale-105 transition-transform"
                 />
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
