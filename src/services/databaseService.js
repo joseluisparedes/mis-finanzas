@@ -104,6 +104,14 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Verificar límites de suscripción antes de crear
+      const subscriptionInfo = await this.getUserSubscription();
+      const categoryLimits = subscriptionInfo?.limits?.categories;
+      
+      if (categoryLimits && categoryLimits.available !== -1 && categoryLimits.available <= 0) {
+        throw new Error('Has alcanzado el límite de categorías personalizadas para tu plan. Upgrade a Premium para categorías ilimitadas.');
+      }
+      
       const { data, error } = await supabase
         .from('categories')
         .insert([{
@@ -111,7 +119,8 @@ class DatabaseService {
           name: category.name,
           color: category.color || '#FF6B6B',
           icon: category.icon || 'circle',
-          sort_order: category.sort_order || 0
+          sort_order: category.sort_order || 0,
+          is_custom: true
         }])
         .select()
         .single();
@@ -121,6 +130,7 @@ class DatabaseService {
       return data;
     } catch (error) {
       this.handleError(error, 'createCategory');
+      throw error;
     }
   }
 
@@ -190,6 +200,14 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Verificar límites de suscripción antes de crear
+      const subscriptionInfo = await this.getUserSubscription();
+      const paymentMethodLimits = subscriptionInfo?.limits?.payment_methods;
+      
+      if (paymentMethodLimits && paymentMethodLimits.available !== -1 && paymentMethodLimits.available <= 0) {
+        throw new Error('Has alcanzado el límite de métodos de pago personalizados para tu plan. Upgrade a Premium para métodos ilimitados.');
+      }
+      
       const { data, error } = await supabase
         .from('payment_methods')
         .insert([{
@@ -200,7 +218,8 @@ class DatabaseService {
           sort_order: method.sort_order || 0,
           payment_type: method.payment_type || 'cash',
           cc_closing_day: method.cc_closing_day || null,
-          cc_payment_day: method.cc_payment_day || null
+          cc_payment_day: method.cc_payment_day || null,
+          is_custom: true
         }])
         .select()
         .single();
@@ -210,6 +229,7 @@ class DatabaseService {
       return data;
     } catch (error) {
       this.handleError(error, 'createPaymentMethod');
+      throw error;
     }
   }
 
@@ -278,6 +298,14 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Verificar límites de suscripción antes de crear
+      const subscriptionInfo = await this.getUserSubscription();
+      const incomeTypeLimits = subscriptionInfo?.limits?.income_types;
+      
+      if (incomeTypeLimits && incomeTypeLimits.available !== -1 && incomeTypeLimits.available <= 0) {
+        throw new Error('Has alcanzado el límite de tipos de ingreso personalizados para tu plan. Upgrade a Premium para tipos ilimitados.');
+      }
+      
       const { data, error } = await supabase
         .from('income_types')
         .insert([{
@@ -285,7 +313,8 @@ class DatabaseService {
           name: type.name,
           color: type.color || '#00B894',
           icon: type.icon || 'dollar-sign',
-          sort_order: type.sort_order || 0
+          sort_order: type.sort_order || 0,
+          is_custom: true
         }])
         .select()
         .single();
@@ -295,6 +324,7 @@ class DatabaseService {
       return data;
     } catch (error) {
       this.handleError(error, 'createIncomeType');
+      throw error;
     }
   }
 
@@ -923,6 +953,14 @@ class DatabaseService {
   async createBudget(budgetData) {
     try {
       const userId = this.getCurrentUserId();
+      
+      // Verificar límites de suscripción antes de crear
+      const subscriptionInfo = await this.getUserSubscription();
+      const budgetLimits = subscriptionInfo?.limits?.budgets;
+      
+      if (budgetLimits && budgetLimits.available !== -1 && budgetLimits.available <= 0) {
+        throw new Error('Has alcanzado el límite de presupuestos para tu plan. Upgrade a Premium para presupuestos ilimitados.');
+      }
       
       const { data, error } = await supabase
         .from('budgets')
