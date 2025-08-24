@@ -4,18 +4,8 @@ import { X, AlertCircle, ExternalLink, Crown } from 'lucide-react';
 const ErrorMessage = ({ message, onClose, autoClose = true }) => {
   const [isVisible, setIsVisible] = React.useState(true);
 
-  // Auto close después de 8 segundos para TODOS los errores
-  React.useEffect(() => {
-    if (autoClose) {
-      const timer = setTimeout(() => {
-        handleClose();
-      }, 8000); // 8 segundos para que el usuario pueda leer el mensaje
-      
-      return () => clearTimeout(timer);
-    }
-  }, [message, autoClose, handleClose]);
-
-  const isUpgradeError = (msg) => {
+  // Función para detectar errores de upgrade - DEFINIDA PRIMERO
+  const isUpgradeError = React.useCallback((msg) => {
     const upgradeKeywords = [
       'límite',
       'plan',
@@ -27,14 +17,26 @@ const ErrorMessage = ({ message, onClose, autoClose = true }) => {
     return upgradeKeywords.some(keyword => 
       msg.toLowerCase().includes(keyword.toLowerCase())
     );
-  };
+  }, []);
 
+  // Función para cerrar - DEFINIDA ANTES DE USARSE
   const handleClose = React.useCallback(() => {
     setIsVisible(false);
     setTimeout(() => {
       if (onClose) onClose();
     }, 300);
   }, [onClose]);
+
+  // Auto close después de 8 segundos para TODOS los errores
+  React.useEffect(() => {
+    if (autoClose) {
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 8000); // 8 segundos para que el usuario pueda leer el mensaje
+      
+      return () => clearTimeout(timer);
+    }
+  }, [message, autoClose, handleClose]);
 
   const handleUpgrade = () => {
     // Abrir en nueva pestaña la página de upgrade
