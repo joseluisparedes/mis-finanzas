@@ -104,7 +104,8 @@ const UserManagementPanel = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.users?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const email = user.user_email || user.users?.email || '';
+    const matchesSearch = email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === 'all' || user.subscription_type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -349,10 +350,10 @@ const UserRow = ({ user, onChangeSubscription, onEditUser, actionLoading }) => {
           </div>
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900 dark:text-white">
-              {user.profile?.display_name || user.users?.email?.split('@')[0] || 'N/A'}
+              {user.profile?.display_name || (user.user_email || user.users?.email)?.split('@')[0] || 'N/A'}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              {user.users?.email || 'N/A'}
+              {user.user_email || user.users?.email || 'N/A'}
             </div>
             {user.notes && (
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
