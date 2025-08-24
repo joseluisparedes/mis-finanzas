@@ -1677,20 +1677,15 @@ class DatabaseService {
   // Verificar si el usuario actual es admin
   async isUserAdmin() {
     try {
-      const userId = this.getCurrentUserId();
-      
       const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('subscription_type, status')
-        .eq('user_id', userId)
-        .single();
+        .rpc('is_current_user_admin');
       
       if (error) {
-        console.log('No subscription found');
+        console.log('Error checking admin status:', error);
         return false;
       }
       
-      return data.subscription_type === 'admin' && data.status === 'active';
+      return data === true;
     } catch (error) {
       console.error('Error checking admin status:', error);
       return false;
