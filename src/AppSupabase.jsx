@@ -189,7 +189,7 @@ const AppSupabase = () => {
   const [darkMode, setDarkMode] = useState(false);
   
   // Hook de manejo de errores mejorado
-  const { error: globalError, showError, clearError } = useErrorHandler();
+  const { error: globalError, showError, clearError: clearGlobalError } = useErrorHandler();
   const [menuCollapsed, setMenuCollapsed] = useState({
     gastos: false,
     ingresos: false,
@@ -6175,7 +6175,7 @@ const AppSupabase = () => {
       {globalError && (
         <ErrorMessage
           message={globalError}
-          onClose={clearError}
+          onClose={clearGlobalError}
         />
       )}
     </div>
