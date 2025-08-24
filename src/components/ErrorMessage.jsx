@@ -13,7 +13,7 @@ const ErrorMessage = ({ message, onClose, autoClose = true }) => {
       
       return () => clearTimeout(timer);
     }
-  }, [message, autoClose]);
+  }, [message, autoClose, handleClose]);
 
   const isUpgradeError = (msg) => {
     const upgradeKeywords = [
@@ -29,12 +29,12 @@ const ErrorMessage = ({ message, onClose, autoClose = true }) => {
     );
   };
 
-  const handleClose = () => {
+  const handleClose = React.useCallback(() => {
     setIsVisible(false);
     setTimeout(() => {
       if (onClose) onClose();
     }, 300);
-  };
+  }, [onClose]);
 
   const handleUpgrade = () => {
     // Abrir en nueva pestaña la página de upgrade
