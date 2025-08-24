@@ -231,12 +231,13 @@ export const useSupabaseData = () => {
       if (!isAuthenticated) throw new Error('Usuario no autenticado');
 
       const updatedExpense = await databaseService.updateExpense(id, {
-        category_id: updates.category,
-        payment_method_id: updates.paymentMethod,
+        category_id: updates.category_id || updates.category,
+        payment_method_id: updates.payment_method_id || updates.paymentMethod,
         amount: updates.amount ? parseFloat(updates.amount) : undefined,
         description: updates.description,
         date: updates.date,
-        notes: updates.notes
+        notes: updates.notes,
+        currency: updates.currency
       });
 
       setExpenses(prev => 
