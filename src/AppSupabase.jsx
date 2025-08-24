@@ -1834,9 +1834,13 @@ const AppSupabase = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 xl:py-8">
         {successMessage && <MessageAlert message={successMessage} type="success" />}
         {(dataError || expenseError || incomeError) && (
-          <MessageAlert 
-            message={dataError || expenseError || incomeError} 
-            type="error" 
+          <ErrorMessage
+            message={dataError || expenseError || incomeError}
+            onClose={() => {
+              if (dataError) clearError();
+              if (expenseError) setExpenseError('');
+              if (incomeError) setIncomeError('');
+            }}
           />
         )}
         
