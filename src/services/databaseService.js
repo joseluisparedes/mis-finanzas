@@ -453,6 +453,8 @@ class DatabaseService {
         processedUpdates.date = this.convertToLocalDate(processedUpdates.date);
       }
       
+      console.log('🔄 Actualizando gasto:', { id, updates, processedUpdates });
+      
       const { data, error } = await supabase
         .from('expenses')
         .update(processedUpdates)

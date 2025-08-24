@@ -3023,12 +3023,15 @@ const AppSupabase = () => {
                                   <button
                                     onClick={async () => {
                                       try {
+                                        console.log('📝 Datos del formulario antes de actualizar:', editFormData);
+                                        console.log('💳 payment_method_id a actualizar:', editFormData.payment_method_id);
                                         await updateExpense(expense.id, editFormData);
                                         setEditingExpense(null);
                                         setEditFormData({});
                                         setSuccessMessage('Gasto actualizado exitosamente');
                                         setTimeout(() => setSuccessMessage(''), 3000);
                                       } catch (error) {
+                                        console.error('❌ Error actualizando gasto:', error);
                                         setError('Error al actualizar el gasto');
                                         setTimeout(() => setError(''), 3000);
                                       }
