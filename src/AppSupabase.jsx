@@ -11,6 +11,8 @@ import UserManagementPanel from './components/UserManagementPanel';
 import SubscriptionStatus from './components/SubscriptionStatus';
 import ProfileCustomization from './components/ProfileCustomization';
 import Avatar from './components/Avatar';
+import ErrorMessage from './components/ErrorMessage';
+import { useErrorHandler } from './hooks/useErrorHandler';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
 
@@ -185,6 +187,9 @@ const AppSupabase = () => {
   const [showProfileCustomization, setShowProfileCustomization] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
+  
+  // Hook de manejo de errores mejorado
+  const { error, showError, clearError } = useErrorHandler();
   const [menuCollapsed, setMenuCollapsed] = useState({
     gastos: false,
     ingresos: false,
@@ -2364,15 +2369,19 @@ const AppSupabase = () => {
                           ? 'border-gray-300 focus:ring-blue-500'
                           : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
-                      onKeyPress={(e) => {
+                      onKeyPress={async (e) => {
                         if (e.key === 'Enter' && e.target.value.trim() && canCreateCategory()) {
                           const newCategory = {
                             name: e.target.value.trim(),
                             color: '#' + Math.floor(Math.random()*16777215).toString(16),
                             sort_order: categories.length + 1
                           };
-                          addCategory(newCategory);
-                          e.target.value = '';
+                          try {
+                            await addCategory(newCategory);
+                            e.target.value = '';
+                          } catch (error) {
+                            showError(error);
+                          }
                         }
                       }}
                     />
@@ -2385,9 +2394,9 @@ const AppSupabase = () => {
                       }`}
                     />
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         if (!canCreateCategory()) {
-                          setExpenseError('Plan Free: Límite de 3 categorías alcanzado. Upgrade a Premium.');
+                          showError('Plan Free: Límite de 3 categorías alcanzado. Upgrade a Premium para categorías ilimitadas.');
                           return;
                         }
                         const nameInput = e.target.parentElement.querySelector('input[type="text"]');
@@ -2398,9 +2407,13 @@ const AppSupabase = () => {
                             color: colorInput.value,
                             sort_order: categories.length + 1
                           };
-                          addCategory(newCategory);
-                          nameInput.value = '';
-                          colorInput.value = '#6B7280';
+                          try {
+                            await addCategory(newCategory);
+                            nameInput.value = '';
+                            colorInput.value = '#6B7280';
+                          } catch (error) {
+                            showError(error);
+                          }
                         }
                       }}
                       disabled={!canCreateCategory()}
@@ -6157,6 +6170,14 @@ const AppSupabase = () => {
         onClose={() => setShowProfileCustomization(false)}
         onProfileUpdate={handleProfileUpdate}
       />
+      
+      {/* Componente de manejo de errores mejorado */}
+      {error && (
+        <ErrorMessage
+          message={error}
+          onClose={clearError}
+        />
+      )}
     </div>
   );
 };
