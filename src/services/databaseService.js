@@ -119,8 +119,7 @@ class DatabaseService {
           name: category.name,
           color: category.color || '#FF6B6B',
           icon: category.icon || 'circle',
-          sort_order: category.sort_order || 0,
-          is_custom: true
+          sort_order: category.sort_order || 0
         }])
         .select()
         .single();
@@ -218,8 +217,7 @@ class DatabaseService {
           sort_order: method.sort_order || 0,
           payment_type: method.payment_type || 'cash',
           cc_closing_day: method.cc_closing_day || null,
-          cc_payment_day: method.cc_payment_day || null,
-          is_custom: true
+          cc_payment_day: method.cc_payment_day || null
         }])
         .select()
         .single();
@@ -313,8 +311,7 @@ class DatabaseService {
           name: type.name,
           color: type.color || '#00B894',
           icon: type.icon || 'dollar-sign',
-          sort_order: type.sort_order || 0,
-          is_custom: true
+          sort_order: type.sort_order || 0
         }])
         .select()
         .single();
