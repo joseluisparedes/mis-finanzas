@@ -1237,8 +1237,8 @@ class DatabaseService {
   // Obtener todas las suscripciones (solo admin)
   async getAllSubscriptions() {
     try {
-      console.log('🔄 Calling RPC function get_all_subscriptions...');
-      const { data, error } = await supabase.rpc('get_all_subscriptions');
+      console.log('🔄 Calling RPC function get_all_subscriptions_admin...');
+      const { data, error } = await supabase.rpc('get_all_subscriptions_admin');
 
       if (error) {
         console.error('❌ RPC Error:', error);
@@ -1246,7 +1246,23 @@ class DatabaseService {
       }
       
       console.log('✅ RPC Success:', data);
-      return data || [];
+      
+      // La función devuelve un JSON que ya es un array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && data.error) {
+        throw new Error(data.error);
+      } else if (typeof data === 'string') {
+        // Si viene como string, parsearlo
+        try {
+          const parsed = JSON.parse(data);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      
+      return [];
     } catch (error) {
       this.handleError(error, 'getAllSubscriptions');
       throw error;
@@ -1692,26 +1708,6 @@ class DatabaseService {
     }
   }
 
-  // Obtener todas las suscripciones (solo admin)
-  async getAllSubscriptions() {
-    try {
-      const isAdmin = await this.isUserAdmin();
-      if (!isAdmin) {
-        throw new Error('No tienes permisos de administrador');
-      }
-      
-      const { data, error } = await supabase
-        .rpc('get_all_subscriptions_admin');
-      
-      if (error) throw error;
-      
-      // Convertir JSON response a array si es necesario
-      return Array.isArray(data) ? data : (data ? [data] : []);
-    } catch (error) {
-      console.error('Error getting all subscriptions:', error);
-      throw error;
-    }
-  }
 
   // Obtener estadísticas de suscripciones (solo admin)
   async getSubscriptionStats() {
