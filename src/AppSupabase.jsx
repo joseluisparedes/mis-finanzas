@@ -5172,24 +5172,10 @@ const AppSupabase = () => {
                       <div className="space-y-6">
                         {/* Sección de Ingresos */}
                         <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-md font-medium text-green-700 flex items-center">
-                              <TrendingUp className="w-4 h-4 mr-2" />
-                              Ingresos del Mes: {formatCurrency(totalIncomes)}
-                            </h4>
-                            <div className="flex items-center space-x-2">
-                              <label className="text-sm font-medium text-gray-600">Ver:</label>
-                              <select
-                                value={balanceViewOptions.incomes}
-                                onChange={(e) => setBalanceViewOptions(prev => ({...prev, incomes: e.target.value}))}
-                                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                              >
-                                <option value="category">Por Categoría</option>
-                                <option value="payment">Por Método de Pago</option>
-                                <option value="both">Categoría + Método</option>
-                              </select>
-                            </div>
-                          </div>
+                          <h4 className="text-md font-medium text-green-700 mb-3 flex items-center">
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Ingresos del Mes: {formatCurrency(totalIncomes)}
+                          </h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
                             {/* Ingresos Regulares */}
                             <div className="bg-green-50 rounded-lg p-4">
@@ -5199,70 +5185,31 @@ const AppSupabase = () => {
                                   {formatCurrency(regularIncomesTotal)}
                                 </span>
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 {monthIncomes.length === 0 ? (
                                   <p className="text-xs text-green-600">Sin ingresos regulares</p>
                                 ) : (
-                                  (() => {
-                                    let groupedIncomes;
-                                    switch(balanceViewOptions.incomes) {
-                                      case 'payment':
-                                        groupedIncomes = groupByPaymentMethod(monthIncomes);
-                                        break;
-                                      case 'both':
-                                        groupedIncomes = groupByCategoryAndPayment(monthIncomes);
-                                        break;
-                                      case 'category':
-                                      default:
-                                        groupedIncomes = groupByCategory(monthIncomes);
-                                        break;
-                                    }
-
-                                    const displayGroups = expandedSections.regularIncomes ? groupedIncomes : groupedIncomes.slice(0, 3);
-
-                                    return (
-                                      <>
-                                        {displayGroups.map((group, index) => (
-                                          <div key={index} className="border-l-3 pl-2 space-y-1" style={{ borderLeftColor: group.color || group.categoryColor }}>
-                                            <div className="flex justify-between items-center">
-                                              <span className="text-xs font-medium text-green-800 truncate">
-                                                {balanceViewOptions.incomes === 'both' ? (
-                                                  <div className="flex items-center space-x-1">
-                                                    <span className="text-xs bg-green-200 px-1 rounded">{group.category}</span>
-                                                    <span className="text-gray-400">•</span>
-                                                    <span className="text-xs bg-gray-200 px-1 rounded">{group.paymentMethod}</span>
-                                                  </div>
-                                                ) : group.name}
-                                              </span>
-                                              <span className="text-xs font-bold text-green-700">
-                                                {formatCurrency(group.total)}
-                                              </span>
-                                            </div>
-                                            {expandedSections.regularIncomes && (
-                                              <div className="ml-2 space-y-1">
-                                                {group.items.map(income => (
-                                                  <div key={income.id} className="flex justify-between text-xs text-green-600">
-                                                    <span className="truncate mr-2">{income.description}</span>
-                                                    <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                        {groupedIncomes.length > 3 && (
-                                          <button
-                                            onClick={() => toggleBalanceSection('regularIncomes')}
-                                            className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
-                                          >
-                                            {expandedSections.regularIncomes 
-                                              ? 'Mostrar menos' 
-                                              : `...y ${groupedIncomes.length - 3} ${balanceViewOptions.incomes === 'category' ? 'categorías' : balanceViewOptions.incomes === 'payment' ? 'métodos' : 'combinaciones'} más`}
-                                          </button>
-                                        )}
-                                      </>
-                                    );
-                                  })()
+                                  <>
+                                    {(expandedSections.regularIncomes ? monthIncomes : monthIncomes.slice(0, 3)).map(income => {
+                                      const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
+                                      return (
+                                        <div key={income.id} className="flex justify-between text-xs text-green-700">
+                                          <span className="truncate mr-2">{income.description}</span>
+                                          <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                        </div>
+                                      );
+                                    })}
+                                    {monthIncomes.length > 3 && (
+                                      <button
+                                        onClick={() => toggleBalanceSection('regularIncomes')}
+                                        className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
+                                      >
+                                        {expandedSections.regularIncomes 
+                                          ? 'Mostrar menos' 
+                                          : `...y ${monthIncomes.length - 3} más`}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
