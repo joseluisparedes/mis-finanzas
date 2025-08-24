@@ -80,13 +80,14 @@ const ProfileCustomization = ({ isOpen, onClose, onProfileUpdate }) => {
       });
 
       // Guardar datos personalizados en nuestra BD
-      await databaseService.updateUserProfile({
+      const updatedProfile = await databaseService.updateUserProfile({
         display_name: profile.displayName,
         avatar: profile.avatar,
         avatar_color: profile.avatarColor
       });
 
-      onProfileUpdate?.(profile);
+      // Notificar al componente padre con el perfil actualizado de la BD
+      onProfileUpdate?.(updatedProfile);
       onClose();
     } catch (error) {
       console.error('Error saving profile:', error);

@@ -274,7 +274,22 @@ const AppSupabase = () => {
 
   // Manejar actualización de perfil
   const handleProfileUpdate = (newProfile) => {
+    console.log('Actualizando perfil:', newProfile);
     setUserProfile(newProfile);
+    
+    // Forzar re-renderizado inmediato
+    // También recargar el perfil desde la BD para asegurar sincronización
+    setTimeout(async () => {
+      try {
+        const refreshedProfile = await getUserProfile();
+        if (refreshedProfile) {
+          setUserProfile(refreshedProfile);
+          console.log('Perfil recargado:', refreshedProfile);
+        }
+      } catch (error) {
+        console.error('Error recargando perfil:', error);
+      }
+    }, 100);
   };
 
   // Función para guardar tipo de cambio
