@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play, Users } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play, Users, LogOut } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useUserSubscription } from './hooks/useUserSubscription';
@@ -1443,22 +1443,69 @@ const AppSupabase = () => {
               </div>
             </div>
             
-            {/* Usuario + Cerrar sesión - Derecha */}
-            <div className="hidden lg:flex items-center space-x-3">
-              {/* Estado de suscripción */}
-              {isAuthenticated && !subscriptionLoading && (
-                <SubscriptionStatus compact={true} />
+            {/* Usuario + Opciones - Derecha */}
+            <div className="flex items-center space-x-3">
+              {isAuthenticated ? (
+                /* Usuario Autenticado - Información Completa */
+                <div className="flex items-center space-x-3">
+                  {/* Avatar y Saludo */}
+                  <div className="flex items-center space-x-3">
+                    <Avatar
+                      avatar={userProfile?.avatar}
+                      avatarColor={userProfile?.avatar_color}
+                      size="lg"
+                      onClick={() => setShowProfileCustomization(true)}
+                      className="cursor-pointer hover:scale-105 transition-transform"
+                    />
+                    <div className="hidden sm:block">
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        ¡Hola, {userProfile?.display_name || user?.email?.split('@')[0] || 'Usuario'}!
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {subscriptionType === 'admin' ? '👑 Administrador' : 
+                         subscriptionType === 'premium' ? '⭐ Premium' : 
+                         subscriptionType === 'family' ? '❤️ Familia' : '🆓 Plan Free'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Opciones de Edición */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setShowProfileCustomization(true)}
+                      className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition-colors"
+                      title="Personalizar perfil"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (confirm('¿Estás seguro de cerrar sesión?')) {
+                          handleSignOut();
+                        }
+                      }}
+                      className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                      title="Cerrar sesión"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Usuario No Autenticado */
+                <div className="hidden lg:flex items-center space-x-3">
+                  <AuthButton
+                    isAuthenticated={isAuthenticated}
+                    user={user}
+                    onSignIn={() => setShowAuthModal(true)}
+                    onSignOut={handleSignOut}
+                    loading={loading}
+                    darkMode={darkMode}
+                    isMobile={false}
+                  />
+                </div>
               )}
-              
-              <AuthButton
-                isAuthenticated={isAuthenticated}
-                user={user}
-                onSignIn={() => setShowAuthModal(true)}
-                onSignOut={handleSignOut}
-                loading={loading}
-                darkMode={darkMode}
-                isMobile={false}
-              />
             </div>
           </div>
           
@@ -2809,52 +2856,6 @@ const AppSupabase = () => {
           </div>
         ) : (
           <div>
-            {/* Header del Usuario */}
-            <div className={`flex items-center justify-between p-4 rounded-lg shadow mb-4 transition-colors duration-200 ${
-              'bg-white dark:bg-dark-surface'
-            }`}>
-              <div className="flex items-center space-x-3">
-                <Avatar
-                  avatar={userProfile?.avatar}
-                  avatarColor={userProfile?.avatar_color}
-                  size="lg"
-                  onClick={() => setShowProfileCustomization(true)}
-                  className="cursor-pointer hover:scale-105 transition-transform"
-                />
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    ¡Hola, {userProfile?.display_name || user?.email?.split('@')[0] || 'Usuario'}!
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {subscriptionType === 'admin' ? '👑 Administrador' : 
-                     subscriptionType === 'premium' ? '⭐ Premium' : 
-                     subscriptionType === 'family' ? '❤️ Familia' : '🆓 Plan Free'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowProfileCustomization(true)}
-                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                  title="Personalizar perfil"
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-                
-                <button
-                  onClick={() => {
-                    if (confirm('¿Estás seguro de cerrar sesión?')) {
-                      handleSignOut();
-                    }
-                  }}
-                  className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                  title="Cerrar sesión"
-                >
-                  <User className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
 
             <nav className={`flex flex-wrap sm:flex-nowrap p-1 rounded-lg shadow mb-4 sm:mb-8 overflow-x-auto transition-colors duration-200 ${
               'bg-white dark:bg-dark-surface'
