@@ -220,6 +220,12 @@ const AppSupabase = () => {
     regularExpenses: false,
     recurringExpenses: false
   });
+
+  // Estados para selectores de vista en Detalle de Balance
+  const [balanceViewOptions, setBalanceViewOptions] = useState({
+    incomes: 'category', // 'category', 'payment', 'both'
+    expenses: 'category' // 'category', 'payment', 'both'
+  });
   
   // Estado para formulario de método de pago
   const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
@@ -343,6 +349,86 @@ const AppSupabase = () => {
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  // Función para agrupar transacciones por categoría
+  const groupByCategory = (transactions) => {
+    const grouped = transactions.reduce((acc, transaction) => {
+      const category = categories.find(cat => cat.id === transaction.category_id);
+      const categoryName = category?.name || 'Sin categoría';
+      const categoryColor = category?.color || '#6B7280';
+      
+      if (!acc[categoryName]) {
+        acc[categoryName] = {
+          name: categoryName,
+          color: categoryColor,
+          items: [],
+          total: 0
+        };
+      }
+      
+      acc[categoryName].items.push(transaction);
+      acc[categoryName].total += convertToSoles(parseFloat(transaction.amount), transaction.currency);
+      
+      return acc;
+    }, {});
+    
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
+  };
+
+  // Función para agrupar transacciones por método de pago
+  const groupByPaymentMethod = (transactions) => {
+    const grouped = transactions.reduce((acc, transaction) => {
+      const paymentMethod = paymentMethods.find(pm => pm.id === transaction.payment_method_id);
+      const methodName = paymentMethod?.name || 'Sin método';
+      const methodColor = paymentMethod?.color || '#6B7280';
+      
+      if (!acc[methodName]) {
+        acc[methodName] = {
+          name: methodName,
+          color: methodColor,
+          items: [],
+          total: 0
+        };
+      }
+      
+      acc[methodName].items.push(transaction);
+      acc[methodName].total += convertToSoles(parseFloat(transaction.amount), transaction.currency);
+      
+      return acc;
+    }, {});
+    
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
+  };
+
+  // Función para agrupar transacciones por categoría y método de pago
+  const groupByCategoryAndPayment = (transactions) => {
+    const grouped = transactions.reduce((acc, transaction) => {
+      const category = categories.find(cat => cat.id === transaction.category_id);
+      const paymentMethod = paymentMethods.find(pm => pm.id === transaction.payment_method_id);
+      const categoryName = category?.name || 'Sin categoría';
+      const methodName = paymentMethod?.name || 'Sin método';
+      const key = `${categoryName} • ${methodName}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          name: key,
+          category: categoryName,
+          paymentMethod: methodName,
+          categoryColor: category?.color || '#6B7280',
+          paymentColor: paymentMethod?.color || '#6B7280',
+          items: [],
+          total: 0
+        };
+      }
+      
+      acc[key].items.push(transaction);
+      acc[key].total += convertToSoles(parseFloat(transaction.amount), transaction.currency);
+      
+      return acc;
+    }, {});
+    
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
   };
   
   // Estados para ordenamiento
@@ -5086,10 +5172,24 @@ const AppSupabase = () => {
                       <div className="space-y-6">
                         {/* Sección de Ingresos */}
                         <div>
-                          <h4 className="text-md font-medium text-green-700 mb-3 flex items-center">
-                            <TrendingUp className="w-4 h-4 mr-2" />
-                            Ingresos del Mes: {formatCurrency(totalIncomes)}
-                          </h4>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-md font-medium text-green-700 flex items-center">
+                              <TrendingUp className="w-4 h-4 mr-2" />
+                              Ingresos del Mes: {formatCurrency(totalIncomes)}
+                            </h4>
+                            <div className="flex items-center space-x-2">
+                              <label className="text-sm font-medium text-gray-600">Ver:</label>
+                              <select
+                                value={balanceViewOptions.incomes}
+                                onChange={(e) => setBalanceViewOptions(prev => ({...prev, incomes: e.target.value}))}
+                                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              >
+                                <option value="category">Por Categoría</option>
+                                <option value="payment">Por Método de Pago</option>
+                                <option value="both">Categoría + Método</option>
+                              </select>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
                             {/* Ingresos Regulares */}
                             <div className="bg-green-50 rounded-lg p-4">
@@ -5099,31 +5199,70 @@ const AppSupabase = () => {
                                   {formatCurrency(regularIncomesTotal)}
                                 </span>
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {monthIncomes.length === 0 ? (
                                   <p className="text-xs text-green-600">Sin ingresos regulares</p>
                                 ) : (
-                                  <>
-                                    {(expandedSections.regularIncomes ? monthIncomes : monthIncomes.slice(0, 3)).map(income => {
-                                      const incomeType = incomeTypes.find(type => type.id === income.income_type_id);
-                                      return (
-                                        <div key={income.id} className="flex justify-between text-xs text-green-700">
-                                          <span className="truncate mr-2">{income.description}</span>
-                                          <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
-                                        </div>
-                                      );
-                                    })}
-                                    {monthIncomes.length > 3 && (
-                                      <button
-                                        onClick={() => toggleBalanceSection('regularIncomes')}
-                                        className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
-                                      >
-                                        {expandedSections.regularIncomes 
-                                          ? 'Mostrar menos' 
-                                          : `...y ${monthIncomes.length - 3} más`}
-                                      </button>
-                                    )}
-                                  </>
+                                  (() => {
+                                    let groupedIncomes;
+                                    switch(balanceViewOptions.incomes) {
+                                      case 'payment':
+                                        groupedIncomes = groupByPaymentMethod(monthIncomes);
+                                        break;
+                                      case 'both':
+                                        groupedIncomes = groupByCategoryAndPayment(monthIncomes);
+                                        break;
+                                      case 'category':
+                                      default:
+                                        groupedIncomes = groupByCategory(monthIncomes);
+                                        break;
+                                    }
+
+                                    const displayGroups = expandedSections.regularIncomes ? groupedIncomes : groupedIncomes.slice(0, 3);
+
+                                    return (
+                                      <>
+                                        {displayGroups.map((group, index) => (
+                                          <div key={index} className="border-l-3 pl-2 space-y-1" style={{ borderLeftColor: group.color || group.categoryColor }}>
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-xs font-medium text-green-800 truncate">
+                                                {balanceViewOptions.incomes === 'both' ? (
+                                                  <div className="flex items-center space-x-1">
+                                                    <span className="text-xs bg-green-200 px-1 rounded">{group.category}</span>
+                                                    <span className="text-gray-400">•</span>
+                                                    <span className="text-xs bg-gray-200 px-1 rounded">{group.paymentMethod}</span>
+                                                  </div>
+                                                ) : group.name}
+                                              </span>
+                                              <span className="text-xs font-bold text-green-700">
+                                                {formatCurrency(group.total)}
+                                              </span>
+                                            </div>
+                                            {expandedSections.regularIncomes && (
+                                              <div className="ml-2 space-y-1">
+                                                {group.items.map(income => (
+                                                  <div key={income.id} className="flex justify-between text-xs text-green-600">
+                                                    <span className="truncate mr-2">{income.description}</span>
+                                                    <span>{formatCurrency(income.amount, income.currency, income.currency === 'USD')}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                        {groupedIncomes.length > 3 && (
+                                          <button
+                                            onClick={() => toggleBalanceSection('regularIncomes')}
+                                            className="text-xs text-green-600 italic hover:text-green-800 underline cursor-pointer"
+                                          >
+                                            {expandedSections.regularIncomes 
+                                              ? 'Mostrar menos' 
+                                              : `...y ${groupedIncomes.length - 3} ${balanceViewOptions.incomes === 'category' ? 'categorías' : balanceViewOptions.incomes === 'payment' ? 'métodos' : 'combinaciones'} más`}
+                                          </button>
+                                        )}
+                                      </>
+                                    );
+                                  })()
                                 )}
                               </div>
                             </div>
@@ -5172,10 +5311,24 @@ const AppSupabase = () => {
                         
                         {/* Sección de Gastos */}
                         <div>
-                          <h4 className="text-md font-medium text-red-700 mb-3 flex items-center">
-                            <TrendingDown className="w-4 h-4 mr-2" />
-                            Gastos del Mes: {formatCurrency(totalExpenses)}
-                          </h4>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-md font-medium text-red-700 flex items-center">
+                              <TrendingDown className="w-4 h-4 mr-2" />
+                              Gastos del Mes: {formatCurrency(totalExpenses)}
+                            </h4>
+                            <div className="flex items-center space-x-2">
+                              <label className="text-sm font-medium text-gray-600">Ver:</label>
+                              <select
+                                value={balanceViewOptions.expenses}
+                                onChange={(e) => setBalanceViewOptions(prev => ({...prev, expenses: e.target.value}))}
+                                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              >
+                                <option value="category">Por Categoría</option>
+                                <option value="payment">Por Método de Pago</option>
+                                <option value="both">Categoría + Método</option>
+                              </select>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
                             {/* Gastos Regulares */}
                             <div className="bg-red-50 rounded-lg p-4">
@@ -5185,31 +5338,70 @@ const AppSupabase = () => {
                                   {formatCurrency(regularExpensesTotal)}
                                 </span>
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {monthExpenses.length === 0 ? (
                                   <p className="text-xs text-red-600">Sin gastos regulares</p>
                                 ) : (
-                                  <>
-                                    {(expandedSections.regularExpenses ? monthExpenses : monthExpenses.slice(0, 3)).map(expense => {
-                                      const category = categories.find(cat => cat.id === expense.category_id);
-                                      return (
-                                        <div key={expense.id} className="flex justify-between text-xs text-red-700">
-                                          <span className="truncate mr-2">{expense.description}</span>
-                                          <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
-                                        </div>
-                                      );
-                                    })}
-                                    {monthExpenses.length > 3 && (
-                                      <button
-                                        onClick={() => toggleBalanceSection('regularExpenses')}
-                                        className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
-                                      >
-                                        {expandedSections.regularExpenses 
-                                          ? 'Mostrar menos' 
-                                          : `...y ${monthExpenses.length - 3} más`}
-                                      </button>
-                                    )}
-                                  </>
+                                  (() => {
+                                    let groupedExpenses;
+                                    switch(balanceViewOptions.expenses) {
+                                      case 'payment':
+                                        groupedExpenses = groupByPaymentMethod(monthExpenses);
+                                        break;
+                                      case 'both':
+                                        groupedExpenses = groupByCategoryAndPayment(monthExpenses);
+                                        break;
+                                      case 'category':
+                                      default:
+                                        groupedExpenses = groupByCategory(monthExpenses);
+                                        break;
+                                    }
+
+                                    const displayGroups = expandedSections.regularExpenses ? groupedExpenses : groupedExpenses.slice(0, 3);
+
+                                    return (
+                                      <>
+                                        {displayGroups.map((group, index) => (
+                                          <div key={index} className="border-l-3 pl-2 space-y-1" style={{ borderLeftColor: group.color || group.categoryColor }}>
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-xs font-medium text-red-800 truncate">
+                                                {balanceViewOptions.expenses === 'both' ? (
+                                                  <div className="flex items-center space-x-1">
+                                                    <span className="text-xs bg-red-200 px-1 rounded">{group.category}</span>
+                                                    <span className="text-gray-400">•</span>
+                                                    <span className="text-xs bg-gray-200 px-1 rounded">{group.paymentMethod}</span>
+                                                  </div>
+                                                ) : group.name}
+                                              </span>
+                                              <span className="text-xs font-bold text-red-700">
+                                                {formatCurrency(group.total)}
+                                              </span>
+                                            </div>
+                                            {expandedSections.regularExpenses && (
+                                              <div className="ml-2 space-y-1">
+                                                {group.items.map(expense => (
+                                                  <div key={expense.id} className="flex justify-between text-xs text-red-600">
+                                                    <span className="truncate mr-2">{expense.description}</span>
+                                                    <span>{formatCurrency(expense.amount, expense.currency, expense.currency === 'USD')}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                        {groupedExpenses.length > 3 && (
+                                          <button
+                                            onClick={() => toggleBalanceSection('regularExpenses')}
+                                            className="text-xs text-red-600 italic hover:text-red-800 underline cursor-pointer"
+                                          >
+                                            {expandedSections.regularExpenses 
+                                              ? 'Mostrar menos' 
+                                              : `...y ${groupedExpenses.length - 3} ${balanceViewOptions.expenses === 'category' ? 'categorías' : balanceViewOptions.expenses === 'payment' ? 'métodos' : 'combinaciones'} más`}
+                                          </button>
+                                        )}
+                                      </>
+                                    );
+                                  })()
                                 )}
                               </div>
                             </div>
