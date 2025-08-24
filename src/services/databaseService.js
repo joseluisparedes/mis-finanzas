@@ -1706,19 +1706,12 @@ class DatabaseService {
       }
       
       const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          user:user_id (
-            email,
-            created_at
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .rpc('get_all_subscriptions_admin');
       
       if (error) throw error;
       
-      return data;
+      // Convertir JSON response a array si es necesario
+      return Array.isArray(data) ? data : (data ? [data] : []);
     } catch (error) {
       console.error('Error getting all subscriptions:', error);
       throw error;
@@ -1734,7 +1727,7 @@ class DatabaseService {
       }
       
       const { data, error } = await supabase
-        .rpc('get_subscription_stats');
+        .rpc('get_subscription_stats_simple');
       
       if (error) throw error;
       
