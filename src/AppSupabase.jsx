@@ -151,7 +151,24 @@ const AppSupabase = () => {
     isAdmin, 
     subscriptionType, 
     loading: subscriptionLoading, 
-    subscription 
+    subscription,
+    // Funciones de verificación de límites
+    canCreateTransaction,
+    canCreateBudget,
+    canCreateCategory,
+    canCreatePaymentMethod,
+    canCreateIncomeType,
+    canCreateRecurringTransaction,
+    // Funciones Premium
+    canUseMultiCurrency,
+    canExportExcel,
+    canImportExcel,
+    canUseAdvancedReports,
+    // Información de límites
+    limits,
+    getLimitStatus,
+    shouldShowUpgradeMessage,
+    getUpgradeMessage
   } = useUserSubscription();
 
   // Mostrar estado de carga mientras se verifica la suscripción
@@ -2890,10 +2907,31 @@ const AppSupabase = () => {
             {activeTab === 'gastos' && (
               <div>
                 <div className={`${cardClasses} p-6 mb-6`}>
-                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${textPrimaryClasses}`}>
-                    <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
-                    Agregar Nuevo Gasto
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-semibold flex items-center ${textPrimaryClasses}`}>
+                      <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
+                      Agregar Nuevo Gasto
+                    </h2>
+                    
+                    {/* Indicador de límites para usuarios Free */}
+                    {subscriptionType === 'free' && limits?.monthly_transactions && (
+                      <div className="text-sm">
+                        <span className={`${textSecondaryClasses}`}>
+                          {limits.monthly_transactions.used}/{limits.monthly_transactions.total} transacciones este mes
+                        </span>
+                        {limits.monthly_transactions.available <= 5 && limits.monthly_transactions.available > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                            ⚠️ Solo {limits.monthly_transactions.available} restantes
+                          </span>
+                        )}
+                        {limits.monthly_transactions.available === 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                            🚫 Límite alcanzado
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div className="sm:col-span-1">
@@ -2960,16 +2998,33 @@ const AppSupabase = () => {
                     </div>
                     
                     <div className="sm:col-span-1">
-                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Moneda</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                        Moneda {!canUseMultiCurrency() && subscriptionType === 'free' ? '(Solo PEN)' : ''}
+                      </label>
                       <select
                         value={newExpense.currency}
                         onChange={(e) => setNewExpense({...newExpense, currency: e.target.value})}
-                        className={selectClasses}
+                        className={`${selectClasses} ${!canUseMultiCurrency() && currencies.length > 1 ? 'opacity-60' : ''}`}
+                        title={!canUseMultiCurrency() ? 'Multi-moneda solo disponible en Premium' : ''}
                       >
                         {currencies.map(currency => (
-                          <option key={currency.id} value={currency.id}>{currency.name}</option>
+                          <option 
+                            key={currency.id} 
+                            value={currency.id}
+                            disabled={!canUseMultiCurrency() && currency.id !== 'PEN'}
+                          >
+                            {currency.name} {!canUseMultiCurrency() && currency.id !== 'PEN' ? '🔒' : ''}
+                          </option>
                         ))}
                       </select>
+                      {!canUseMultiCurrency() && subscriptionType === 'free' && currencies.length > 1 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          💎 Multi-moneda disponible en <button 
+                            onClick={() => alert('🚀 ¡Upgrade a Premium!\n\nDesbloquea multi-moneda PEN/USD')}
+                            className="text-purple-600 underline"
+                          >Premium</button>
+                        </p>
+                      )}
                     </div>
                     
                     <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
@@ -2983,14 +3038,39 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex items-end">
+                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex flex-col items-end">
                       <button
-                        onClick={addExpense}
-                        disabled={loading}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          if (!canCreateTransaction()) {
+                            alert(getUpgradeMessage('monthly_transactions'));
+                            return;
+                          }
+                          addExpense();
+                        }}
+                        disabled={loading || !canCreateTransaction()}
+                        className={`w-full font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          canCreateTransaction() 
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        title={!canCreateTransaction() ? 'Límite alcanzado - Upgrade a Premium' : ''}
                       >
-                        {loading ? 'Agregando...' : 'Agregar Gasto'}
+                        {loading ? 'Agregando...' : 
+                         !canCreateTransaction() ? '🔒 Límite Alcanzado' : 
+                         'Agregar Gasto'}
                       </button>
+                      
+                      {/* Mensaje de upgrade si no puede crear transacciones */}
+                      {!canCreateTransaction() && subscriptionType === 'free' && (
+                        <div className="mt-2 text-center">
+                          <button
+                            onClick={() => alert('🚀 ¡Upgrade a Premium!\n\n✅ Transacciones ilimitadas\n✅ Presupuestos ilimitados\n✅ Categorías ilimitadas\n✅ Multi-moneda PEN/USD\n✅ Exportar/Importar Excel\n✅ Reportes avanzados\n\nSolo S/ 15/mes')}
+                            className="text-xs text-purple-600 hover:text-purple-800 underline"
+                          >
+                            🚀 Upgrade a Premium
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3232,10 +3312,31 @@ const AppSupabase = () => {
             {activeTab === 'ingresos' && (
               <div>
                 <div className={`${cardClasses} p-6 mb-6`}>
-                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${textPrimaryClasses}`}>
-                    <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                    Agregar Nuevo Ingreso
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-semibold flex items-center ${textPrimaryClasses}`}>
+                      <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                      Agregar Nuevo Ingreso
+                    </h2>
+                    
+                    {/* Indicador de límites para usuarios Free */}
+                    {subscriptionType === 'free' && limits?.monthly_transactions && (
+                      <div className="text-sm">
+                        <span className={`${textSecondaryClasses}`}>
+                          {limits.monthly_transactions.used}/{limits.monthly_transactions.total} transacciones este mes
+                        </span>
+                        {limits.monthly_transactions.available <= 5 && limits.monthly_transactions.available > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                            ⚠️ Solo {limits.monthly_transactions.available} restantes
+                          </span>
+                        )}
+                        {limits.monthly_transactions.available === 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                            🚫 Límite alcanzado
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div className="sm:col-span-1">
@@ -3311,14 +3412,39 @@ const AppSupabase = () => {
                       />
                     </div>
                     
-                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex items-end">
+                    <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex flex-col items-end">
                       <button
-                        onClick={addIncome}
-                        disabled={loading}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          if (!canCreateTransaction()) {
+                            alert(getUpgradeMessage('monthly_transactions'));
+                            return;
+                          }
+                          addIncome();
+                        }}
+                        disabled={loading || !canCreateTransaction()}
+                        className={`w-full font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          canCreateTransaction() 
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        title={!canCreateTransaction() ? 'Límite alcanzado - Upgrade a Premium' : ''}
                       >
-                        {loading ? 'Agregando...' : 'Agregar Ingreso'}
+                        {loading ? 'Agregando...' : 
+                         !canCreateTransaction() ? '🔒 Límite Alcanzado' : 
+                         'Agregar Ingreso'}
                       </button>
+                      
+                      {/* Mensaje de upgrade si no puede crear transacciones */}
+                      {!canCreateTransaction() && subscriptionType === 'free' && (
+                        <div className="mt-2 text-center">
+                          <button
+                            onClick={() => alert('🚀 ¡Upgrade a Premium!\n\n✅ Transacciones ilimitadas\n✅ Presupuestos ilimitados\n✅ Categorías ilimitadas\n✅ Multi-moneda PEN/USD\n✅ Exportar/Importar Excel\n✅ Reportes avanzados\n\nSolo S/ 15/mes')}
+                            className="text-xs text-purple-600 hover:text-purple-800 underline"
+                          >
+                            🚀 Upgrade a Premium
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -4179,12 +4305,31 @@ const AppSupabase = () => {
                 <div className={`rounded-lg shadow p-6 mb-6 transition-colors duration-200 ${
                   `${cardClasses} ${textPrimaryClasses}`
                 }`}>
-                  <h2 className={`text-xl font-semibold mb-4 flex items-center ${
-                    textPrimaryClasses
-                  }`}>
-                    <Target className="w-5 h-5 mr-2 text-green-500" />
-                    Gestión de Presupuestos
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-xl font-semibold flex items-center ${textPrimaryClasses}`}>
+                      <Target className="w-5 h-5 mr-2 text-green-500" />
+                      Gestión de Presupuestos
+                    </h2>
+                    
+                    {/* Indicador de límites para usuarios Free */}
+                    {subscriptionType === 'free' && limits?.budgets && (
+                      <div className="text-sm">
+                        <span className={`${textSecondaryClasses}`}>
+                          {limits.budgets.used}/{limits.budgets.total} presupuestos
+                        </span>
+                        {limits.budgets.available <= 1 && limits.budgets.available > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                            ⚠️ Solo {limits.budgets.available} restante
+                          </span>
+                        )}
+                        {limits.budgets.available === 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                            🚫 Límite alcanzado
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Formulario para nuevo presupuesto */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -4245,14 +4390,38 @@ const AppSupabase = () => {
                       </select>
                     </div>
                     
-                    <div className="flex items-end">
+                    <div className="flex flex-col items-end">
                       <button
-                        onClick={addBudget}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+                        onClick={() => {
+                          if (!canCreateBudget()) {
+                            alert(getUpgradeMessage('budgets'));
+                            return;
+                          }
+                          addBudget();
+                        }}
+                        disabled={!canCreateBudget()}
+                        className={`w-full font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          canCreateBudget() 
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        title={!canCreateBudget() ? 'Límite alcanzado - Upgrade a Premium' : ''}
                       >
                         <PlusCircle className="w-4 h-4 inline mr-1" />
-                        Agregar
+                        {!canCreateBudget() ? '🔒 Límite' : 'Agregar'}
                       </button>
+                      
+                      {/* Mensaje de upgrade si no puede crear presupuestos */}
+                      {!canCreateBudget() && subscriptionType === 'free' && (
+                        <div className="mt-1 text-center">
+                          <button
+                            onClick={() => alert('🚀 ¡Upgrade a Premium!\n\n✅ Presupuestos ilimitados\n✅ Transacciones ilimitadas\n✅ Categorías ilimitadas\n✅ Multi-moneda PEN/USD\n✅ Reportes avanzados\n\nSolo S/ 15/mes')}
+                            className="text-xs text-purple-600 hover:text-purple-800 underline"
+                          >
+                            🚀 Upgrade
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
