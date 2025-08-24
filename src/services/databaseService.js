@@ -104,6 +104,19 @@ class DatabaseService {
     try {
       const userId = this.getCurrentUserId();
       
+      // Verificar si ya existe una categoría ACTIVA con el mismo nombre
+      const { data: existingCategory } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', userId)
+        .eq('name', category.name)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (existingCategory) {
+        throw new Error(`Ya tienes una categoría llamada "${category.name}". Usa un nombre diferente.`);
+      }
+      
       // Verificar límites de suscripción antes de crear
       const subscriptionInfo = await this.getUserSubscription();
       const categoryLimits = subscriptionInfo?.limits?.categories;
@@ -198,6 +211,19 @@ class DatabaseService {
   async createPaymentMethod(method) {
     try {
       const userId = this.getCurrentUserId();
+      
+      // Verificar si ya existe un método de pago ACTIVO con el mismo nombre
+      const { data: existingMethod } = await supabase
+        .from('payment_methods')
+        .select('id, name')
+        .eq('user_id', userId)
+        .eq('name', method.name)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (existingMethod) {
+        throw new Error(`Ya tienes un método de pago llamado "${method.name}". Usa un nombre diferente.`);
+      }
       
       // Verificar límites de suscripción antes de crear
       const subscriptionInfo = await this.getUserSubscription();
@@ -295,6 +321,19 @@ class DatabaseService {
   async createIncomeType(type) {
     try {
       const userId = this.getCurrentUserId();
+      
+      // Verificar si ya existe un tipo de ingreso ACTIVO con el mismo nombre
+      const { data: existingType } = await supabase
+        .from('income_types')
+        .select('id, name')
+        .eq('user_id', userId)
+        .eq('name', type.name)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (existingType) {
+        throw new Error(`Ya tienes un tipo de ingreso llamado "${type.name}". Usa un nombre diferente.`);
+      }
       
       // Verificar límites de suscripción antes de crear
       const subscriptionInfo = await this.getUserSubscription();

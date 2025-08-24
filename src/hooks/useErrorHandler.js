@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export const useErrorHandler = () => {
   const [error, setError] = useState(null);
+  const [currentErrorId, setCurrentErrorId] = useState(null);
 
   const showError = (errorMessage) => {
     // Si es un objeto Error, extraer el mensaje
@@ -10,7 +11,14 @@ export const useErrorHandler = () => {
     // Mejorar mensajes específicos
     const improvedMessage = improveErrorMessage(message);
     
-    setError(improvedMessage);
+    // Generar un ID único para evitar errores duplicados
+    const errorId = Date.now() + Math.random();
+    
+    // Solo mostrar si es un error diferente al actual
+    if (improvedMessage !== error) {
+      setError(improvedMessage);
+      setCurrentErrorId(errorId);
+    }
   };
 
   const clearError = () => {
