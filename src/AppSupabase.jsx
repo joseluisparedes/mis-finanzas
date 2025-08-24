@@ -1562,34 +1562,63 @@ const AppSupabase = () => {
               <div className="hidden md:flex items-center">
                 {/* Grupo de Datos */}
                 <div className="flex items-center border-r border-gray-200 dark:border-gray-600 pr-4 mr-4">
+                  {/* Botón Exportar - restringido para Free */}
                   <button
-                    onClick={() => setShowExportModal(true)}
+                    onClick={() => {
+                      if (!canExportExcel()) {
+                        setExpenseError('Plan Free: Solo CSV básico disponible. Upgrade a Premium para Excel completo.');
+                        return;
+                      }
+                      setShowExportModal(true);
+                    }}
+                    disabled={!canExportExcel() && subscriptionType === 'free'}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      !canExportExcel() && subscriptionType === 'free'
+                        ? 'text-gray-400 cursor-not-allowed opacity-60'
+                        : darkMode
+                        ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 active:bg-gray-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
+                    }`}
+                    title={
+                      !canExportExcel() && subscriptionType === 'free'
+                        ? 'Plan Free: Solo CSV básico - Upgrade a Premium para Excel'
+                        : 'Exportar datos a Excel'
+                    }
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden lg:inline">
+                      {canExportExcel() ? 'Excel' : '🔒 Excel'}
+                    </span>
+                  </button>
+                  
+                  {/* Botón Importar - bloqueado para Free */}
+                  {canImportExcel() ? (
+                    <label className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer text-sm font-medium ${
                       darkMode
                         ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 active:bg-gray-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
                     }`}
-                    title="Exportar datos a Excel"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span className="hidden lg:inline">Excel</span>
-                  </button>
-                  
-                  <label className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer text-sm font-medium ${
-                    darkMode
-                      ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 active:bg-gray-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
-                  }`}
-                  title="Importar datos desde Excel">
-                    <Upload className="w-4 h-4" />
-                    <span className="hidden lg:inline">Importar</span>
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={handleImportFile}
-                      className="hidden"
-                    />
-                  </label>
+                    title="Importar datos desde Excel">
+                      <Upload className="w-4 h-4" />
+                      <span className="hidden lg:inline">Importar</span>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleImportFile}
+                        className="hidden"
+                      />
+                    </label>
+                  ) : (
+                    <button
+                      onClick={() => setExpenseError('Plan Free: Importar Excel no disponible. Upgrade a Premium.')}
+                      disabled={true}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-not-allowed text-sm font-medium text-gray-400 opacity-60"
+                      title="Plan Free: Importar Excel no disponible - Upgrade a Premium"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span className="hidden lg:inline">🔒 Importar</span>
+                    </button>
+                  )}
                 </div>
                 
                 {/* Grupo de Herramientas */}
@@ -2290,17 +2319,53 @@ const AppSupabase = () => {
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <PlusCircle className="w-5 h-5 mr-2 text-green-500" />
                   Categorías de Gastos
+                  {subscriptionType === 'free' && (
+                    <span className="ml-2 text-sm bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                      {(() => {
+                        const customCategories = categories.filter(cat => !cat.is_default);
+                        return `${customCategories.length}/3 usadas`;
+                      })()}
+                    </span>
+                  )}
                 </h3>
                 
+                {/* Restricción de categorías para plan Free */}
+                {subscriptionType === 'free' && !canCreateCategory() && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                      <p className={`text-sm font-medium ${textPrimaryClasses}`}>
+                        Plan Free: Has alcanzado el límite de 3 categorías personalizadas
+                      </p>
+                    </div>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                      Upgrade a Premium para crear categorías ilimitadas
+                    </p>
+                  </div>
+                )}
+                
                 {/* Agregar nueva categoría */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className={`mb-4 p-4 rounded-lg ${
+                  canCreateCategory() 
+                    ? 'bg-gray-50 dark:bg-gray-800' 
+                    : 'bg-gray-100 dark:bg-gray-900 opacity-60'
+                }`}>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <input
                       type="text"
-                      placeholder="Nombre de la categoría"
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={
+                        canCreateCategory() 
+                          ? "Nombre de la categoría" 
+                          : "🔒 Límite alcanzado - Upgrade a Premium"
+                      }
+                      disabled={!canCreateCategory()}
+                      className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        canCreateCategory()
+                          ? 'border-gray-300 focus:ring-blue-500'
+                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
+                        if (e.key === 'Enter' && e.target.value.trim() && canCreateCategory()) {
                           const newCategory = {
                             name: e.target.value.trim(),
                             color: '#' + Math.floor(Math.random()*16777215).toString(16),
@@ -2314,10 +2379,17 @@ const AppSupabase = () => {
                     <input
                       type="color"
                       defaultValue="#6B7280"
-                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                      disabled={!canCreateCategory()}
+                      className={`w-full h-10 border border-gray-300 rounded-md ${
+                        canCreateCategory() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                      }`}
                     />
                     <button
                       onClick={(e) => {
+                        if (!canCreateCategory()) {
+                          setExpenseError('Plan Free: Límite de 3 categorías alcanzado. Upgrade a Premium.');
+                          return;
+                        }
                         const nameInput = e.target.parentElement.querySelector('input[type="text"]');
                         const colorInput = e.target.parentElement.querySelector('input[type="color"]');
                         if (nameInput.value.trim()) {
@@ -2331,9 +2403,15 @@ const AppSupabase = () => {
                           colorInput.value = '#6B7280';
                         }
                       }}
-                      className={buttonSuccessClasses}
+                      disabled={!canCreateCategory()}
+                      className={`${
+                        canCreateCategory() 
+                          ? buttonSuccessClasses 
+                          : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60'
+                      }`}
+                      title={!canCreateCategory() ? 'Plan Free: Límite de categorías alcanzado' : ''}
                     >
-                      Agregar
+                      {canCreateCategory() ? 'Agregar' : '🔒 Límite'}
                     </button>
                   </div>
                 </div>
@@ -2398,10 +2476,37 @@ const AppSupabase = () => {
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
                   Métodos de Pago
+                  {subscriptionType === 'free' && (
+                    <span className="ml-2 text-sm bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                      {(() => {
+                        const customPaymentMethods = paymentMethods.filter(pm => !pm.is_default);
+                        return `${customPaymentMethods.length}/2 usados`;
+                      })()}
+                    </span>
+                  )}
                 </h3>
                 
+                {/* Restricción de métodos de pago para plan Free */}
+                {subscriptionType === 'free' && !canCreatePaymentMethod() && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                      <p className={`text-sm font-medium ${textPrimaryClasses}`}>
+                        Plan Free: Has alcanzado el límite de 2 métodos de pago personalizados
+                      </p>
+                    </div>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                      Upgrade a Premium para crear métodos de pago ilimitados
+                    </p>
+                  </div>
+                )}
+                
                 {/* Agregar nuevo método de pago */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className={`mb-4 p-4 rounded-lg ${
+                  canCreatePaymentMethod() 
+                    ? 'bg-gray-50 dark:bg-gray-800' 
+                    : 'bg-gray-100 dark:bg-gray-900 opacity-60'
+                }`}>
                   <div className="space-y-3 sm:space-y-4">
                     {/* Campos básicos */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -2488,10 +2593,26 @@ const AppSupabase = () => {
                     )}
                     
                     <button
-                      onClick={addPaymentMethodWithValidation}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                      onClick={() => {
+                        if (!canCreatePaymentMethod()) {
+                          setError('Plan Free: Límite de 2 métodos de pago alcanzado. Upgrade a Premium para métodos ilimitados.');
+                          return;
+                        }
+                        addPaymentMethodWithValidation();
+                      }}
+                      disabled={!canCreatePaymentMethod()}
+                      className={`w-full px-4 py-2 rounded-md transition-colors font-medium ${
+                        canCreatePaymentMethod()
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                      }`}
+                      title={!canCreatePaymentMethod() ? 'Plan Free: Límite de métodos de pago alcanzado' : ''}
                     >
-                      {newPaymentMethodForm.payment_type === 'credit_card' ? 'Agregar Tarjeta de Crédito' : 'Agregar Método de Pago'}
+                      {!canCreatePaymentMethod() 
+                        ? '🔒 Límite Alcanzado'
+                        : newPaymentMethodForm.payment_type === 'credit_card' 
+                          ? 'Agregar Tarjeta de Crédito' 
+                          : 'Agregar Método de Pago'}
                     </button>
                   </div>
                 </div>
@@ -2704,17 +2825,53 @@ const AppSupabase = () => {
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
                   Tipos de Ingresos
+                  {subscriptionType === 'free' && (
+                    <span className="ml-2 text-sm bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                      {(() => {
+                        const customIncomeTypes = incomeTypes.filter(it => !it.is_default);
+                        return `${customIncomeTypes.length}/1 usado`;
+                      })()}
+                    </span>
+                  )}
                 </h3>
                 
+                {/* Restricción de tipos de ingreso para plan Free */}
+                {subscriptionType === 'free' && !canCreateIncomeType() && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                      <p className={`text-sm font-medium ${textPrimaryClasses}`}>
+                        Plan Free: Has alcanzado el límite de 1 tipo de ingreso personalizado
+                      </p>
+                    </div>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                      Upgrade a Premium para crear tipos de ingreso ilimitados
+                    </p>
+                  </div>
+                )}
+                
                 {/* Agregar nuevo tipo de ingreso */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className={`mb-4 p-4 rounded-lg ${
+                  canCreateIncomeType() 
+                    ? 'bg-gray-50 dark:bg-gray-800' 
+                    : 'bg-gray-100 dark:bg-gray-900 opacity-60'
+                }`}>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <input
                       type="text"
-                      placeholder="Nombre del tipo de ingreso"
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={
+                        canCreateIncomeType() 
+                          ? "Nombre del tipo de ingreso" 
+                          : "🔒 Límite alcanzado - Upgrade a Premium"
+                      }
+                      disabled={!canCreateIncomeType()}
+                      className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        canCreateIncomeType()
+                          ? 'border-gray-300 focus:ring-blue-500'
+                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
+                        if (e.key === 'Enter' && e.target.value.trim() && canCreateIncomeType()) {
                           const newIncomeType = {
                             name: e.target.value.trim(),
                             color: '#' + Math.floor(Math.random()*16777215).toString(16),
@@ -2728,10 +2885,17 @@ const AppSupabase = () => {
                     <input
                       type="color"
                       defaultValue="#00B894"
-                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                      disabled={!canCreateIncomeType()}
+                      className={`w-full h-10 border border-gray-300 rounded-md ${
+                        canCreateIncomeType() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                      }`}
                     />
                     <button
                       onClick={(e) => {
+                        if (!canCreateIncomeType()) {
+                          setExpenseError('Plan Free: Límite de 1 tipo de ingreso alcanzado. Upgrade a Premium.');
+                          return;
+                        }
                         const nameInput = e.target.parentElement.querySelector('input[type="text"]');
                         const colorInput = e.target.parentElement.querySelector('input[type="color"]');
                         if (nameInput.value.trim()) {
@@ -2745,9 +2909,15 @@ const AppSupabase = () => {
                           colorInput.value = '#00B894';
                         }
                       }}
-                      className={buttonSuccessClasses}
+                      disabled={!canCreateIncomeType()}
+                      className={`${
+                        canCreateIncomeType() 
+                          ? buttonSuccessClasses 
+                          : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60'
+                      }`}
+                      title={!canCreateIncomeType() ? 'Plan Free: Límite de tipos de ingreso alcanzado' : ''}
                     >
-                      Agregar
+                      {canCreateIncomeType() ? 'Agregar' : '🔒 Límite'}
                     </button>
                   </div>
                 </div>
@@ -3663,24 +3833,87 @@ const AppSupabase = () => {
                     Reportes y Análisis
                   </h2>
                   
+                  {/* Restricción de reportes para plan Free */}
+                  {subscriptionType === 'free' && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-600" />
+                        <p className={`text-sm font-medium ${textPrimaryClasses}`}>
+                          Plan Free: Solo puedes ver reportes de los últimos 3 meses
+                        </p>
+                      </div>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                        Upgrade a Premium para acceder a todo tu historial sin límites
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div>
-                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha Inicio</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                        Fecha Inicio {subscriptionType === 'free' ? '(Últimos 3 meses)' : ''}
+                      </label>
                       <input
                         type="date"
                         value={reportFilters.startDate}
-                        onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})}
-                        className={inputClasses}
+                        min={subscriptionType === 'free' ? (() => {
+                          const threeMonthsAgo = new Date();
+                          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                          return formatDateToLocalString(threeMonthsAgo);
+                        })() : undefined}
+                        max={formatDateToLocalString(new Date())}
+                        onChange={(e) => {
+                          let newStartDate = e.target.value;
+                          
+                          // Aplicar restricción de 3 meses para usuarios Free
+                          if (subscriptionType === 'free') {
+                            const threeMonthsAgo = new Date();
+                            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                            const minDate = formatDateToLocalString(threeMonthsAgo);
+                            
+                            if (newStartDate < minDate) {
+                              newStartDate = minDate;
+                            }
+                          }
+                          
+                          setReportFilters({...reportFilters, startDate: newStartDate});
+                        }}
+                        className={`${inputClasses} ${subscriptionType === 'free' ? 'border-yellow-300 focus:border-yellow-500' : ''}`}
+                        title={subscriptionType === 'free' ? 'Plan Free: Solo últimos 3 meses disponibles' : ''}
                       />
                     </div>
                     
                     <div>
-                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>Fecha Fin</label>
+                      <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                        Fecha Fin {subscriptionType === 'free' ? '(Últimos 3 meses)' : ''}
+                      </label>
                       <input
                         type="date"
                         value={reportFilters.endDate}
-                        onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})}
-                        className={inputClasses}
+                        min={subscriptionType === 'free' ? (() => {
+                          const threeMonthsAgo = new Date();
+                          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                          return formatDateToLocalString(threeMonthsAgo);
+                        })() : reportFilters.startDate || undefined}
+                        max={formatDateToLocalString(new Date())}
+                        onChange={(e) => {
+                          let newEndDate = e.target.value;
+                          
+                          // Aplicar restricción de 3 meses para usuarios Free
+                          if (subscriptionType === 'free') {
+                            const threeMonthsAgo = new Date();
+                            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                            const minDate = formatDateToLocalString(threeMonthsAgo);
+                            
+                            if (newEndDate < minDate) {
+                              newEndDate = minDate;
+                            }
+                          }
+                          
+                          setReportFilters({...reportFilters, endDate: newEndDate});
+                        }}
+                        className={`${inputClasses} ${subscriptionType === 'free' ? 'border-yellow-300 focus:border-yellow-500' : ''}`}
+                        title={subscriptionType === 'free' ? 'Plan Free: Solo últimos 3 meses disponibles' : ''}
                       />
                     </div>
                     

@@ -1491,6 +1491,259 @@ class DatabaseService {
       throw error;
     }
   }
+
+  // ==============================================
+  // FUNCIONES DE SUSCRIPCIÓN Y ROLES
+  // ==============================================
+
+  // Crear suscripción por defecto para usuario nuevo
+  async createDefaultUserSubscription() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          subscription_type: 'free',
+          status: 'active'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ Default subscription created:', data);
+      return data;
+    } catch (error) {
+      console.error('Error creating default subscription:', error);
+      throw error;
+    }
+  }
+
+  // Obtener información completa de suscripción del usuario
+  async getUserSubscription() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      // Usar la función SQL que calcula límites dinámicamente
+      const { data, error } = await supabase
+        .rpc('get_user_subscription_info', { user_uuid: userId });
+      
+      if (error) throw error;
+      
+      if (!data) {
+        throw new Error('No subscription found');
+      }
+      
+      console.log('📋 Subscription info loaded:', data);
+      return data;
+    } catch (error) {
+      console.error('Error getting user subscription:', error);
+      throw error;
+    }
+  }
+
+  // Verificar si el usuario puede crear más recursos de un tipo
+  async checkUserLimit(limitType) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .rpc('check_user_limit', { 
+          user_uuid: userId, 
+          limit_type: limitType 
+        });
+      
+      if (error) throw error;
+      
+      return data; // true si puede crear, false si llegó al límite
+    } catch (error) {
+      console.error(`Error checking limit for ${limitType}:`, error);
+      return false;
+    }
+  }
+
+  // Actualizar usuario a Premium con información de pago
+  async upgradeUserToPremium(paymentInfo) {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update({
+          subscription_type: 'premium',
+          status: 'active',
+          price_paid: paymentInfo.price,
+          billing_period: paymentInfo.billingPeriod || 'monthly',
+          transaction_id: paymentInfo.transactionId,
+          payment_method: paymentInfo.paymentMethod,
+          is_early_bird: paymentInfo.isEarlyBird || false,
+          early_bird_price: paymentInfo.earlyBirdPrice,
+          // Habilitar todas las características Premium
+          monthly_transaction_limit: -1,
+          budget_limit: -1,
+          custom_category_limit: -1,
+          custom_payment_method_limit: -1,
+          custom_income_type_limit: -1,
+          recurring_transaction_limit: -1,
+          report_months_limit: -1,
+          multi_currency_enabled: true,
+          excel_export_enabled: true,
+          excel_import_enabled: true,
+          advanced_reports_enabled: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ User upgraded to Premium:', data);
+      return data;
+    } catch (error) {
+      console.error('Error upgrading to Premium:', error);
+      throw error;
+    }
+  }
+
+  // Degradar usuario a Free
+  async downgradeUserToFree() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update({
+          subscription_type: 'free',
+          status: 'active',
+          cancelled_at: new Date().toISOString(),
+          // Aplicar límites de Free
+          monthly_transaction_limit: 30,
+          budget_limit: 2,
+          custom_category_limit: 3,
+          custom_payment_method_limit: 2,
+          custom_income_type_limit: 1,
+          recurring_transaction_limit: 5,
+          report_months_limit: 3,
+          multi_currency_enabled: false,
+          excel_export_enabled: false,
+          excel_import_enabled: false,
+          advanced_reports_enabled: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ User downgraded to Free:', data);
+      return data;
+    } catch (error) {
+      console.error('Error downgrading to Free:', error);
+      throw error;
+    }
+  }
+
+  // Promover usuario a Admin
+  async promoteUserToAdmin(userEmail) {
+    try {
+      const adminId = this.getCurrentUserId();
+      
+      // Verificar que el usuario actual es admin
+      const adminCheck = await this.isUserAdmin();
+      if (!adminCheck) {
+        throw new Error('No tienes permisos de administrador');
+      }
+      
+      const { data, error } = await supabase
+        .rpc('promote_user_to_admin', { 
+          admin_uuid: adminId,
+          target_email: userEmail 
+        });
+      
+      if (error) throw error;
+      
+      console.log('✅ User promoted to Admin:', data);
+      return data;
+    } catch (error) {
+      console.error('Error promoting user to Admin:', error);
+      throw error;
+    }
+  }
+
+  // Verificar si el usuario actual es admin
+  async isUserAdmin() {
+    try {
+      const userId = this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('subscription_type, status')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.log('No subscription found');
+        return false;
+      }
+      
+      return data.subscription_type === 'admin' && data.status === 'active';
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  }
+
+  // Obtener todas las suscripciones (solo admin)
+  async getAllSubscriptions() {
+    try {
+      const isAdmin = await this.isUserAdmin();
+      if (!isAdmin) {
+        throw new Error('No tienes permisos de administrador');
+      }
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          user:user_id (
+            email,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting all subscriptions:', error);
+      throw error;
+    }
+  }
+
+  // Obtener estadísticas de suscripciones (solo admin)
+  async getSubscriptionStats() {
+    try {
+      const isAdmin = await this.isUserAdmin();
+      if (!isAdmin) {
+        throw new Error('No tienes permisos de administrador');
+      }
+      
+      const { data, error } = await supabase
+        .rpc('get_subscription_stats');
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting subscription stats:', error);
+      throw error;
+    }
+  }
 }
 
 // Instancia singleton
