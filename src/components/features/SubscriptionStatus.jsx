@@ -1,6 +1,6 @@
 import React from 'react';
 import { Crown, Shield, Zap, Heart, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useUserSubscription, useLimitDisplay } from '../hooks/useUserSubscription';
+import { useUserSubscription, useLimitDisplay } from '../../hooks/useUserSubscription';
 
 const SubscriptionStatus = ({ compact = false }) => {
   const {

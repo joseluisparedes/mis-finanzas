@@ -26,8 +26,8 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import AuthModal from './Auth/AuthModal';
-import authService from '../services/authService';
+import AuthModal from '../auth/AuthModal';
+import authService from '../../services/authService';
 
 const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

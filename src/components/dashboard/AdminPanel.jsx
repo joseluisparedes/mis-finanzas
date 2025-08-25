@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAdminFunctions } from '../hooks/useUserSubscription';
-import databaseService from '../services/databaseService';
+import { useAdminFunctions } from '../../hooks/useUserSubscription';
+import databaseService from '../../services/databaseService';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Edit3, Save, X, Camera, Palette } from 'lucide-react';
-import authService from '../services/authService';
-import databaseService from '../services/databaseService';
+import authService from '../../services/authService';
+import databaseService from '../../services/databaseService';
 
 const ProfileCustomization = ({ isOpen, onClose, onProfileUpdate }) => {
   const [profile, setProfile] = useState({

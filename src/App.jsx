@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { SubscriptionProvider } from './hooks/useUserSubscription';
 import AppSupabase from './AppSupabase.jsx';
-import LandingPage from './components/LandingPage.jsx';
+import LandingPage from './components/landing/LandingPage.jsx';
 
 const App = () => {
   const [currentView, setCurrentView] = useState('landing'); // 'landing', 'app', 'login'

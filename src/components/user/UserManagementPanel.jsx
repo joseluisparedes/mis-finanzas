@@ -4,10 +4,10 @@ import {
   AlertCircle, CheckCircle, Search, Filter,
   UserPlus, Edit3, Trash2, Mail, Calendar
 } from 'lucide-react';
-import { useAdminFunctions } from '../hooks/useUserSubscription';
-import databaseService from '../services/databaseService';
-import { supabase } from '../lib/supabase';
-import Avatar from './Avatar';
+import { useAdminFunctions } from '../../hooks/useUserSubscription';
+import databaseService from '../../services/databaseService';
+import { supabase } from '../../lib/supabase';
+import Avatar from '../common/Avatar';
 
 const UserManagementPanel = () => {
   const [users, setUsers] = useState([]);
