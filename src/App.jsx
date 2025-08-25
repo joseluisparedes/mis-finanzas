@@ -44,6 +44,11 @@ const App = () => {
     window.history.pushState({}, '', '/mis-finanzas/');
   };
 
+  const handleOpenLoginModal = () => {
+    // Abrir modal SIN cambiar URL - solución definitiva
+    return 'open-modal-directly';
+  };
+
   // Auto-redirect authenticated users to app
   useEffect(() => {
     if (isAuthenticated && currentView === 'landing') {
@@ -74,6 +79,7 @@ const App = () => {
       <LandingPage 
         onNavigateToApp={handleNavigateToApp}
         onNavigateToLogin={handleNavigateToLogin}
+        onOpenLoginModal={handleOpenLoginModal}
         onCloseModal={handleNavigateToLanding}
         autoOpenLogin={currentView === 'login'}
       />
@@ -85,6 +91,7 @@ const App = () => {
     <LandingPage 
       onNavigateToApp={handleNavigateToApp}
       onNavigateToLogin={handleNavigateToLogin}
+      onOpenLoginModal={handleOpenLoginModal}
       onCloseModal={handleNavigateToLanding}
       autoOpenLogin={false}
     />

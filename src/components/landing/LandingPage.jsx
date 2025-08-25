@@ -29,7 +29,7 @@ import {
 import AuthModal from '../auth/AuthModal';
 import authService from '../../services/authService';
 
-const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpenLogin = false }) => {
+const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onOpenLoginModal, onCloseModal, autoOpenLogin = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [earlyBirdCount, setEarlyBirdCount] = useState(42); // Simulated counter
   const [authModalOpen, setAuthModalOpen] = useState(autoOpenLogin);
@@ -228,7 +228,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
                   Iniciar Sesión
                 </button>
                 <button 
-                  onClick={onNavigateToApp}
+                  onClick={() => setAuthModalOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Probar Gratis
@@ -267,7 +267,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
                   Iniciar Sesión
                 </button>
                 <button 
-                  onClick={onNavigateToApp}
+                  onClick={() => setAuthModalOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium"
                 >
                   Probar Gratis
@@ -316,7 +316,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
               <button 
-                onClick={onNavigateToApp}
+                onClick={() => setAuthModalOpen(true)}
                 className="group relative bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white px-10 py-5 rounded-2xl text-xl font-bold transition-all transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/25"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-75 transition-opacity"></div>
@@ -585,7 +585,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
               </ul>
               
               <button 
-                onClick={onNavigateToApp}
+                onClick={() => setAuthModalOpen(true)}
                 className="w-full bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 text-white py-4 px-6 rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 hover:shadow-xl"
               >
                 🚀 Comenzar Gratis Ahora
@@ -791,7 +791,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
             <button 
-              onClick={onNavigateToApp}
+              onClick={() => setAuthModalOpen(true)}
               className="group bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white px-12 py-6 rounded-2xl text-2xl font-black transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/25 relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-75 transition-opacity"></div>
@@ -871,12 +871,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpe
       {/* Authentication Modal */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => {
-          setAuthModalOpen(false);
-          if (onCloseModal) {
-            onCloseModal(); // Reset URL to landing
-          }
-        }}
+        onClose={() => setAuthModalOpen(false)}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
         onGoogleSignIn={handleGoogleSignIn}
