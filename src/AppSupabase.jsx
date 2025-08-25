@@ -228,7 +228,7 @@ const AppSupabase = () => {
   };
 
   const handleAddPaymentMethod = async (methodData) => {
-    const result = await handleAddPaymentMethod(methodData);
+    const result = await addPaymentMethod(methodData);
     if (result.success) {
       refreshSubscription(); // Actualizar límites disponibles
     }
