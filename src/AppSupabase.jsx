@@ -12,6 +12,7 @@ import SubscriptionStatus from './components/SubscriptionStatus';
 import ProfileCustomization from './components/ProfileCustomization';
 import Avatar from './components/Avatar';
 import ErrorMessage from './components/ErrorMessage';
+import InstallPWAButton from './components/InstallPWAButton';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
@@ -1559,6 +1560,8 @@ const AppSupabase = () => {
                   
                   {/* Opciones de Edición */}
                   <div className="flex items-center space-x-2">
+                    <InstallPWAButton />
+                    
                     <button
                       onClick={() => setShowProfileCustomization(true)}
                       className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition-colors"
@@ -1583,6 +1586,7 @@ const AppSupabase = () => {
               ) : (
                 /* Usuario No Autenticado */
                 <div className="hidden lg:flex items-center space-x-3">
+                  <InstallPWAButton />
                   <AuthButton
                     isAuthenticated={isAuthenticated}
                     user={user}
