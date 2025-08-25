@@ -2,15 +2,39 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/mis-finanzas/manifest.json" />
+    <meta name="theme-color" content="#8B5CF6" />
+    <meta name="background-color" content="#0f172a" />
+    
+    <!-- Standard Icons -->
+    <link rel="icon" type="image/svg+xml" href="/mis-finanzas/icons/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/mis-finanzas/icons/icon-192x192.svg" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="152x152" href="/mis-finanzas/icons/icon-152x152.svg" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/mis-finanzas/icons/icon-192x192.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MisFinanzas" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#8B5CF6" />
+    <meta name="msapplication-TileImage" content="/mis-finanzas/icons/icon-144x144.svg" />
+    
+    <!-- PWA Meta -->
+    <meta name="application-name" content="MisFinanzas" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
     <title>💰 MisFinanzas - Tu centro de control financiero</title>
     <script type="module" crossorigin src="/mis-finanzas/assets/index-4fa2d185.js"></script>
     <link rel="modulepreload" crossorigin href="/mis-finanzas/assets/vendor-e72fc605.js">
     <link rel="modulepreload" crossorigin href="/mis-finanzas/assets/utils-503d95dc.js">
     <link rel="modulepreload" crossorigin href="/mis-finanzas/assets/charts-7887dfe1.js">
     <link rel="stylesheet" href="/mis-finanzas/assets/index-8e42a314.css">
-  </head>
+  <link rel="manifest" href="/mis-finanzas/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/mis-finanzas/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
     

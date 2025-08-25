@@ -1,0 +1,31 @@
+<svg width="192" height="192" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E5E7EB" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="50" fill="url(#bgGradient)"/>
+  
+  <!-- Main financial icon (trending up + dollar) -->
+  <g transform="translate(128, 128)">
+    <!-- Trending up arrow -->
+    <path d="M3 17L9 11L13 15L21 7" stroke="url(#iconGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M14 7H21V14" stroke="url(#iconGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    
+    <!-- Dollar symbol -->
+    <g transform="translate(200, 80)">
+      <circle cx="32" cy="32" r="28" fill="#10B981" stroke="white" stroke-width="4"/>
+      <path d="M28 20V44M36 20V44M24 28C24 24 28 20 32 20C36 20 40 24 40 28C40 32 36 36 32 36C28 36 24 40 24 44C24 48 28 52 32 52C36 52 40 48 40 44" 
+            stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+  
+  
+</svg>
