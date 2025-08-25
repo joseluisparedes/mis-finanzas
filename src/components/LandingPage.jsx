@@ -35,6 +35,13 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false
   const [authModalOpen, setAuthModalOpen] = useState(autoOpenLogin);
   const [loading, setLoading] = useState(false);
 
+  // Watch for autoOpenLogin changes and open modal immediately
+  useEffect(() => {
+    if (autoOpenLogin) {
+      setAuthModalOpen(true);
+    }
+  }, [autoOpenLogin]);
+
   // Countdown timer for Early Bird offer
   const [timeLeft, setTimeLeft] = useState({
     days: 15,

@@ -64,7 +64,7 @@ const securityUtils = {
   })()
 };
 
-const AppSupabase = () => {
+const AppSupabase = ({ onNavigateToLanding }) => {
   // Funciones auxiliares para manejar fechas sin problemas de zona horaria
   const formatDateToLocalString = (date) => {
     const year = date.getFullYear();
@@ -840,6 +840,10 @@ const AppSupabase = () => {
     const result = await signOut();
     if (result.success) {
       setShowMigrationBanner(false);
+      // Navegar de vuelta al landing después del logout
+      if (onNavigateToLanding) {
+        onNavigateToLanding();
+      }
     }
     return result;
   };
