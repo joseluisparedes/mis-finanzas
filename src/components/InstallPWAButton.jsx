@@ -117,6 +117,9 @@ const InstallPWAButton = () => {
                     } catch (error) {
                       console.error('Error installing PWA:', error);
                     }
+                  } else {
+                    // Si no hay prompt nativo, mostrar instrucciones
+                    alert('Para instalar la app:\n\nChrome/Edge: Menú ⋮ > Instalar MisFinanzas\nSafari: Compartir 📤 > Añadir a inicio\nFirefox: Menú ☰ > Instalar');
                   }
                 }}
                 className="flex-1 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
