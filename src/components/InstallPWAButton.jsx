@@ -8,27 +8,14 @@ const InstallPWAButton = () => {
   const [installSuccess, setInstallSuccess] = useState(false);
 
   useEffect(() => {
-    // MÚLTIPLES métodos para detectar si ya está instalado
+    // Detección SIMPLE y confiable de instalación
     const checkIfInstalled = () => {
-      // Método 1: Display mode standalone
+      // Solo verificar métodos 100% confiables
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      
-      // Método 2: iOS Safari standalone
       const isIOSStandalone = window.navigator.standalone === true;
-      
-      // Método 3: Verificar si viene de una app instalada
-      const isFromInstalledApp = document.referrer.includes('android-app://') || 
-                                 document.referrer === '' && window.location.search === '';
-      
-      // Método 4: User agent contiene información de app instalada
-      const userAgent = navigator.userAgent || '';
-      const isAppUserAgent = userAgent.includes('wv') || // WebView
-                             userAgent.includes('Version') && userAgent.includes('Mobile');
-      
-      // Método 5: Verificar localStorage para flag personalizada
       const isMarkedAsInstalled = localStorage.getItem('pwa-installed') === 'true';
       
-      return isStandalone || isIOSStandalone || isFromInstalledApp || isMarkedAsInstalled;
+      return isStandalone || isIOSStandalone || isMarkedAsInstalled;
     };
 
     const isAppInstalled = checkIfInstalled();
@@ -39,15 +26,14 @@ const InstallPWAButton = () => {
       return;
     }
 
-    // Escuchar evento beforeinstallprompt (solo si NO está instalado)
+    // MOSTRAR POPUP INMEDIATAMENTE si no está instalado
+    setShowInstallPrompt(true);
+
+    // Escuchar evento beforeinstallprompt para tener el prompt nativo
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // Solo mostrar popup si realmente NO está instalado
-      if (!checkIfInstalled()) {
-        setShowInstallPrompt(true);
-      }
+      // El popup ya está visible, solo guardamos el prompt
     };
 
     // Escuchar evento appinstalled
