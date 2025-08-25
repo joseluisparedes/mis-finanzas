@@ -40,7 +40,7 @@ const InstallPWAButton = () => {
   const handleInstallClick = async () => {
     setIsInstalling(true);
 
-    // Solo manejar el prompt nativo - igual que el popup flotante
+    // Si hay prompt disponible, usarlo
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
@@ -62,7 +62,8 @@ const InstallPWAButton = () => {
         setIsInstalling(false);
       }
     } else {
-      // Si no hay prompt disponible, simplemente no hacer nada
+      // Si no hay prompt, mostrar el popup flotante
+      setShowInstallPrompt(true);
       setIsInstalling(false);
     }
   };
@@ -103,7 +104,7 @@ const InstallPWAButton = () => {
               onClick={handleInstallClick}
               className="w-full mt-3 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
             >
-              {isIOS ? 'Ver instrucciones' : 'Instalar App'}
+              Instalar App
             </button>
           </div>
         </div>
@@ -129,8 +130,8 @@ const InstallPWAButton = () => {
         </div>
       )}
 
-      {/* Botón solo aparece cuando HAY prompt disponible */}
-      {!showInstallPrompt && deferredPrompt && (
+      {/* Botón siempre visible cuando la app no está instalada */}
+      {!isInstalled && (
         <button
           onClick={handleInstallClick}
           disabled={isInstalling || installSuccess}
