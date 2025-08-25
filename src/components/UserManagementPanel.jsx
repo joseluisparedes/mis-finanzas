@@ -450,8 +450,14 @@ const PromoteModal = ({ user, onClose, onConfirm, loading }) => {
 
   const handleConfirm = () => {
     const price = selectedPlan === 'premium' ? (isEarlyBird ? 5 : 15) : 0;
+    const userEmail = user.users?.email || user.user_email;
     
-    onConfirm(user.users?.email, selectedPlan, {
+    console.log('DEBUG - user object:', user);
+    console.log('DEBUG - user.users?.email:', user.users?.email);
+    console.log('DEBUG - user.user_email:', user.user_email);
+    console.log('DEBUG - final userEmail:', userEmail);
+    
+    onConfirm(userEmail, selectedPlan, {
       price,
       billing_period: selectedPlan === 'premium' ? billingPeriod : null,
       is_early_bird: selectedPlan === 'premium' ? isEarlyBird : false,
