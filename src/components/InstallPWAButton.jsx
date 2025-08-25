@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Monitor } from 'lucide-react';
+import { Download, X, Smartphone, Monitor, CheckCircle, Loader, Share, Plus } from 'lucide-react';
 
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -7,6 +7,9 @@ const InstallPWAButton = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installSuccess, setInstallSuccess] = useState(false);
+  const [showIOSHelper, setShowIOSHelper] = useState(false);
 
   useEffect(() => {
     // Detectar si es iOS
@@ -42,35 +45,97 @@ const InstallPWAButton = () => {
   }, []);
 
   const handleInstallClick = async () => {
+    setIsInstalling(true);
+
     if (isIOS) {
-      setShowIOSInstructions(true);
+      // Para iOS, mostrar helper visual automáticamente
+      setShowIOSHelper(true);
+      setIsInstalling(false);
       return;
     }
 
     if (!deferredPrompt) {
-      // Mostrar instrucciones manuales si no hay prompt automático
-      alert(
-        'Para instalar la app:\n\n' +
-        '• Chrome/Edge: Busca el ícono ⊞ en la barra de direcciones\n' +
-        '• Firefox: Menú → "Instalar esta aplicación"\n' +
-        '• Safari: Botón Compartir → "Añadir a pantalla de inicio"'
-      );
+      // Intentar detectar el navegador y mostrar ayuda específica
+      const userAgent = navigator.userAgent.toLowerCase();
+      
+      if (userAgent.includes('firefox')) {
+        // Firefox: Intentar mostrar ayuda visual
+        setShowInstallPrompt(true);
+        setTimeout(() => {
+          setIsInstalling(false);
+        }, 1000);
+      } else if (userAgent.includes('edge') || userAgent.includes('chrome')) {
+        // Chrome/Edge: Mostrar indicación visual hacia la barra de direcciones
+        showAddressBarHint();
+        setIsInstalling(false);
+      } else {
+        // Otros navegadores
+        setShowInstallPrompt(true);
+        setTimeout(() => {
+          setIsInstalling(false);
+        }, 1000);
+      }
       return;
     }
 
     try {
-      deferredPrompt.prompt();
+      // Mostrar el prompt nativo
+      await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       
       if (outcome === 'accepted') {
-        setShowInstallPrompt(false);
-        setIsInstalled(true);
+        setInstallSuccess(true);
+        setTimeout(() => {
+          setIsInstalled(true);
+          setShowInstallPrompt(false);
+        }, 2000);
+      } else {
+        setIsInstalling(false);
       }
       
       setDeferredPrompt(null);
     } catch (error) {
       console.error('Error installing PWA:', error);
+      setIsInstalling(false);
     }
+  };
+
+  const showAddressBarHint = () => {
+    // Crear indicador visual hacia la barra de direcciones
+    const hint = document.createElement('div');
+    hint.style.cssText = `
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      z-index: 10000;
+      background: linear-gradient(135deg, #8B5CF6, #3B82F6);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      animation: bounceIn 0.5s ease-out;
+    `;
+    hint.innerHTML = '⬆️ Busca el ícono ⊞ aquí arriba';
+    
+    // Añadir animación CSS
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes bounceIn {
+        0% { transform: scale(0.3) translateY(-20px); opacity: 0; }
+        50% { transform: scale(1.05) translateY(-10px); }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(hint);
+    
+    // Remover después de 5 segundos
+    setTimeout(() => {
+      hint.remove();
+      style.remove();
+    }, 5000);
   };
 
   const dismissPrompt = () => {
@@ -114,56 +179,108 @@ const InstallPWAButton = () => {
         </div>
       )}
 
-      {/* Modal de instrucciones iOS */}
-      {showIOSInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+      {/* Helper visual iOS mejorado */}
+      {showIOSHelper && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-t-3xl p-6 w-full max-w-sm transform transition-transform duration-500 animate-slide-up">
             <div className="text-center">
-              <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Smartphone className="text-blue-600" size={32} />
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                <Share className="text-white animate-bounce" size={36} />
               </div>
               
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                Instalar en iOS
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                ¡Casi listo!
               </h3>
               
-              <div className="text-left space-y-3 text-sm text-gray-600">
-                <div className="flex items-start space-x-2">
-                  <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                  <span>Toca el botón <strong>Compartir</strong> 📤 en Safari</span>
+              <p className="text-gray-600 mb-6">
+                Toca el botón <strong>Compartir</strong> en la parte inferior de Safari
+              </p>
+              
+              {/* Indicador visual animado */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Share className="text-blue-600" size={24} />
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
                 </div>
-                
-                <div className="flex items-start space-x-2">
-                  <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                  <span>Selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
+              </div>
+              
+              <div className="text-left bg-gray-50 rounded-xl p-4 space-y-2 text-sm text-gray-700">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Busca <strong>"Añadir a pantalla de inicio"</strong></span>
                 </div>
-                
-                <div className="flex items-start space-x-2">
-                  <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  <span>Confirma tocando <strong>"Añadir"</strong></span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Toca <strong>"Añadir"</strong> para confirmar</span>
                 </div>
               </div>
               
               <button
-                onClick={() => setShowIOSInstructions(false)}
-                className="mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-semibold transition-colors"
+                onClick={() => setShowIOSHelper(false)}
+                className="mt-6 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 px-6 rounded-xl font-semibold transition-colors"
               >
-                Entendido
+                ¡Perfecto!
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Botón en el header/menu si no se ha mostrado el prompt */}
+      {/* Modal de éxito */}
+      {installSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center transform animate-bounce">
+            <div className="bg-green-100 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <CheckCircle className="text-green-600 animate-pulse" size={40} />
+            </div>
+            
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              ¡Instalado!
+            </h3>
+            
+            <p className="text-gray-600">
+              MisFinanzas ya está en tu dispositivo
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Botón mejorado con estados visuales */}
       {!showInstallPrompt && (
         <button
           onClick={handleInstallClick}
-          className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105"
+          disabled={isInstalling || installSuccess}
+          className={`inline-flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 ${
+            installSuccess 
+              ? 'bg-green-500 text-white cursor-default'
+              : isInstalling
+                ? 'bg-gray-400 text-white cursor-wait'
+                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+          }`}
         >
-          <Download size={16} />
-          <span className="hidden sm:inline">Instalar App</span>
-          <span className="sm:hidden">App</span>
+          {installSuccess ? (
+            <>
+              <CheckCircle size={16} className="animate-pulse" />
+              <span className="hidden sm:inline">¡Instalado!</span>
+              <span className="sm:hidden">✓</span>
+            </>
+          ) : isInstalling ? (
+            <>
+              <Loader size={16} className="animate-spin" />
+              <span className="hidden sm:inline">Instalando...</span>
+              <span className="sm:hidden">⏳</span>
+            </>
+          ) : (
+            <>
+              <Download size={16} className="animate-pulse" />
+              <span className="hidden sm:inline">Instalar App</span>
+              <span className="sm:hidden">📱</span>
+            </>
+          )}
         </button>
       )}
     </>
