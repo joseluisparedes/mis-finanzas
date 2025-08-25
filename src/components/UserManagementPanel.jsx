@@ -73,12 +73,12 @@ const UserManagementPanel = () => {
         price: extraData.price || 0,
         billing_period: extraData.billing_period || 'monthly',
         is_early_bird: extraData.is_early_bird || false,
-        notes: extraData.notes || ''
+        notes: extraData.notes || '',
+        target_user_email: userEmail
       };
 
       const { data, error } = await supabase
         .rpc('change_user_subscription', {
-          target_user_email: userEmail,
           new_subscription_type: newType,
           payment_info: paymentInfo
         });
