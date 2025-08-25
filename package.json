@@ -9,7 +9,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build",
-    "start": "vite preview --port 4173 --host"
+    "start": "vite preview --port 4173 --host",
+    "health-check": "node scripts/system-health-check.js",
+    "test-system": "chmod +x scripts/run-health-check.sh && ./scripts/run-health-check.sh",
+    "validate": "npm run health-check && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
@@ -24,6 +27,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.15",
+    "dotenv": "^16.6.1",
     "postcss": "^8.4.28",
     "tailwindcss": "^3.3.3",
     "vite": "^4.4.5"
