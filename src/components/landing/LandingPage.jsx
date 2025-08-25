@@ -34,13 +34,15 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false
   const [earlyBirdCount, setEarlyBirdCount] = useState(42); // Simulated counter
   const [authModalOpen, setAuthModalOpen] = useState(autoOpenLogin);
   const [loading, setLoading] = useState(false);
+  const [autoOpenHandled, setAutoOpenHandled] = useState(false);
 
-  // Watch for autoOpenLogin changes and open modal when navigating
+  // Watch for autoOpenLogin changes and open modal when navigating (only once)
   useEffect(() => {
-    if (autoOpenLogin && !authModalOpen) {
+    if (autoOpenLogin && !autoOpenHandled) {
       setAuthModalOpen(true);
+      setAutoOpenHandled(true);
     }
-  }, [autoOpenLogin, authModalOpen]);
+  }, [autoOpenLogin, autoOpenHandled]);
 
   // Countdown timer for Early Bird offer
   const [timeLeft, setTimeLeft] = useState({
