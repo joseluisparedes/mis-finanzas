@@ -74,6 +74,7 @@ const App = () => {
       <LandingPage 
         onNavigateToApp={handleNavigateToApp}
         onNavigateToLogin={handleNavigateToLogin}
+        onCloseModal={handleNavigateToLanding}
         autoOpenLogin={currentView === 'login'}
       />
     );
@@ -84,6 +85,7 @@ const App = () => {
     <LandingPage 
       onNavigateToApp={handleNavigateToApp}
       onNavigateToLogin={handleNavigateToLogin}
+      onCloseModal={handleNavigateToLanding}
       autoOpenLogin={false}
     />
   );

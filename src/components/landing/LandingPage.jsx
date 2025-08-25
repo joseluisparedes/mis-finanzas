@@ -29,7 +29,7 @@ import {
 import AuthModal from '../auth/AuthModal';
 import authService from '../../services/authService';
 
-const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false }) => {
+const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onCloseModal, autoOpenLogin = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [earlyBirdCount, setEarlyBirdCount] = useState(42); // Simulated counter
   const [authModalOpen, setAuthModalOpen] = useState(autoOpenLogin);
@@ -871,7 +871,12 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false
       {/* Authentication Modal */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          if (onCloseModal) {
+            onCloseModal(); // Reset URL to landing
+          }
+        }}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
         onGoogleSignIn={handleGoogleSignIn}
