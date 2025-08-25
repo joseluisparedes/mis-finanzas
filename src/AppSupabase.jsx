@@ -170,7 +170,9 @@ const AppSupabase = () => {
     limits,
     getLimitStatus,
     shouldShowUpgradeMessage,
-    getUpgradeMessage
+    getUpgradeMessage,
+    // Función para refrescar suscripción
+    refreshSubscription
   } = useUserSubscription();
 
   // Mostrar estado de carga mientras se verifica la suscripción
@@ -190,6 +192,56 @@ const AppSupabase = () => {
   
   // Hook de manejo de errores mejorado
   const { error: globalError, showError, clearError: clearGlobalError } = useErrorHandler();
+
+  // Funciones wrapper que actualizan límites después de borrar
+  const handleDeleteCategory = async (id) => {
+    const result = await deleteCategory(id);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
+
+  const handleDeletePaymentMethod = async (id) => {
+    const result = await deletePaymentMethod(id);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
+
+  const handleDeleteIncomeType = async (id) => {
+    const result = await deleteIncomeType(id);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
+
+  // También actualizar límites después de crear elementos
+  const handleAddCategory = async (categoryData) => {
+    const result = await addCategory(categoryData);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
+
+  const handleAddPaymentMethod = async (methodData) => {
+    const result = await handleAddPaymentMethod(methodData);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
+
+  const handleAddIncomeType = async (typeData) => {
+    const result = await addIncomeType(typeData);
+    if (result.success) {
+      refreshSubscription(); // Actualizar límites disponibles
+    }
+    return result;
+  };
   const [menuCollapsed, setMenuCollapsed] = useState({
     gastos: false,
     ingresos: false,
@@ -1338,7 +1390,7 @@ const AppSupabase = () => {
       methodData.cc_payment_day = parseInt(newPaymentMethodForm.cc_payment_day);
     }
 
-    const result = await addPaymentMethod(methodData);
+    const result = await handleAddPaymentMethod(methodData);
     
     if (result.success) {
       setNewPaymentMethodForm({
@@ -2395,7 +2447,7 @@ const AppSupabase = () => {
                             sort_order: categories.length + 1
                           };
                           try {
-                            await addCategory(newCategory);
+                            await handleAddCategory(newCategory);
                             e.target.value = '';
                           } catch (error) {
                             showError(error);
@@ -2426,7 +2478,7 @@ const AppSupabase = () => {
                             sort_order: categories.length + 1
                           };
                           try {
-                            await addCategory(newCategory);
+                            await handleAddCategory(newCategory);
                             nameInput.value = '';
                             colorInput.value = '#6B7280';
                           } catch (error) {
@@ -2489,7 +2541,7 @@ const AppSupabase = () => {
                         <button
                           onClick={() => {
                             if (confirm('¿Estás seguro de eliminar esta categoría?')) {
-                              deleteCategory(category.id);
+                              handleDeleteCategory(category.id);
                             }
                           }}
                           className="text-red-600 hover:text-red-800 transition-colors"
@@ -2836,7 +2888,7 @@ const AppSupabase = () => {
                           <button
                             onClick={() => {
                               if (confirm('¿Estás seguro de eliminar este método de pago?')) {
-                                deletePaymentMethod(method.id);
+                                handleDeletePaymentMethod(method.id);
                               }
                             }}
                             className="text-red-600 hover:text-red-800 transition-colors"
@@ -2995,7 +3047,7 @@ const AppSupabase = () => {
                         <button
                           onClick={() => {
                             if (confirm('¿Estás seguro de eliminar este tipo de ingreso?')) {
-                              deleteIncomeType(type.id);
+                              handleDeleteIncomeType(type.id);
                             }
                           }}
                           className="text-red-600 hover:text-red-800 transition-colors"
