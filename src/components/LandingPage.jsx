@@ -26,10 +26,14 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import AuthModal from './Auth/AuthModal';
+import authService from '../services/authService';
 
-const LandingPage = ({ onNavigateToApp, onNavigateToLogin }) => {
+const LandingPage = ({ onNavigateToApp, onNavigateToLogin, autoOpenLogin = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [earlyBirdCount, setEarlyBirdCount] = useState(42); // Simulated counter
+  const [authModalOpen, setAuthModalOpen] = useState(autoOpenLogin);
+  const [loading, setLoading] = useState(false);
 
   // Countdown timer for Early Bird offer
   const [timeLeft, setTimeLeft] = useState({
@@ -57,6 +61,52 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin }) => {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Authentication functions
+  const handleSignIn = async (email, password) => {
+    try {
+      setLoading(true);
+      const result = await authService.signIn(email, password);
+      if (result.success) {
+        onNavigateToApp(); // Navigate to app after successful login
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (email, password, metadata) => {
+    try {
+      setLoading(true);
+      const result = await authService.signUp(email, password, metadata);
+      if (result.success) {
+        onNavigateToApp(); // Navigate to app after successful registration
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const result = await authService.signInWithGoogle();
+      if (result.success) {
+        // Google auth redirects, so we don't need to navigate here
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const features = [
     {
@@ -163,7 +213,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin }) => {
                   Testimonios
                 </a>
                 <button 
-                  onClick={onNavigateToLogin}
+                  onClick={() => setAuthModalOpen(true)}
                   className="text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Iniciar Sesión
@@ -202,7 +252,7 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin }) => {
                   Testimonios
                 </a>
                 <button 
-                  onClick={onNavigateToLogin}
+                  onClick={() => setAuthModalOpen(true)}
                   className="text-blue-600 hover:text-blue-700 block w-full text-left px-3 py-2 rounded-md text-base font-medium"
                 >
                   Iniciar Sesión
@@ -808,6 +858,16 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin }) => {
           </div>
         </div>
       </footer>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSignIn={handleSignIn}
+        onSignUp={handleSignUp}
+        onGoogleSignIn={handleGoogleSignIn}
+        loading={loading}
+      />
     </div>
   );
 };

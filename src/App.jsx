@@ -24,8 +24,14 @@ const App = () => {
 
   // Handle navigation
   const handleNavigateToApp = () => {
-    setCurrentView('app');
-    window.history.pushState({}, '', '#app');
+    // Si no está autenticado, ir directo al login/registro
+    if (!isAuthenticated) {
+      setCurrentView('login');
+      window.history.pushState({}, '', '#login');
+    } else {
+      setCurrentView('app');
+      window.history.pushState({}, '', '#app');
+    }
   };
 
   const handleNavigateToLogin = () => {
@@ -68,6 +74,7 @@ const App = () => {
       <LandingPage 
         onNavigateToApp={handleNavigateToApp}
         onNavigateToLogin={handleNavigateToLogin}
+        autoOpenLogin={currentView === 'login'}
       />
     );
   }
@@ -77,6 +84,7 @@ const App = () => {
     <LandingPage 
       onNavigateToApp={handleNavigateToApp}
       onNavigateToLogin={handleNavigateToLogin}
+      autoOpenLogin={false}
     />
   );
 };
