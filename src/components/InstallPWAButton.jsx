@@ -26,14 +26,12 @@ const InstallPWAButton = () => {
       return;
     }
 
-    // MOSTRAR POPUP INMEDIATAMENTE si no está instalado
-    setShowInstallPrompt(true);
-
     // Escuchar evento beforeinstallprompt para tener el prompt nativo
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // El popup ya está visible, solo guardamos el prompt
+      // SOLO AHORA mostrar el popup cuando tenemos el prompt
+      setShowInstallPrompt(true);
     };
 
     // Escuchar evento appinstalled
@@ -98,7 +96,7 @@ const InstallPWAButton = () => {
             <div className="flex space-x-2 mt-3">
               <button
                 onClick={async () => {
-                  // LÓGICA de instalación
+                  // SIEMPRE debe haber deferredPrompt disponible porque solo mostramos el popup cuando lo hay
                   if (deferredPrompt) {
                     try {
                       await deferredPrompt.prompt();
@@ -117,9 +115,6 @@ const InstallPWAButton = () => {
                     } catch (error) {
                       console.error('Error installing PWA:', error);
                     }
-                  } else {
-                    // Si no hay prompt nativo, mostrar instrucciones
-                    alert('Para instalar la app:\n\nChrome/Edge: Menú ⋮ > Instalar MisFinanzas\nSafari: Compartir 📤 > Añadir a inicio\nFirefox: Menú ☰ > Instalar');
                   }
                 }}
                 className="flex-1 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
