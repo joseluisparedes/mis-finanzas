@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Monitor, CheckCircle, Loader, Share, Plus } from 'lucide-react';
+import { Download, X, CheckCircle } from 'lucide-react';
 
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isInstalling, setIsInstalling] = useState(false);
   const [installSuccess, setInstallSuccess] = useState(false);
 
   useEffect(() => {
@@ -37,36 +36,6 @@ const InstallPWAButton = () => {
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    setIsInstalling(true);
-
-    // Si hay prompt disponible, usarlo
-    if (deferredPrompt) {
-      try {
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          setInstallSuccess(true);
-          setTimeout(() => {
-            setIsInstalled(true);
-            setShowInstallPrompt(false);
-          }, 2000);
-        } else {
-          setIsInstalling(false);
-        }
-        
-        setDeferredPrompt(null);
-      } catch (error) {
-        console.error('Error installing PWA:', error);
-        setIsInstalling(false);
-      }
-    } else {
-      // Si no hay prompt, mostrar el popup flotante
-      setShowInstallPrompt(true);
-      setIsInstalling(false);
-    }
-  };
 
 
   const dismissPrompt = () => {
@@ -101,7 +70,27 @@ const InstallPWAButton = () => {
             </div>
             
             <button
-              onClick={handleInstallClick}
+              onClick={async () => {
+                // MISMA LÓGICA que funciona en el popup
+                if (deferredPrompt) {
+                  try {
+                    await deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    
+                    if (outcome === 'accepted') {
+                      setInstallSuccess(true);
+                      setShowInstallPrompt(false);
+                      setTimeout(() => {
+                        setIsInstalled(true);
+                      }, 2000);
+                    }
+                    
+                    setDeferredPrompt(null);
+                  } catch (error) {
+                    console.error('Error installing PWA:', error);
+                  }
+                }
+              }}
               className="w-full mt-3 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
             >
               Instalar App
@@ -130,40 +119,7 @@ const InstallPWAButton = () => {
         </div>
       )}
 
-      {/* Botón siempre visible cuando la app no está instalada */}
-      {!isInstalled && (
-        <button
-          onClick={handleInstallClick}
-          disabled={isInstalling || installSuccess}
-          className={`inline-flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 ${
-            installSuccess 
-              ? 'bg-green-500 text-white cursor-default'
-              : isInstalling
-                ? 'bg-gray-400 text-white cursor-wait'
-                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
-          }`}
-        >
-          {installSuccess ? (
-            <>
-              <CheckCircle size={16} className="animate-pulse" />
-              <span className="hidden sm:inline">¡Instalado!</span>
-              <span className="sm:hidden">✓</span>
-            </>
-          ) : isInstalling ? (
-            <>
-              <Loader size={16} className="animate-spin" />
-              <span className="hidden sm:inline">Instalando...</span>
-              <span className="sm:hidden">⏳</span>
-            </>
-          ) : (
-            <>
-              <Download size={16} className="animate-pulse" />
-              <span className="hidden sm:inline">Instalar App</span>
-              <span className="sm:hidden">📱</span>
-            </>
-          )}
-        </button>
-      )}
+      {/* El popup flotante es el ÚNICO botón que funciona */}
     </>
   );
 };
