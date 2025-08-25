@@ -41,7 +41,7 @@ const App = () => {
 
   const handleNavigateToLanding = () => {
     setCurrentView('landing');
-    window.history.pushState({}, '', '/');
+    window.history.pushState({}, '', '/mis-finanzas/');
   };
 
   // Auto-redirect authenticated users to app
