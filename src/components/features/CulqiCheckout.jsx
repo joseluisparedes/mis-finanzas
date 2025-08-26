@@ -83,24 +83,62 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     setLoading(true);
 
     try {
-      // Configurar los datos de la tarjeta en Culqi.settings
+      // Configurar los datos básicos de Culqi
       window.Culqi.settings({
         title: `Suscripción ${plan.name}`,
-        currency: plan.currency,
+        currency: plan.currency || 'PEN',
         description: `Suscripción ${plan.name} - MisFinanzas`,
-        amount: plan.price * 100, // Culqi maneja centavos
-        order: `ORDER-${Date.now()}`,
-        metadata: {
-          plan_id: plan.id,
-          plan_name: plan.name
+        amount: plan.price * 100 // Culqi maneja centavos
+      });
+
+      // Configurar los datos específicos de la tarjeta
+      window.Culqi.options({
+        lang: 'auto',
+        modal: false,
+        style: {
+          logo: '',
+          maincolor: '#8B5CF6',
+          buttontext: '#ffffff',
+          maintext: '#4a5568'
         },
-        card: {
-          email: formData.email,
-          card_number: formData.cardNumber.replace(/\s+/g, ''),
-          exp_month: formData.expirationMonth,
-          exp_year: formData.expirationYear,
-          cvv: formData.cvv
+        paymentmethods: {
+          tarjeta: true,
+          yape: false,
+          billetera: false,
+          bancaMovil: false,
+          agente: false,
+          cuotealo: false
         }
+      });
+
+      console.log('Datos del formulario antes de enviar:', {
+        email: formData.email,
+        cardNumber: formData.cardNumber.replace(/\s+/g, ''),
+        expirationMonth: formData.expirationMonth,
+        expirationYear: formData.expirationYear,
+        cvv: formData.cvv
+      });
+
+      // Establecer los datos de la tarjeta en el DOM (Culqi v4 los toma de aquí)
+      const cardData = {
+        email: formData.email,
+        card_number: formData.cardNumber.replace(/\s+/g, ''),
+        cvv: formData.cvv,
+        expiration_month: formData.expirationMonth,
+        expiration_year: formData.expirationYear
+      };
+
+      // Crear inputs ocultos para que Culqi los capture
+      Object.entries(cardData).forEach(([key, value]) => {
+        let input = document.getElementById(`culqi_${key}`);
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.id = `culqi_${key}`;
+          input.name = key;
+          document.body.appendChild(input);
+        }
+        input.value = value;
       });
 
       // Validar métodos de pago disponibles
