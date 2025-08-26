@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import databaseService from '../../services/databaseService';
+import PromotionAdminPanel from '../features/PromotionAdminPanel';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
@@ -9,6 +10,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState('');
   const [message, setMessage] = useState(null);
+  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'promotions'
 
   const {
     isAdmin,
@@ -135,10 +137,41 @@ const AdminPanel = () => {
               <span>{message.text}</span>
             </div>
           )}
+
+          {/* Tabs */}
+          <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'users'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Users className="w-4 h-4 inline mr-2" />
+                Gestión de Usuarios
+              </button>
+              <button
+                onClick={() => setActiveTab('promotions')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'promotions'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Gift className="w-4 h-4 inline mr-2" />
+                Promociones Early Bird
+              </button>
+            </nav>
+          </div>
         </div>
 
-        {/* Estadísticas */}
-        {stats && (
+        {/* Contenido de las tabs */}
+        {activeTab === 'users' && (
+          <>
+            {/* Estadísticas */}
+            {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <StatCard
               icon={Users}
@@ -293,6 +326,18 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
         )}
       </td>
     </tr>
+  );
+};
+
+          </>
+        )}
+
+        {/* Tab de Promociones */}
+        {activeTab === 'promotions' && (
+          <PromotionAdminPanel />
+        )}
+      </div>
+    </div>
   );
 };
 

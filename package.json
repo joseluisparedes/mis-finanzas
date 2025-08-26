@@ -20,6 +20,7 @@
     "@tanstack/react-query-devtools": "^5.85.3",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
+    "react-culqi-next": "^0.1.2",
     "react-dom": "^18.2.0",
     "recharts": "^2.8.0",
     "xlsx": "^0.18.5"

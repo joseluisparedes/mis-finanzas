@@ -1,8 +1,11 @@
-import React from 'react';
-import { Crown, Shield, Zap, Heart, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Crown, Shield, Zap, Heart, Clock, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { useUserSubscription, useLimitDisplay } from '../../hooks/useUserSubscription';
+import SubscriptionPlans from './SubscriptionPlans';
 
 const SubscriptionStatus = ({ compact = false }) => {
+  const [showPlansModal, setShowPlansModal] = useState(false);
+
   const {
     loading,
     error,
@@ -179,9 +182,33 @@ const SubscriptionStatus = ({ compact = false }) => {
       {/* Call to action para FREE */}
       {isFree && (
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-          <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105">
-            🚀 Upgrade a Premium - Solo S/ 15/mes
+          <button 
+            onClick={() => setShowPlansModal(true)}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+          >
+            🔥 Upgrade a Premium Early Bird - Solo S/ 5/mes
           </button>
+        </div>
+      )}
+
+      {/* Modal de planes */}
+      {showPlansModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setShowPlansModal(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <SubscriptionPlans 
+              currentPlan={subscriptionType} 
+              onSuccess={() => {
+                setShowPlansModal(false);
+                // Aquí podrías refrescar los datos de suscripción
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
