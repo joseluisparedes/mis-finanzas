@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
 import { usePromotion } from '../../hooks/usePromotion';
+import { useUserSubscription } from '../../hooks/useUserSubscription';
 
 const SubscriptionPlans = ({ currentPlan = 'free', onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
   
   const { promotion, loading: promotionLoading, error: promotionError } = usePromotion();
+  const { refreshSubscription } = useUserSubscription();
 
   const plans = [
     {
@@ -195,6 +199,10 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess }) => {
             console.log('Payment successful:', result);
             setShowCheckout(false);
             setCheckoutPlan(null);
+            setPaymentResult(result);
+            setShowSuccessModal(true);
+            // Actualizar el estado de suscripción
+            refreshSubscription();
             if (onSuccess) onSuccess(result);
           }}
           onCancel={() => {
@@ -206,6 +214,45 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess }) => {
             alert('Error en el pago: ' + error);
           }}
         />
+      )}
+
+      {/* Modal de Confirmación de Pago Exitoso */}
+      {showSuccessModal && paymentResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                ¡Pago Exitoso!
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Tu suscripción ha sido activada correctamente.
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-900">
+                  {paymentResult.plan?.name || 'Premium Plan'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Monto: S/ {paymentResult.amount}
+                </p>
+              </div>
+              <p className="text-xs text-green-600 font-medium">
+                🎉 ¡Ahora tienes acceso a todas las funciones premium!
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setPaymentResult(null);
+              }}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
