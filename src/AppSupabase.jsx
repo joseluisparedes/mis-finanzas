@@ -9,6 +9,7 @@ import MigrationBanner from './components/migration/MigrationBanner';
 import FinancialDashboard from './components/dashboard/FinancialDashboard';
 import UserManagementPanel from './components/user/UserManagementPanel';
 import SubscriptionStatus from './components/features/SubscriptionStatus';
+import SubscriptionPlans from './components/features/SubscriptionPlans';
 import ProfileCustomization from './components/features/ProfileCustomization';
 import Avatar from './components/common/Avatar';
 import ErrorMessage from './components/common/ErrorMessage';
@@ -592,6 +593,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
 
   // Estados para configuración
   const [showConfig, setShowConfig] = useState(false);
+  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   
@@ -2272,6 +2274,32 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Planes de Suscripción */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-purple-500" />
+                  Planes de Suscripción
+                </h3>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm mb-2">
+                      Plan actual: <span className="font-semibold capitalize">{subscriptionType}</span>
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                      Gestiona tu suscripción y explora planes disponibles
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowSubscriptionPlans(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Ver Planes</span>
+                  </button>
                 </div>
               </div>
 
@@ -6248,6 +6276,21 @@ const AppSupabase = ({ onNavigateToLanding }) => {
         onClose={() => setShowProfileCustomization(false)}
         onProfileUpdate={handleProfileUpdate}
       />
+
+      {/* Modal de Planes de Suscripción */}
+      {showSubscriptionPlans && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowSubscriptionPlans(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <SubscriptionPlans />
+          </div>
+        </div>
+      )}
       
       {/* Componente de manejo de errores mejorado */}
       {globalError && (

@@ -402,7 +402,10 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onOpenLoginModal, onC
                 </div>
               </div>
               
-              <button className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-8 py-4 rounded-xl font-black text-lg transition-all transform hover:scale-105 hover:shadow-2xl">
+              <button 
+                onClick={() => setAuthModalOpen(true)}
+                className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-8 py-4 rounded-xl font-black text-lg transition-all transform hover:scale-105 hover:shadow-2xl"
+              >
                 <span className="flex items-center">
                   🚀 ASEGURAR PRECIO
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -653,7 +656,10 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onOpenLoginModal, onC
                 </li>
               </ul>
               
-              <button className="group w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-5 px-8 rounded-2xl font-black text-xl transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/50 relative overflow-hidden">
+              <button 
+                onClick={() => setAuthModalOpen(true)}
+                className="group w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-5 px-8 rounded-2xl font-black text-xl transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/50 relative overflow-hidden"
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <span className="relative flex items-center justify-center">
                   🚀 ASEGURAR MI PRECIO FUNDADOR

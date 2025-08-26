@@ -59,8 +59,8 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         }
       };
 
-      // Crear el token con Culqi
-      window.Culqi.createToken(culqiData.card, (token) => {
+      // Crear el token con Culqi v4
+      window.Culqi.token.create(culqiData.card, (token) => {
         if (token.id) {
           // Token creado exitosamente
           processPayment(token.id);
@@ -122,8 +122,14 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
       }
 
     } catch (error) {
-      console.error('Error procesando pago:', error);
-      onError(error.message || 'Error al procesar el pago');
+      console.error('Error completo procesando pago:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      onError(`Error en el pago: ${error.message || 'Error inesperado al procesar el pago'}`);
     } finally {
       setLoading(false);
     }
