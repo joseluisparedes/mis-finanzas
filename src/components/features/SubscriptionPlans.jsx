@@ -4,7 +4,7 @@ import CulqiCheckout from './CulqiCheckout';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 
-const SubscriptionPlans = ({ currentPlan = 'free', onSuccess }) => {
+const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpenses }) => {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -246,6 +246,10 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess }) => {
               onClick={() => {
                 setShowSuccessModal(false);
                 setPaymentResult(null);
+                // Navegar a la página de Gastos después del pago exitoso
+                if (onNavigateToExpenses) {
+                  onNavigateToExpenses();
+                }
               }}
               className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
             >

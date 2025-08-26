@@ -3,7 +3,7 @@ import { Crown, Shield, Zap, Heart, Clock, AlertTriangle, CheckCircle, X } from 
 import { useUserSubscription, useLimitDisplay } from '../../hooks/useUserSubscription';
 import SubscriptionPlans from './SubscriptionPlans';
 
-const SubscriptionStatus = ({ compact = false }) => {
+const SubscriptionStatus = ({ compact = false, onNavigateToExpenses }) => {
   const [showPlansModal, setShowPlansModal] = useState(false);
 
   const {
@@ -206,6 +206,12 @@ const SubscriptionStatus = ({ compact = false }) => {
               onSuccess={() => {
                 setShowPlansModal(false);
                 // Aquí podrías refrescar los datos de suscripción
+              }}
+              onNavigateToExpenses={() => {
+                setShowPlansModal(false);
+                if (onNavigateToExpenses) {
+                  onNavigateToExpenses();
+                }
               }}
             />
           </div>

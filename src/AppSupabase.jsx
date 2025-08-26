@@ -6287,7 +6287,12 @@ const AppSupabase = ({ onNavigateToLanding }) => {
             >
               <X className="w-5 h-5" />
             </button>
-            <SubscriptionPlans />
+            <SubscriptionPlans 
+              onNavigateToExpenses={() => {
+                setShowSubscriptionPlans(false);
+                setActiveTab('gastos');
+              }}
+            />
           </div>
         </div>
       )}
