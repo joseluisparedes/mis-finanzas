@@ -20,12 +20,24 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     const script = document.createElement('script');
     script.src = 'https://checkout.culqi.com/js/v4';
     script.onload = () => {
-      setCulqiLoaded(true);
-      // Configurar Culqi
-      if (window.Culqi) {
-        window.Culqi.publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
-        window.Culqi.init();
-      }
+      // Dar tiempo para que Culqi se inicialice completamente
+      setTimeout(() => {
+        if (window.Culqi) {
+          window.Culqi.publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
+          window.Culqi.init();
+          setCulqiLoaded(true);
+          console.log('Culqi inicializado correctamente', {
+            publicKey: import.meta.env.VITE_CULQI_PUBLIC_KEY,
+            hasToken: !!window.Culqi.token
+          });
+        } else {
+          console.error('Culqi no se cargó correctamente');
+        }
+      }, 1000);
+    };
+    script.onerror = () => {
+      console.error('Error cargando el script de Culqi');
+      onError('Error cargando el sistema de pagos');
     };
     document.head.appendChild(script);
 
@@ -45,6 +57,17 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
       return;
     }
 
+    // Verificar que Culqi esté completamente disponible
+    if (!window.Culqi || !window.Culqi.token || typeof window.Culqi.token.create !== 'function') {
+      console.error('Culqi no está completamente inicializado:', {
+        hasCulqi: !!window.Culqi,
+        hasToken: !!(window.Culqi && window.Culqi.token),
+        hasCreate: !!(window.Culqi && window.Culqi.token && window.Culqi.token.create)
+      });
+      onError('El sistema de pagos no está disponible. Intenta recargar la página.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -59,15 +82,18 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         }
       };
 
+      console.log('Creando token con Culqi...', culqiData.card);
+
       // Crear el token con Culqi v4
       window.Culqi.token.create(culqiData.card, (token) => {
+        console.log('Respuesta de Culqi:', token);
         if (token.id) {
           // Token creado exitosamente
           processPayment(token.id);
         } else {
           // Error en la creación del token
-          console.error('Error Culqi:', token.user_message);
-          onError(token.user_message || 'Error al procesar la tarjeta');
+          console.error('Error Culqi:', token);
+          onError(token.user_message || token.merchant_message || 'Error al procesar la tarjeta');
           setLoading(false);
         }
       });
