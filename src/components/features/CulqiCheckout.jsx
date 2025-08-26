@@ -24,11 +24,24 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
       setTimeout(() => {
         if (window.Culqi) {
           window.Culqi.publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
-          window.Culqi.init();
+          
+          // Configurar el callback global de Culqi
+          window.culqi = function() {
+            if (window.Culqi.token) {
+              console.log('Token generado:', window.Culqi.token);
+              processPayment(window.Culqi.token.id);
+            } else if (window.Culqi.error) {
+              console.error('Error Culqi:', window.Culqi.error);
+              onError(window.Culqi.error.user_message || 'Error al procesar la tarjeta');
+              setLoading(false);
+            }
+          };
+          
           setCulqiLoaded(true);
           console.log('Culqi inicializado correctamente', {
             publicKey: import.meta.env.VITE_CULQI_PUBLIC_KEY,
-            hasToken: !!window.Culqi.token
+            hasCulqi: !!window.Culqi,
+            hasValidationPaymentMethods: typeof window.Culqi.validationPaymentMethods === 'function'
           });
         } else {
           console.error('Culqi no se cargó correctamente');
@@ -58,11 +71,10 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     }
 
     // Verificar que Culqi esté completamente disponible
-    if (!window.Culqi || !window.Culqi.token || typeof window.Culqi.token.create !== 'function') {
+    if (!window.Culqi || typeof window.Culqi.validationPaymentMethods !== 'function') {
       console.error('Culqi no está completamente inicializado:', {
         hasCulqi: !!window.Culqi,
-        hasToken: !!(window.Culqi && window.Culqi.token),
-        hasCreate: !!(window.Culqi && window.Culqi.token && window.Culqi.token.create)
+        hasValidationPaymentMethods: !!(window.Culqi && window.Culqi.validationPaymentMethods)
       });
       onError('El sistema de pagos no está disponible. Intenta recargar la página.');
       return;
@@ -71,36 +83,45 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     setLoading(true);
 
     try {
-      // Configurar los datos para Culqi
-      const culqiData = {
+      // Configurar los datos de la tarjeta en Culqi.settings
+      window.Culqi.settings({
+        title: `Suscripción ${plan.name}`,
+        currency: plan.currency,
+        description: `Suscripción ${plan.name} - MisFinanzas`,
+        amount: plan.price * 100, // Culqi maneja centavos
+        order: `ORDER-${Date.now()}`,
+        metadata: {
+          plan_id: plan.id,
+          plan_name: plan.name
+        },
         card: {
-          number: formData.cardNumber.replace(/\s+/g, ''),
-          cvv: formData.cvv,
-          exp_month: parseInt(formData.expirationMonth),
-          exp_year: parseInt(formData.expirationYear),
-          email: formData.email
-        }
-      };
-
-      console.log('Creando token con Culqi...', culqiData.card);
-
-      // Crear el token con Culqi v4
-      window.Culqi.token.create(culqiData.card, (token) => {
-        console.log('Respuesta de Culqi:', token);
-        if (token.id) {
-          // Token creado exitosamente
-          processPayment(token.id);
-        } else {
-          // Error en la creación del token
-          console.error('Error Culqi:', token);
-          onError(token.user_message || token.merchant_message || 'Error al procesar la tarjeta');
-          setLoading(false);
+          email: formData.email,
+          card_number: formData.cardNumber.replace(/\s+/g, ''),
+          exp_month: formData.expirationMonth,
+          exp_year: formData.expirationYear,
+          cvv: formData.cvv
         }
       });
 
+      // Validar métodos de pago disponibles
+      window.Culqi.validationPaymentMethods();
+      
+      // Obtener opciones de pago disponibles
+      const paymentOptions = window.Culqi.paymentOptionsAvailable;
+      
+      console.log('Opciones de pago disponibles:', paymentOptions);
+
+      // Generar token usando la API v4
+      if (paymentOptions && paymentOptions.token && paymentOptions.token.available) {
+        console.log('Generando token con Culqi v4...');
+        paymentOptions.token.generate();
+      } else {
+        throw new Error('El método de pago con tarjeta no está disponible');
+      }
+
     } catch (error) {
       console.error('Error en el checkout:', error);
-      onError('Error inesperado al procesar el pago');
+      onError(error.message || 'Error inesperado al procesar el pago');
       setLoading(false);
     }
   };
