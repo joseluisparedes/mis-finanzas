@@ -63,8 +63,22 @@ serve(async (req) => {
     )
 
     const culqiSecretKey = Deno.env.get('CULQI_SECRET_KEY')
+    const culqiPublicKey = Deno.env.get('CULQI_PUBLIC_KEY')
+    
     if (!culqiSecretKey) {
-      throw new Error('CULQI_SECRET_KEY not configured')
+      console.error('CULQI_SECRET_KEY not configured')
+      return new Response(
+        JSON.stringify({ error: 'CULQI_SECRET_KEY not configured' }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!culqiPublicKey) {
+      console.error('CULQI_PUBLIC_KEY not configured')
+      return new Response(
+        JSON.stringify({ error: 'CULQI_PUBLIC_KEY not configured' }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const url = new URL(req.url)
@@ -72,6 +86,14 @@ serve(async (req) => {
     // POST /culqi-payment-webhook - Procesar pago
     if (req.method === 'POST' && url.pathname === '/culqi-payment-webhook') {
       const paymentData: PaymentRequest = await req.json()
+      
+      console.log('Payment data received:', {
+        hasCard: !!paymentData.card,
+        hasTokenId: !!paymentData.token_id,
+        planId: paymentData.plan_id,
+        userId: paymentData.user_id,
+        amount: paymentData.amount
+      })
       
       let tokenId = paymentData.token_id
 
@@ -82,7 +104,7 @@ serve(async (req) => {
         const tokenResponse = await fetch('https://api.culqi.com/v2/tokens', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${Deno.env.get('CULQI_PUBLIC_KEY')}`,
+            'Authorization': `Bearer ${culqiPublicKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(paymentData.card)
