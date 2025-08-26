@@ -68,7 +68,10 @@ serve(async (req) => {
     if (!culqiSecretKey) {
       console.error('CULQI_SECRET_KEY not configured')
       return new Response(
-        JSON.stringify({ error: 'CULQI_SECRET_KEY not configured' }), 
+        JSON.stringify({ 
+          success: false, 
+          error: 'CULQI_SECRET_KEY not configured in Edge Function environment variables' 
+        }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -76,7 +79,10 @@ serve(async (req) => {
     if (!culqiPublicKey) {
       console.error('CULQI_PUBLIC_KEY not configured')
       return new Response(
-        JSON.stringify({ error: 'CULQI_PUBLIC_KEY not configured' }), 
+        JSON.stringify({ 
+          success: false, 
+          error: 'CULQI_PUBLIC_KEY not configured in Edge Function environment variables' 
+        }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
