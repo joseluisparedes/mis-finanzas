@@ -16,16 +16,36 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
   });
 
   useEffect(() => {
-    // Marcar como cargado inmediatamente ya que usamos API directa
-    setCulqiLoaded(true);
-    console.log('Sistema de pagos inicializado (API directa)', {
-      publicKey: import.meta.env.VITE_CULQI_PUBLIC_KEY
-    });
+    // Cargar Culqi JS v3 (más estable que v4)
+    const script = document.createElement('script');
+    script.src = 'https://checkout.culqi.com/js/v3';
+    script.onload = () => {
+      if (window.Culqi) {
+        window.Culqi.publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
+        setCulqiLoaded(true);
+        console.log('Culqi v3 inicializado:', {
+          publicKey: import.meta.env.VITE_CULQI_PUBLIC_KEY,
+          ready: true
+        });
+      }
+    };
+    script.onerror = () => {
+      console.error('Error cargando Culqi');
+      onError('Error cargando el sistema de pagos');
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      const scriptElement = document.querySelector('script[src="https://checkout.culqi.com/js/v3"]');
+      if (scriptElement) {
+        document.head.removeChild(scriptElement);
+      }
+    };
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!culqiLoaded) {
+    if (!culqiLoaded || !window.Culqi) {
       onError('El sistema de pagos aún no ha cargado');
       return;
     }
@@ -33,40 +53,33 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     setLoading(true);
 
     try {
-      console.log('Creando token directamente con API de Culqi...');
-
-      // Crear el token directamente con la API de Culqi
-      const tokenData = {
-        card_number: formData.cardNumber.replace(/\s+/g, ''),
-        cvv: formData.cvv,
-        expiration_month: formData.expirationMonth,
-        expiration_year: formData.expirationYear,
-        email: formData.email
+      // Configurar callback global para Culqi v3
+      window.culqi = function() {
+        if (window.Culqi.token) {
+          console.log('Token generado:', window.Culqi.token.id);
+          processPayment(window.Culqi.token.id);
+        } else {
+          console.error('Error Culqi:', window.Culqi.error);
+          onError(window.Culqi.error.user_message || 'Error al procesar la tarjeta');
+          setLoading(false);
+        }
       };
 
-      console.log('Datos enviados a Culqi:', tokenData);
+      // Crear token con Culqi v3
+      window.Culqi.createToken(
+        formData.cardNumber.replace(/\s+/g, ''),
+        formData.cvv,
+        formData.expirationMonth,
+        formData.expirationYear,
+        formData.email
+      );
 
-      const response = await fetch('https://api.culqi.com/v2/tokens', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_CULQI_PUBLIC_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(tokenData)
+      console.log('Creando token con Culqi v3...', {
+        cardNumber: formData.cardNumber.replace(/\s+/g, ''),
+        month: formData.expirationMonth,
+        year: formData.expirationYear,
+        email: formData.email
       });
-
-      const result = await response.json();
-      console.log('Respuesta de Culqi API:', result);
-
-      if (response.ok && result.id) {
-        // Token creado exitosamente
-        console.log('Token creado exitosamente:', result.id);
-        processPayment(result.id);
-      } else {
-        // Error en la creación del token
-        console.error('Error creando token:', result);
-        throw new Error(result.user_message || result.merchant_message || 'Error al procesar la tarjeta');
-      }
 
     } catch (error) {
       console.error('Error en el checkout:', error);
