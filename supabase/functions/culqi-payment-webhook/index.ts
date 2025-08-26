@@ -203,6 +203,47 @@ serve(async (req) => {
           }
         }
 
+        // NUEVO: Enviar email de bienvenida Premium
+        try {
+          console.log('Enviando email de bienvenida premium...')
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: 'welcome_premium',
+              user_id: paymentData.user_id,
+              recipient_email: paymentData.customer.email,
+              template_data: {
+                user_name: `${paymentData.customer.first_name || ''} ${paymentData.customer.last_name || ''}`.trim() || 'Usuario',
+                plan_name: paymentData.plan_id === 'premium_early_bird' ? 'Premium Early Bird' : 'Premium',
+                amount: (paymentData.amount / 100).toString(),
+                premium_features: [
+                  'Transacciones ilimitadas',
+                  'Presupuestos ilimitados', 
+                  'Categorías ilimitadas',
+                  'Multi-moneda PEN/USD',
+                  'Exportar Excel completo',
+                  'Análisis avanzados',
+                  'Gráficos premium',
+                  'Soporte prioritario'
+                ]
+              }
+            })
+          })
+
+          if (!emailResponse.ok) {
+            const emailError = await emailResponse.text()
+            console.error('Error enviando email de bienvenida:', emailError)
+          } else {
+            console.log('Email de bienvenida enviado exitosamente')
+          }
+        } catch (emailErr) {
+          console.error('Error en envío de email de bienvenida:', emailErr)
+        }
+
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -217,6 +258,40 @@ serve(async (req) => {
       } else {
         // Pago fallido
         console.error('Culqi charge failed:', chargeResult)
+
+        // NUEVO: Enviar email de notificación de pago fallido
+        try {
+          console.log('Enviando email de pago fallido...')
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: 'payment_failed',
+              user_id: paymentData.user_id,
+              recipient_email: paymentData.customer.email,
+              template_data: {
+                user_name: `${paymentData.customer.first_name || ''} ${paymentData.customer.last_name || ''}`.trim() || 'Usuario',
+                amount: (paymentData.amount / 100).toString(),
+                error_reason: chargeResult.outcome.merchant_message || chargeResult.outcome.user_message || 'Fondos insuficientes o tarjeta rechazada',
+                error_code: chargeResult.outcome.code,
+                retry_url: `${Deno.env.get('EMAIL_BASE_URL') || 'https://joseluisparedes.github.io/mis-finanzas'}#planes`
+              }
+            })
+          })
+
+          if (!emailResponse.ok) {
+            const emailError = await emailResponse.text()
+            console.error('Error enviando email de pago fallido:', emailError)
+          } else {
+            console.log('Email de pago fallido enviado exitosamente')
+          }
+        } catch (emailErr) {
+          console.error('Error en envío de email de pago fallido:', emailErr)
+        }
+
         return new Response(
           JSON.stringify({ 
             error: chargeResult.outcome.user_message || 'Payment failed',
