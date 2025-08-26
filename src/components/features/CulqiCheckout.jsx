@@ -27,6 +27,12 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
           
           // Configurar el callback global de Culqi
           window.culqi = function() {
+            // Limpiar formulario temporal
+            const tempForm = document.getElementById('culqi-form');
+            if (tempForm) {
+              tempForm.remove();
+            }
+            
             if (window.Culqi.token) {
               console.log('Token generado:', window.Culqi.token);
               processPayment(window.Culqi.token.id);
@@ -119,7 +125,11 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         cvv: formData.cvv
       });
 
-      // Establecer los datos de la tarjeta en el DOM (Culqi v4 los toma de aquí)
+      // Crear un formulario temporal con los datos para Culqi
+      const tempForm = document.createElement('form');
+      tempForm.style.display = 'none';
+      tempForm.id = 'culqi-form';
+      
       const cardData = {
         email: formData.email,
         card_number: formData.cardNumber.replace(/\s+/g, ''),
@@ -128,18 +138,23 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         expiration_year: formData.expirationYear
       };
 
-      // Crear inputs ocultos para que Culqi los capture
+      // Crear inputs en el formulario
       Object.entries(cardData).forEach(([key, value]) => {
-        let input = document.getElementById(`culqi_${key}`);
-        if (!input) {
-          input = document.createElement('input');
-          input.type = 'hidden';
-          input.id = `culqi_${key}`;
-          input.name = key;
-          document.body.appendChild(input);
-        }
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = key;
+        input.id = key;
         input.value = value;
+        tempForm.appendChild(input);
       });
+
+      document.body.appendChild(tempForm);
+
+      // Configurar Culqi para usar el formulario
+      window.Culqi.form = tempForm;
+
+      console.log('Formulario creado:', tempForm);
+      console.log('Datos en formulario:', Object.fromEntries(new FormData(tempForm)));
 
       // Validar métodos de pago disponibles
       window.Culqi.validationPaymentMethods();
@@ -154,6 +169,7 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         console.log('Generando token con Culqi v4...');
         paymentOptions.token.generate();
       } else {
+        console.error('Token no disponible:', paymentOptions);
         throw new Error('El método de pago con tarjeta no está disponible');
       }
 
