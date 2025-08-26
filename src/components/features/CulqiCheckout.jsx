@@ -89,16 +89,19 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         }
       };
 
-      console.log('Llamando Culqi.createToken con parámetros:', {
-        cardNumber: cardNumber,
-        cvv: cvv, 
-        month: month,
-        year: year,
+      // Culqi v3 espera un objeto, no parámetros separados
+      const tokenData = {
+        card_number: cardNumber,
+        cvv: cvv,
+        expiration_month: month,
+        expiration_year: year,
         email: email
-      });
+      };
 
-      // Crear token con Culqi v3
-      window.Culqi.createToken(cardNumber, cvv, month, year, email);
+      console.log('Llamando Culqi.createToken con objeto:', tokenData);
+
+      // Crear token con Culqi v3 usando objeto
+      window.Culqi.createToken(tokenData);
 
     } catch (error) {
       console.error('Error en el checkout:', error);
