@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { ResendUsageMonitor } from './services/usage-monitor.ts'
 
 // Configuración de CORS
 const corsHeaders = {
@@ -26,6 +27,58 @@ serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // Obtener URL para routing
+  const url = new URL(req.url);
+
+  // GET /usage - Consultar uso actual de Resend
+  if (req.method === 'GET' && url.pathname.endsWith('/usage')) {
+    try {
+      if (!RESEND_API_KEY) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Resend API not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const usageMonitor = new ResendUsageMonitor(RESEND_API_KEY, supabase);
+      const { usage } = await usageMonitor.monitor();
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          usage: {
+            used: usage.used,
+            remaining: usage.remaining,
+            limit: usage.limit,
+            percentage: usage.percentage,
+            resetDate: usage.resetDate
+          }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } catch (error) {
+      console.error('Error checking usage:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  }
+
+  // POST - Enviar email
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -160,6 +213,21 @@ serve(async (req) => {
       template_data: emailRequest.template_data,
       sent_at: new Date().toISOString()
     })
+
+    // NUEVO: Verificar uso y enviar alertas si es necesario
+    try {
+      const usageMonitor = new ResendUsageMonitor(RESEND_API_KEY, supabase);
+      const { usage, alertSent } = await usageMonitor.monitor();
+      
+      console.log(`Current email usage: ${usage.used}/${usage.limit} (${usage.percentage}%)`);
+      
+      if (alertSent) {
+        console.log('⚠️ Usage alert sent to admin');
+      }
+    } catch (monitorError) {
+      console.error('Warning: Usage monitoring failed:', monitorError);
+      // No bloquear el envío por errores de monitoreo
+    }
 
     return new Response(
       JSON.stringify({ 
