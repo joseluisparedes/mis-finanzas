@@ -53,6 +53,30 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
     setLoading(true);
 
     try {
+      // Validar que todos los datos estén presentes
+      const cardNumber = formData.cardNumber.replace(/\s+/g, '');
+      const cvv = formData.cvv;
+      const month = formData.expirationMonth;
+      const year = formData.expirationYear;
+      const email = formData.email;
+
+      console.log('Validando datos antes de enviar:', {
+        cardNumber: cardNumber,
+        cvv: cvv,
+        month: month,
+        year: year,
+        email: email,
+        cardNumberLength: cardNumber.length,
+        cvvLength: cvv.length,
+        monthLength: month.length,
+        yearLength: year.length,
+        emailLength: email.length
+      });
+
+      if (!cardNumber || !cvv || !month || !year || !email) {
+        throw new Error('Todos los campos de la tarjeta son requeridos');
+      }
+
       // Configurar callback global para Culqi v3
       window.culqi = function() {
         if (window.Culqi.token) {
@@ -65,21 +89,16 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         }
       };
 
-      // Crear token con Culqi v3
-      window.Culqi.createToken(
-        formData.cardNumber.replace(/\s+/g, ''),
-        formData.cvv,
-        formData.expirationMonth,
-        formData.expirationYear,
-        formData.email
-      );
-
-      console.log('Creando token con Culqi v3...', {
-        cardNumber: formData.cardNumber.replace(/\s+/g, ''),
-        month: formData.expirationMonth,
-        year: formData.expirationYear,
-        email: formData.email
+      console.log('Llamando Culqi.createToken con parámetros:', {
+        cardNumber: cardNumber,
+        cvv: cvv, 
+        month: month,
+        year: year,
+        email: email
       });
+
+      // Crear token con Culqi v3
+      window.Culqi.createToken(cardNumber, cvv, month, year, email);
 
     } catch (error) {
       console.error('Error en el checkout:', error);
