@@ -29,7 +29,7 @@ interface CulqiCharge {
 }
 
 interface PaymentRequest {
-  token_id: string
+  token_id?: string
   plan_id: string
   amount: number
   currency_code: string
@@ -40,6 +40,14 @@ interface PaymentRequest {
   }
   description: string
   user_id: string
+  // Para creación de token
+  card?: {
+    card_number: string
+    cvv: string
+    expiration_month: string
+    expiration_year: string
+    email: string
+  }
 }
 
 serve(async (req) => {
@@ -65,8 +73,39 @@ serve(async (req) => {
     if (req.method === 'POST' && url.pathname === '/culqi-payment-webhook') {
       const paymentData: PaymentRequest = await req.json()
       
+      let tokenId = paymentData.token_id
+
+      // Si no hay token_id, crear el token primero
+      if (!tokenId && paymentData.card) {
+        console.log('Creando token desde backend...')
+        
+        const tokenResponse = await fetch('https://api.culqi.com/v2/tokens', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('CULQI_PUBLIC_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(paymentData.card)
+        })
+
+        const tokenResult = await tokenResponse.json()
+        console.log('Token response:', tokenResult)
+
+        if (!tokenResponse.ok || !tokenResult.id) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: tokenResult.user_message || 'Error creando token de pago'
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        tokenId = tokenResult.id
+      }
+      
       // Validar datos requeridos
-      if (!paymentData.token_id || !paymentData.plan_id || !paymentData.user_id) {
+      if (!tokenId || !paymentData.plan_id || !paymentData.user_id) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }), 
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,7 +123,7 @@ serve(async (req) => {
           amount: paymentData.amount, // En centavos
           currency_code: paymentData.currency_code,
           email: paymentData.customer.email,
-          source_id: paymentData.token_id,
+          source_id: tokenId,
           description: paymentData.description,
           metadata: {
             user_id: paymentData.user_id,

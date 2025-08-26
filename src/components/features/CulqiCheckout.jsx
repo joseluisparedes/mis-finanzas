@@ -16,36 +16,14 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
   });
 
   useEffect(() => {
-    // Cargar Culqi JS v3 (más estable que v4)
-    const script = document.createElement('script');
-    script.src = 'https://checkout.culqi.com/js/v3';
-    script.onload = () => {
-      if (window.Culqi) {
-        window.Culqi.publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
-        setCulqiLoaded(true);
-        console.log('Culqi v3 inicializado:', {
-          publicKey: import.meta.env.VITE_CULQI_PUBLIC_KEY,
-          ready: true
-        });
-      }
-    };
-    script.onerror = () => {
-      console.error('Error cargando Culqi');
-      onError('Error cargando el sistema de pagos');
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      const scriptElement = document.querySelector('script[src="https://checkout.culqi.com/js/v3"]');
-      if (scriptElement) {
-        document.head.removeChild(scriptElement);
-      }
-    };
+    // Sistema de pagos backend - no necesita scripts
+    setCulqiLoaded(true);
+    console.log('Sistema de pagos backend inicializado');
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!culqiLoaded || !window.Culqi) {
+    if (!culqiLoaded) {
       onError('El sistema de pagos aún no ha cargado');
       return;
     }
@@ -77,35 +55,71 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         throw new Error('Todos los campos de la tarjeta son requeridos');
       }
 
-      // Configurar callback global para Culqi v3
-      window.culqi = function() {
-        if (window.Culqi.token) {
-          console.log('Token generado:', window.Culqi.token.id);
-          processPayment(window.Culqi.token.id);
-        } else {
-          console.error('Error Culqi:', window.Culqi.error);
-          onError(window.Culqi.error.user_message || 'Error al procesar la tarjeta');
-          setLoading(false);
-        }
-      };
+      console.log('Procesando pago directamente desde backend...');
 
-      // Culqi v3 espera un objeto, no parámetros separados
-      const tokenData = {
+      // Procesar pago directamente enviando datos de tarjeta al backend
+      await processPaymentDirect({
         card_number: cardNumber,
         cvv: cvv,
         expiration_month: month,
         expiration_year: year,
         email: email
-      };
-
-      console.log('Llamando Culqi.createToken con objeto:', tokenData);
-
-      // Crear token con Culqi v3 usando objeto
-      window.Culqi.createToken(tokenData);
+      });
 
     } catch (error) {
       console.error('Error en el checkout:', error);
       onError(error.message || 'Error inesperado al procesar el pago');
+      setLoading(false);
+    }
+  };
+
+  const processPaymentDirect = async (cardData) => {
+    try {
+      // Obtener el usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      const paymentData = {
+        plan_id: plan.id,
+        amount: plan.price * 100, // Culqi maneja centavos
+        currency_code: plan.currency,
+        customer: {
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName
+        },
+        description: `Suscripción ${plan.name} - MisFinanzas`,
+        user_id: user.id,
+        card: cardData // Enviar datos de tarjeta para crear token en backend
+      };
+
+      console.log('Enviando datos al backend:', paymentData);
+
+      // Llamar a la Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('culqi-payment-webhook', {
+        body: paymentData
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        onSuccess({
+          plan: plan,
+          amount: plan.price,
+          charge_id: data.charge_id
+        });
+      } else {
+        throw new Error(data.error || 'Error en el procesamiento del pago');
+      }
+
+    } catch (error) {
+      console.error('Error procesando pago:', error);
+      onError(`Error en el pago: ${error.message || 'Error inesperado al procesar el pago'}`);
+    } finally {
       setLoading(false);
     }
   };
