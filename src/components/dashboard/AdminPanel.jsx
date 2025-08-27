@@ -82,7 +82,7 @@ const AdminPanel = () => {
 
   const handleDowngradeToFree = async (userId, userEmail) => {
     // Prevenir auto-degradación accidental
-    if (userEmail.includes('admin') || userEmail.includes('joseluisparedes')) {
+    if (userEmail.includes('admin') || userEmail.includes('jose241100@gmail.com') || userEmail.includes('joseluisparedes')) {
       alert('⚠️ No puedes degradar la cuenta de administrador principal. Usa otro usuario para pruebas.');
       return;
     }
