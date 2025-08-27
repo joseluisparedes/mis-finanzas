@@ -68,10 +68,18 @@ const AdminPanel = () => {
         early_bird_price: isEarlyBird ? 5.00 : null
       };
 
-      await promoteUserToPremium(userId, paymentInfo);
+      // Usar la nueva función RPC segura
+      const { data, error } = await supabaseClient.rpc('safe_promote_to_premium', {
+        target_user_id: userId,
+        payment_info: paymentInfo
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ Resultado de promoción:', data);
       setMessage({ 
         type: 'success', 
-        text: `Usuario ${userEmail} promovido a Premium ${isEarlyBird ? 'Early Bird' : 'Regular'}` 
+        text: data
       });
       loadData(); // Recargar datos
     } catch (error) {
