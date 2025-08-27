@@ -89,6 +89,42 @@ const AdminPanel = () => {
     }
   };
 
+  const handlePromoteToFamily = async (userId, userEmail, isEarlyBird = false) => {
+    try {
+      setActionLoading(`promote-family-${userId}`);
+      
+      const paymentInfo = {
+        price: isEarlyBird ? 10.00 : 25.00,
+        currency: 'PEN',
+        billing_period: 'monthly',
+        payment_method: 'admin_promotion',
+        transaction_id: `ADMIN_FAMILY_${Date.now()}`,
+        is_early_bird: isEarlyBird,
+        early_bird_price: isEarlyBird ? 10.00 : null
+      };
+
+      // Usar la nueva función RPC segura para family
+      const { data, error } = await supabase.rpc('safe_promote_to_family', {
+        target_user_id: userId,
+        payment_info: paymentInfo
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ Resultado de promoción a Family:', data);
+      setMessage({ 
+        type: 'success', 
+        text: data
+      });
+      loadData(); // Recargar datos
+    } catch (error) {
+      console.error('Error promoting user to Family:', error);
+      setMessage({ type: 'error', text: `Error promoviendo usuario a Family: ${error.message}` });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const handleDowngradeToFree = async (userId, userEmail) => {
     // Prevenir auto-degradación accidental
     if (userEmail.includes('admin') || userEmail.includes('jose241100@gmail.com') || userEmail.includes('joseluisparedes')) {
@@ -293,6 +329,7 @@ const AdminPanel = () => {
                         key={user.user_id}
                         user={user}
                         onPromoteToPremium={handlePromoteToPremium}
+                        onPromoteToFamily={handlePromoteToFamily}
                         onDowngradeToFree={handleDowngradeToFree}
                         actionLoading={actionLoading}
                       />
@@ -324,10 +361,11 @@ const AdminPanel = () => {
 };
 
 // Componente para cada fila de usuario
-const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading }) => {
+const UserRow = ({ user, onPromoteToPremium, onPromoteToFamily, onDowngradeToFree, actionLoading }) => {
   const isPromoting = actionLoading === `promote-${user.user_id}`;
+  const isPromotingFamily = actionLoading === `promote-family-${user.user_id}`;
   const isDowngrading = actionLoading === `downgrade-${user.user_id}`;
-  const isLoading = isPromoting || isDowngrading;
+  const isLoading = isPromoting || isPromotingFamily || isDowngrading;
 
   const getSubscriptionBadge = () => {
     const config = {
@@ -386,6 +424,20 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
               {isPromoting ? '...' : '💎 Premium'}
+            </button>
+            <button
+              onClick={() => onPromoteToFamily(user.user_id, user.user_email || user.users?.email || 'N/A', false)}
+              disabled={isLoading}
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              {isPromotingFamily ? '...' : '👪 Family'}
+            </button>
+            <button
+              onClick={() => onPromoteToFamily(user.user_id, user.user_email || user.users?.email || 'N/A', true)}
+              disabled={isLoading}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              {isPromotingFamily ? '...' : '👑 Family EB'}
             </button>
           </>
         )}
