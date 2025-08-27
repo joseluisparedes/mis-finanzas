@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings } from 'lucide-react';
+import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings, History } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import databaseService from '../../services/databaseService';
 import PromotionAdminPanel from '../features/PromotionAdminPanel';
 import AdvancedUserManagement from '../features/AdvancedUserManagement';
+import AuditLogViewer from '../features/AuditLogViewer';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
@@ -11,7 +12,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState('');
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced'
+  const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced' | 'audit'
 
   const {
     isAdmin,
@@ -175,6 +176,17 @@ const AdminPanel = () => {
                 <Gift className="w-4 h-4 inline mr-2" />
                 Promociones
               </button>
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'audit'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <History className="w-4 h-4 inline mr-2" />
+                Auditoría
+              </button>
             </nav>
           </div>
         </div>
@@ -266,6 +278,11 @@ const AdminPanel = () => {
         {/* Tab de Promociones */}
         {activeTab === 'promotions' && (
           <PromotionAdminPanel />
+        )}
+
+        {/* Tab de Auditoría */}
+        {activeTab === 'audit' && (
+          <AuditLogViewer />
         )}
       </div>
     </div>
