@@ -371,6 +371,7 @@ const UserRow = ({ user, onPromoteToPremium, onPromoteToFamily, onDowngradeToFre
     const config = {
       free: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: 'Free' },
       premium: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', text: 'Premium' },
+      family: { color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200', text: 'Family' },
       admin: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200', text: 'Admin' }
     };
     
@@ -443,6 +444,32 @@ const UserRow = ({ user, onPromoteToPremium, onPromoteToFamily, onDowngradeToFre
           >
             {isDowngrading ? '...' : '⬇️ Degradar'}
           </button>
+        )}
+
+        {user.subscription_type === 'family' && (
+          <>
+            <button
+              onClick={() => onDowngradeToFree(user.user_id, user.user_email || user.users?.email || 'N/A')}
+              disabled={isLoading}
+              className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              {isDowngrading ? '...' : '⬇️ Free'}
+            </button>
+            <button
+              onClick={() => onPromoteToPremium(user.user_id, user.user_email || user.users?.email || 'N/A', true)}
+              disabled={isLoading}
+              className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              {isPromoting ? '...' : '👑 Premium EB'}
+            </button>
+            <button
+              onClick={() => onPromoteToPremium(user.user_id, user.user_email || user.users?.email || 'N/A', false)}
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              {isPromoting ? '...' : '💎 Premium'}
+            </button>
+          </>
         )}
       </td>
     </tr>
