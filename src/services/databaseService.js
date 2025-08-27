@@ -1283,15 +1283,21 @@ class DatabaseService {
 
       if (error) throw error;
 
-      // Aplicar límites Free
-      await supabase.rpc('set_subscription_limits', { 
-        sub_type: 'free', 
-        user_uuid: userId 
-      });
+      // Aplicar límites Free (si la función existe)
+      try {
+        await supabase.rpc('set_subscription_limits', { 
+          sub_type: 'free', 
+          user_uuid: userId 
+        });
+      } catch (rpcError) {
+        console.warn('RPC set_subscription_limits not available, skipping limits update:', rpcError);
+        // No lanzar error, continuar con la degradación
+      }
 
       return data;
     } catch (error) {
       this.handleError(error, 'downgradeUserToFree');
+      throw error; // Re-lanzar el error para que lo maneje el componente
     }
   }
 

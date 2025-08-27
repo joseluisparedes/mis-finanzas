@@ -31,15 +31,22 @@ const AdminPanel = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Cargando datos de administración...');
+      
       const [usersData, statsData] = await Promise.all([
         getAllSubscriptions(),
         getSubscriptionStats()
       ]);
+      
+      console.log('📊 Usuarios cargados:', usersData?.length || 0);
+      console.log('📈 Estadísticas cargadas:', statsData);
+      
       setUsers(usersData || []);
       setStats(statsData || {});
     } catch (error) {
-      console.error('Error loading admin data:', error);
-      setMessage({ type: 'error', text: 'Error cargando datos de administración' });
+      console.error('❌ Error loading admin data:', error);
+      console.error('❌ Stack trace:', error.stack);
+      setMessage({ type: 'error', text: `Error cargando datos de administración: ${error.message || error}` });
     } finally {
       setLoading(false);
     }
@@ -78,12 +85,19 @@ const AdminPanel = () => {
     
     try {
       setActionLoading(`downgrade-${userId}`);
+      console.log('🔄 Iniciando degradación de usuario:', userId, userEmail);
+      
       await downgradeUserToFree(userId);
+      console.log('✅ Usuario degradado exitosamente');
+      
       setMessage({ type: 'success', text: `Usuario ${userEmail} degradado a Free` });
-      loadData();
+      
+      console.log('🔄 Recargando datos de administración...');
+      await loadData();
+      console.log('✅ Datos recargados exitosamente');
     } catch (error) {
-      console.error('Error downgrading user:', error);
-      setMessage({ type: 'error', text: `Error degradando usuario: ${error.message}` });
+      console.error('❌ Error en proceso de degradación:', error);
+      setMessage({ type: 'error', text: `Error degradando usuario: ${error.message || error}` });
     } finally {
       setActionLoading('');
     }
