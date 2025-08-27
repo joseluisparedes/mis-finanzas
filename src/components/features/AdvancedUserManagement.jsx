@@ -5,7 +5,7 @@ import {
   FileDown, MoreVertical, UserX, UserCheck, Database, History
 } from 'lucide-react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { useUserSubscription } from '../../hooks/useUserSubscription';
+import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 import Avatar from '../common/Avatar';
 import * as XLSX from 'xlsx';
 
@@ -24,6 +24,7 @@ const AdvancedUserManagement = () => {
   
   const { supabaseClient } = useSupabaseData();
   const { isAdmin } = useUserSubscription();
+  const { getAllSubscriptions, getSubscriptionStats } = useAdminFunctions();
 
   // Solo admins pueden acceder
   if (!isAdmin) {
@@ -54,31 +55,19 @@ const AdvancedUserManagement = () => {
   const loadUsersData = async () => {
     setLoading(true);
     try {
-      // Intentar usar la función RPC, si falla usar método alternativo
-      let data = null;
-      try {
-        const result = await supabaseClient.rpc('get_users_detailed_admin');
-        data = result.data;
-      } catch (rpcError) {
-        // Método alternativo si la función RPC no existe
-        const result = await supabaseClient
-          .from('user_subscriptions')
-          .select(`
-            user_id,
-            subscription_type,
-            status,
-            created_at,
-            users:user_id (
-              email,
-              created_at
-            )
-          `);
-        data = result.data;
+      console.log('🔄 Loading users data for AdvancedUserManagement...');
+      // Usar el mismo método que funciona en AdminPanel
+      const data = await getAllSubscriptions();
+      console.log('✅ Users data loaded:', data);
+      console.log('📊 Number of users found:', data?.length || 0);
+      
+      if (data && data.length > 0) {
+        console.log('👤 First user sample:', data[0]);
       }
       
       setUsers(data || []);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('❌ Error loading users in AdvancedUserManagement:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -87,33 +76,33 @@ const AdvancedUserManagement = () => {
 
   const loadSystemStats = async () => {
     try {
-      // Intentar usar la función RPC, si falla calcular manualmente
-      let stats = null;
-      try {
-        const result = await supabaseClient.rpc('get_system_stats_admin');
-        stats = result.data;
-      } catch (rpcError) {
-        // Calcular estadísticas manualmente
-        const { data: subscriptions } = await supabaseClient
-          .from('user_subscriptions')
-          .select('subscription_type, status');
-        
-        if (subscriptions) {
-          const active = subscriptions.filter(s => s.status === 'active');
-          stats = {
-            total_users: subscriptions.length,
-            active_users: active.length,
-            free_users: active.filter(s => s.subscription_type === 'free').length,
-            premium_users: active.filter(s => s.subscription_type === 'premium').length,
-            admin_users: active.filter(s => s.subscription_type === 'admin').length,
-            suspended_users: subscriptions.filter(s => s.status === 'suspended').length
-          };
-        }
-      }
+      console.log('🔄 Loading system stats...');
+      // Usar el mismo método que funciona en AdminPanel
+      const stats = await getSubscriptionStats();
+      console.log('✅ System stats loaded:', stats);
       
-      setSystemStats(stats);
+      // Adaptar formato si es necesario
+      const adaptedStats = {
+        total_users: stats?.total_users || 0,
+        active_users: stats?.active_users || 0,
+        free_users: stats?.free_users || 0,
+        premium_users: stats?.premium_users || 0,
+        admin_users: stats?.admin_users || 0,
+        suspended_users: stats?.suspended_users || 0
+      };
+      
+      setSystemStats(adaptedStats);
     } catch (error) {
-      console.error('Error loading system stats:', error);
+      console.error('❌ Error loading system stats:', error);
+      // Fallback stats
+      setSystemStats({
+        total_users: 0,
+        active_users: 0,
+        free_users: 0,
+        premium_users: 0,
+        admin_users: 0,
+        suspended_users: 0
+      });
     }
   };
 
