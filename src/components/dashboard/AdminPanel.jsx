@@ -81,6 +81,12 @@ const AdminPanel = () => {
   };
 
   const handleDowngradeToFree = async (userId, userEmail) => {
+    // Prevenir auto-degradación accidental
+    if (userEmail.includes('admin') || userEmail.includes('joseluisparedes')) {
+      alert('⚠️ No puedes degradar la cuenta de administrador principal. Usa otro usuario para pruebas.');
+      return;
+    }
+    
     if (!confirm(`¿Seguro que quieres degradar a ${userEmail} a plan Free?`)) return;
     
     try {

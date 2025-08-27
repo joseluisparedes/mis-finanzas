@@ -1,0 +1,2 @@
+-- RESTAURAR ADMIN NUEVAMENTE
+UPDATE user_subscriptions SET subscription_type = 'admin', status = 'active', updated_at = NOW() WHERE user_id = (SELECT id FROM auth.users ORDER BY created_at ASC LIMIT 1);
