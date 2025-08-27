@@ -266,7 +266,7 @@ const AdminPanel = () => {
           <>
             {/* Estadísticas */}
             {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
                 <StatCard
                   icon={Users}
                   title="Total Usuarios"
@@ -284,6 +284,12 @@ const AdminPanel = () => {
                   title="Premium"
                   value={stats.premium_users}
                   color="yellow"
+                />
+                <StatCard
+                  icon={Users}
+                  title="Family"
+                  value={stats.family_users || 0}
+                  color="green"
                 />
                 <StatCard
                   icon={Shield}
@@ -482,6 +488,7 @@ const StatCard = ({ icon: Icon, title, value, color }) => {
     blue: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
     gray: 'text-gray-600 bg-gray-50 dark:bg-gray-700',
     yellow: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
+    green: 'text-green-600 bg-green-50 dark:bg-green-900/20',
     purple: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20'
   };
 
