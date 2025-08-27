@@ -14,7 +14,6 @@ import ProfileCustomization from './components/features/ProfileCustomization';
 import Avatar from './components/common/Avatar';
 import ErrorMessage from './components/common/ErrorMessage';
 import InstallPWAButton from './components/pwa/InstallPWAButton';
-import EmailUsageDashboard from './components/features/EmailUsageDashboard';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
@@ -1567,7 +1566,6 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                   
                   {/* Opciones de Edición */}
                   <div className="flex items-center space-x-2">
-                    {isAdmin && <EmailUsageDashboard compact />}
                     <InstallPWAButton />
                     
                     <button

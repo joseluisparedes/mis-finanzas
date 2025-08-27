@@ -8,7 +8,6 @@ import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import databaseService from '../../services/databaseService';
 import { supabase } from '../../lib/supabase';
 import Avatar from '../common/Avatar';
-import EmailUsageDashboard from '../features/EmailUsageDashboard';
 
 const UserManagementPanel = () => {
   const [users, setUsers] = useState([]);
@@ -206,10 +205,6 @@ const UserManagementPanel = () => {
           </div>
         )}
 
-        {/* Dashboard de Uso de Emails */}
-        <div className="mb-8">
-          <EmailUsageDashboard />
-        </div>
 
         {/* Filtros y búsqueda */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
