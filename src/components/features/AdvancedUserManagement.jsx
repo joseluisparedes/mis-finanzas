@@ -4,8 +4,8 @@ import {
   AlertTriangle, CheckCircle, Clock, Shield, Activity, Calendar,
   FileDown, MoreVertical, UserX, UserCheck, Database, History, ArrowDown
 } from 'lucide-react';
-import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
+import { supabase } from '../../lib/supabase';
 import Avatar from '../common/Avatar';
 import * as XLSX from 'xlsx';
 
@@ -22,7 +22,6 @@ const AdvancedUserManagement = () => {
   const [systemStats, setSystemStats] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   
-  const { supabaseClient } = useSupabaseData();
   const { isAdmin } = useUserSubscription();
   const { getAllSubscriptions, getSubscriptionStats } = useAdminFunctions();
 
@@ -134,7 +133,7 @@ const AdvancedUserManagement = () => {
     try {
       // Intentar usar la función RPC, si falla usar método directo
       try {
-        const { error } = await supabaseClient.rpc('suspend_user_account', {
+        const { error } = await supabase.rpc('suspend_user_account', {
           target_user_id: userId,
           admin_reason: 'Suspensión administrativa'
         });
@@ -142,7 +141,7 @@ const AdvancedUserManagement = () => {
         if (error) throw error;
       } catch (rpcError) {
         // Método alternativo
-        const { error } = await supabaseClient
+        const { error } = await supabase
           .from('user_subscriptions')
           .update({ status: 'suspended' })
           .eq('user_id', userId);
@@ -167,7 +166,7 @@ const AdvancedUserManagement = () => {
     try {
       // Intentar usar la función RPC, si falla usar método directo
       try {
-        const { error } = await supabaseClient.rpc('restore_user_account', {
+        const { error } = await supabase.rpc('restore_user_account', {
           target_user_id: userId,
           admin_reason: 'Restauración administrativa'
         });
@@ -175,7 +174,7 @@ const AdvancedUserManagement = () => {
         if (error) throw error;
       } catch (rpcError) {
         // Método alternativo
-        const { error } = await supabaseClient
+        const { error } = await supabase
           .from('user_subscriptions')
           .update({ status: 'active' })
           .eq('user_id', userId);
@@ -201,7 +200,7 @@ const AdvancedUserManagement = () => {
       console.log('🔄 Iniciando degradación atómica para:', userId, userEmail);
       
       // Usar la función atómica segura
-      const { data, error } = await supabaseClient.rpc('safe_degrade_user', {
+      const { data, error } = await supabase.rpc('safe_degrade_user', {
         target_user_id: userId
       });
       
@@ -231,7 +230,7 @@ const AdvancedUserManagement = () => {
     setActionLoading(true);
     try {
       // Obtener datos completos del usuario
-      const { data: userData, error } = await supabaseClient
+      const { data: userData, error } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
@@ -243,12 +242,12 @@ const AdvancedUserManagement = () => {
       if (error) throw error;
 
       // Obtener transacciones del usuario
-      const { data: expenses } = await supabaseClient
+      const { data: expenses } = await supabase
         .from('expenses')
         .select('*')
         .eq('user_id', userId);
 
-      const { data: income } = await supabaseClient
+      const { data: income } = await supabase
         .from('income')
         .select('*')
         .eq('user_id', userId);
