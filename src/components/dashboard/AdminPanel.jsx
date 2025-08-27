@@ -58,13 +58,13 @@ const AdminPanel = () => {
       setActionLoading(`promote-${userId}`);
       
       const paymentInfo = {
-        price: isEarlyBird ? 5.00 : 15.00,
+        price: isEarlyBird ? 15.00 : 50.00,  // SOLES: EB S/15, Regular S/50
         currency: 'PEN',
         billing_period: 'monthly',
         payment_method: 'admin_promotion',
         transaction_id: `ADMIN_${Date.now()}`,
         is_early_bird: isEarlyBird,
-        early_bird_price: isEarlyBird ? 5.00 : null
+        early_bird_price: isEarlyBird ? 15.00 : null
       };
 
       // Usar la nueva función RPC segura
@@ -89,18 +89,18 @@ const AdminPanel = () => {
     }
   };
 
-  const handlePromoteToFamily = async (userId, userEmail, isEarlyBird = false) => {
+  const handlePromoteToFamily = async (userId, userEmail) => {
     try {
       setActionLoading(`promote-family-${userId}`);
       
       const paymentInfo = {
-        price: isEarlyBird ? 10.00 : 25.00,
+        price: 0.00,  // FAMILY ES GRATUITO
         currency: 'PEN',
-        billing_period: 'monthly',
-        payment_method: 'admin_promotion',
+        billing_period: 'lifetime',
+        payment_method: 'admin_promotion_family',
         transaction_id: `ADMIN_FAMILY_${Date.now()}`,
-        is_early_bird: isEarlyBird,
-        early_bird_price: isEarlyBird ? 10.00 : null
+        is_early_bird: false,  // NO HAY EARLY BIRD PARA FAMILY
+        early_bird_price: null
       };
 
       // Usar la nueva función RPC segura para family
@@ -416,28 +416,21 @@ const UserRow = ({ user, onPromoteToPremium, onPromoteToFamily, onDowngradeToFre
               disabled={isLoading}
               className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
-              {isPromoting ? '...' : '👑 Premium EB'}
+              {isPromoting ? '...' : '👑 Premium EB S/15'}
             </button>
             <button
               onClick={() => onPromoteToPremium(user.user_id, user.user_email || user.users?.email || 'N/A', false)}
               disabled={isLoading}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
-              {isPromoting ? '...' : '💎 Premium'}
+              {isPromoting ? '...' : '💎 Premium S/50'}
             </button>
             <button
-              onClick={() => onPromoteToFamily(user.user_id, user.user_email || user.users?.email || 'N/A', false)}
+              onClick={() => onPromoteToFamily(user.user_id, user.user_email || user.users?.email || 'N/A')}
               disabled={isLoading}
-              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
-              {isPromotingFamily ? '...' : '👪 Family'}
-            </button>
-            <button
-              onClick={() => onPromoteToFamily(user.user_id, user.user_email || user.users?.email || 'N/A', true)}
-              disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-            >
-              {isPromotingFamily ? '...' : '👑 Family EB'}
+              {isPromotingFamily ? '...' : '👪 Family GRATIS'}
             </button>
           </>
         )}
