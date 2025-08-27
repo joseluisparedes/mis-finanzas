@@ -4,7 +4,7 @@ import {
   AlertCircle, CheckCircle, Database, Shield
 } from 'lucide-react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { useUserSubscription } from '../../hooks/useUserSubscription';
+import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 
 const AuditLogViewer = () => {
   const [auditLogs, setAuditLogs] = useState([]);
@@ -17,6 +17,7 @@ const AuditLogViewer = () => {
 
   const { supabaseClient } = useSupabaseData();
   const { isAdmin } = useUserSubscription();
+  const { getAllSubscriptions } = useAdminFunctions();
 
   // Solo admins pueden acceder
   if (!isAdmin) {
@@ -57,8 +58,8 @@ const AuditLogViewer = () => {
         logs = data || [];
       } catch (error) {
         // Simular datos de auditoría si la tabla no existe
-        console.log('Tabla audit_logs no disponible, simulando datos...');
-        logs = generateMockAuditLogs();
+        console.log('Tabla audit_logs no disponible, generando datos simulados con usuarios reales...');
+        logs = await generateMockAuditLogs();
       }
 
       setAuditLogs(logs);
@@ -70,29 +71,47 @@ const AuditLogViewer = () => {
     }
   };
 
-  const generateMockAuditLogs = () => {
+  const generateMockAuditLogs = async () => {
     const mockActions = [
       'USER_LOGIN', 'USER_LOGOUT', 'SUBSCRIPTION_CHANGED', 'PAYMENT_SUCCESS',
       'ACCOUNT_SUSPENDED', 'ACCOUNT_RESTORED', 'ADMIN_ACTION', 'EXPORT_DATA'
     ];
     
-    const mockUsers = [
+    // Intentar obtener usuarios reales del sistema
+    let realUsers = [];
+    try {
+      const users = await getAllSubscriptions();
+      realUsers = users.map(user => ({
+        email: user.user_email || user.users?.email || `usuario${Math.random().toString().substr(2,4)}@misfinanzas.com`,
+        role: user.subscription_type || 'free'
+      }));
+    } catch (error) {
+      console.log('No se pudieron cargar usuarios reales, usando datos simulados');
+    }
+    
+    // Si no hay usuarios reales, usar datos simulados
+    const mockUsers = realUsers.length > 0 ? realUsers : [
       { email: 'admin@misfinanzas.com', role: 'admin' },
-      { email: 'user1@example.com', role: 'premium' },
-      { email: 'user2@example.com', role: 'free' }
+      { email: 'usuario1@misfinanzas.com', role: 'premium' },
+      { email: 'usuario2@misfinanzas.com', role: 'free' },
+      { email: 'contacto.intrusosgamers@gmail.com', role: 'free' },
+      { email: 'romiparvas@gmail.com', role: 'free' }
     ];
 
-    return Array.from({ length: 50 }, (_, i) => ({
-      id: `mock-${i}`,
-      action_type: mockActions[Math.floor(Math.random() * mockActions.length)],
-      table_name: ['user_subscriptions', 'expenses', 'income'][Math.floor(Math.random() * 3)],
-      user_email: mockUsers[Math.floor(Math.random() * mockUsers.length)].email,
-      user_role: mockUsers[Math.floor(Math.random() * mockUsers.length)].role,
-      changes_summary: `Acción ${i + 1} - Cambio simulado en el sistema`,
-      ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
-      created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      operation_source: 'web_admin_panel'
-    }));
+    return Array.from({ length: 50 }, (_, i) => {
+      const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+      return {
+        id: `mock-${i}`,
+        action_type: mockActions[Math.floor(Math.random() * mockActions.length)],
+        table_name: ['user_subscriptions', 'expenses', 'income'][Math.floor(Math.random() * 3)],
+        user_email: randomUser.email,
+        user_role: randomUser.role,
+        changes_summary: `Acción ${i + 1} - Cambio simulado en el sistema`,
+        ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        operation_source: 'web_admin_panel'
+      };
+    });
   };
 
   const filterLogs = () => {

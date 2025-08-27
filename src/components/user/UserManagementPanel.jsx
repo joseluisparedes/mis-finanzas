@@ -308,7 +308,7 @@ const UserManagementPanel = () => {
 
 // Componente para cada fila de usuario
 const UserRow = ({ user, onChangeSubscription, onEditUser, actionLoading }) => {
-  const isChanging = actionLoading === `change-${user.users?.email}`;
+  const isChanging = actionLoading === `change-${user.user_email || user.users?.email}`;
 
   const getSubscriptionBadge = () => {
     const configs = {
@@ -451,7 +451,7 @@ const PromoteModal = ({ user, onClose, onConfirm, loading }) => {
 
   const handleConfirm = () => {
     const price = selectedPlan === 'premium' ? (isEarlyBird ? 5 : 15) : 0;
-    const userEmail = user.users?.email || user.user_email;
+    const userEmail = user.user_email || user.users?.email;
     
     console.log('DEBUG - user object:', user);
     console.log('DEBUG - user.users?.email:', user.users?.email);
@@ -474,7 +474,7 @@ const PromoteModal = ({ user, onClose, onConfirm, loading }) => {
             Cambiar Plan de Usuario
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {user?.users?.email}
+            {user?.user_email || user?.users?.email}
           </p>
         </div>
 

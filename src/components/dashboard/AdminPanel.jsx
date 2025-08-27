@@ -317,7 +317,7 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
       <td className="px-6 py-4 whitespace-nowrap">
         <div>
           <div className="text-sm font-medium text-gray-900 dark:text-white">
-            {user.users?.email || 'N/A'}
+            {user.user_email || user.users?.email || 'N/A'}
           </div>
         </div>
       </td>
@@ -340,14 +340,14 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
         {user.subscription_type === 'free' && (
           <>
             <button
-              onClick={() => onPromoteToPremium(user.user_id, user.users?.email, true)}
+              onClick={() => onPromoteToPremium(user.user_id, user.user_email || user.users?.email || 'N/A', true)}
               disabled={isLoading}
               className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
               {isPromoting ? '...' : '👑 Premium EB'}
             </button>
             <button
-              onClick={() => onPromoteToPremium(user.user_id, user.users?.email, false)}
+              onClick={() => onPromoteToPremium(user.user_id, user.user_email || user.users?.email || 'N/A', false)}
               disabled={isLoading}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             >
@@ -358,7 +358,7 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
         
         {user.subscription_type === 'premium' && (
           <button
-            onClick={() => onDowngradeToFree(user.user_id, user.users?.email)}
+            onClick={() => onDowngradeToFree(user.user_id, user.user_email || user.users?.email || 'N/A')}
             disabled={isLoading}
             className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
           >
