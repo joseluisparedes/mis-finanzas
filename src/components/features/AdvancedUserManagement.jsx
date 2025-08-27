@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Download, Eye, Ban, Trash2, RotateCcw, 
   AlertTriangle, CheckCircle, Clock, Shield, Activity, Calendar,
-  FileDown, MoreVertical, UserX, UserCheck, Database, History
+  FileDown, MoreVertical, UserX, UserCheck, Database, History, ArrowDown
 } from 'lucide-react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
@@ -190,6 +190,28 @@ const AdvancedUserManagement = () => {
     } catch (error) {
       console.error('Error restoring user:', error);
       alert(`Error al restaurar usuario: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const degradeUser = async (userId, userEmail) => {
+    setActionLoading(true);
+    try {
+      // La función RPC ya maneja todas las protecciones
+      const { error } = await supabaseClient.rpc('degrade_user_to_free', {
+        target_user_id: userId
+      });
+      
+      if (error) throw error;
+
+      await loadUsersData();
+      await loadSystemStats();
+      
+      alert(`Usuario ${userEmail} degradado a plan gratuito exitosamente`);
+    } catch (error) {
+      console.error('Error degrading user:', error);
+      alert(`Error al degradar usuario: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -467,6 +489,7 @@ const AdvancedUserManagement = () => {
                   onSuspend={suspendUser}
                   onRestore={restoreUser}
                   onExport={exportUserData}
+                  onDegrade={degradeUser}
                   isLoading={actionLoading}
                 />
               ))}
@@ -488,7 +511,7 @@ const AdvancedUserManagement = () => {
 };
 
 // Componente para cada fila de usuario avanzada
-const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, isLoading }) => {
+const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, onDegrade, isLoading }) => {
   const userEmail = user.user_email || user.users?.email || 'N/A';
   const isActive = user.status === 'active';
   const isSuspended = user.status === 'suspended';
@@ -559,6 +582,18 @@ const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, isLoading }) =>
         >
           <Download className="w-3 h-3" />
         </button>
+
+        {/* Botón de degradar a usuario gratuito */}
+        {isActive && user.subscription_type !== 'free' && user.subscription_type !== 'admin' && (
+          <button
+            onClick={() => onDegrade(user.user_id, userEmail)}
+            disabled={isLoading}
+            className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            title="Degradar a plan gratuito"
+          >
+            <ArrowDown className="w-3 h-3" />
+          </button>
+        )}
 
         {/* Botón de suspender/restaurar */}
         {isActive && (
