@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift } from 'lucide-react';
+import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import databaseService from '../../services/databaseService';
 import PromotionAdminPanel from '../features/PromotionAdminPanel';
+import AdvancedUserManagement from '../features/AdvancedUserManagement';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
@@ -10,7 +11,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState('');
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'promotions'
+  const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced'
 
   const {
     isAdmin,
@@ -142,6 +143,17 @@ const AdminPanel = () => {
           <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
             <nav className="-mb-px flex space-x-8">
               <button
+                onClick={() => setActiveTab('advanced')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'advanced'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Database className="w-4 h-4 inline mr-2" />
+                Gestión Avanzada
+              </button>
+              <button
                 onClick={() => setActiveTab('users')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'users'
@@ -150,7 +162,7 @@ const AdminPanel = () => {
                 }`}
               >
                 <Users className="w-4 h-4 inline mr-2" />
-                Gestión de Usuarios
+                Usuarios Básico
               </button>
               <button
                 onClick={() => setActiveTab('promotions')}
@@ -161,7 +173,7 @@ const AdminPanel = () => {
                 }`}
               >
                 <Gift className="w-4 h-4 inline mr-2" />
-                Promociones Early Bird
+                Promociones
               </button>
             </nav>
           </div>
@@ -330,6 +342,11 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
 };
 
           </>
+        )}
+
+        {/* Tab de Gestión Avanzada */}
+        {activeTab === 'advanced' && (
+          <AdvancedUserManagement />
         )}
 
         {/* Tab de Promociones */}

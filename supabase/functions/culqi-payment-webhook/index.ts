@@ -206,7 +206,7 @@ serve(async (req) => {
         // NUEVO: Enviar email de bienvenida Premium
         try {
           console.log('Enviando email de bienvenida premium...')
-          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-simple`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
@@ -262,7 +262,7 @@ serve(async (req) => {
         // NUEVO: Enviar email de notificación de pago fallido
         try {
           console.log('Enviando email de pago fallido...')
-          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-simple`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
