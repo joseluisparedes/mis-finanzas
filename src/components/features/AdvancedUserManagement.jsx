@@ -112,7 +112,7 @@ const AdvancedUserManagement = () => {
     // Filtro por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(user =>
-        user.users?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        (user.user_email || user.users?.email)?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -228,7 +228,7 @@ const AdvancedUserManagement = () => {
       const userInfo = [
         ['Campo', 'Valor'],
         ['ID de Usuario', userData.user_id],
-        ['Email', userData.users.email],
+        ['Email', userData.user_email || userData.users?.email || 'N/A'],
         ['Tipo de Suscripción', userData.subscription_type],
         ['Estado', userData.status],
         ['Fecha de Registro', userData.created_at],
@@ -287,7 +287,7 @@ const AdvancedUserManagement = () => {
       // Hoja de todos los usuarios
       const usersData = users.map(user => ({
         'ID': user.user_id,
-        'Email': user.users?.email || 'N/A',
+        'Email': user.user_email || user.users?.email || 'N/A',
         'Suscripción': user.subscription_type,
         'Estado': user.status,
         'Fecha Registro': user.created_at,
@@ -489,7 +489,7 @@ const AdvancedUserManagement = () => {
 
 // Componente para cada fila de usuario avanzada
 const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, isLoading }) => {
-  const userEmail = user.users?.email || 'N/A';
+  const userEmail = user.user_email || user.users?.email || 'N/A';
   const isActive = user.status === 'active';
   const isSuspended = user.status === 'suspended';
 
