@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings, History } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
+import { useSupabaseData } from '../../hooks/useSupabaseData';
 import databaseService from '../../services/databaseService';
 import PromotionAdminPanel from '../features/PromotionAdminPanel';
 import AdvancedUserManagement from '../features/AdvancedUserManagement';
@@ -14,6 +15,7 @@ const AdminPanel = () => {
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced' | 'audit'
 
+  const { supabaseClient } = useSupabaseData();
   const {
     isAdmin,
     promoteUserToPremium,
@@ -93,8 +95,13 @@ const AdminPanel = () => {
       setActionLoading(`downgrade-${userId}`);
       console.log('🔄 Iniciando degradación de usuario:', userId, userEmail);
       
-      await downgradeUserToFree(userId);
-      console.log('✅ Usuario degradado exitosamente');
+      // Usar la nueva función RPC segura
+      const { data, error } = await supabaseClient.rpc('safe_degrade_user', {
+        target_user_id: userId
+      });
+      
+      if (error) throw error;
+      console.log('✅ Resultado de degradación:', data);
       
       setMessage({ type: 'success', text: `Usuario ${userEmail} degradado a Free` });
       

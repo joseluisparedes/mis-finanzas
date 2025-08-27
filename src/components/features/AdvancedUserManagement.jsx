@@ -198,21 +198,29 @@ const AdvancedUserManagement = () => {
   const degradeUser = async (userId, userEmail) => {
     setActionLoading(true);
     try {
-      // Usar la función de debug que nos da más información
-      const { data, error } = await supabaseClient.rpc('simple_degrade_user', {
+      console.log('🔄 Iniciando degradación atómica para:', userId, userEmail);
+      
+      // Usar la función atómica segura
+      const { data, error } = await supabaseClient.rpc('safe_degrade_user', {
         target_user_id: userId
       });
       
       if (error) throw error;
 
+      console.log('✅ Resultado de degradación:', data);
+      
+      // Verificar estado admin después de la operación
+      const { data: adminStatus } = await supabaseClient.rpc('verify_admin_status');
+      console.log('👤 Estado admin después:', adminStatus);
+
       // Mostrar resultado detallado
-      alert(`Resultado: ${data}`);
+      alert(`${data}\n\nEstado admin: ${adminStatus}`);
 
       await loadUsersData();
       await loadSystemStats();
       
     } catch (error) {
-      console.error('Error degrading user:', error);
+      console.error('❌ Error en degradación atómica:', error);
       alert(`Error al degradar usuario: ${error.message}`);
     } finally {
       setActionLoading(false);
