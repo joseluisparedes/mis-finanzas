@@ -25,6 +25,9 @@ const AdvancedUserManagement = () => {
   const { supabaseClient } = useSupabaseData();
   const { isAdmin } = useUserSubscription();
 
+  // Debug: mostrar estado de admin
+  console.log('AdvancedUserManagement - isAdmin:', isAdmin);
+  
   // Solo admins pueden acceder
   if (!isAdmin) {
     return (
@@ -34,6 +37,7 @@ const AdvancedUserManagement = () => {
           <div>
             <h3 className="text-lg font-bold text-red-800 dark:text-red-200">Acceso Denegado</h3>
             <p className="text-red-600 dark:text-red-400">Solo administradores pueden acceder a esta sección.</p>
+            <p className="text-sm text-red-500 mt-1">Debug: isAdmin = {String(isAdmin)}</p>
           </div>
         </div>
       </div>

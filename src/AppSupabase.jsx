@@ -7,7 +7,7 @@ import AuthModal from './components/auth/AuthModal';
 import AuthButton from './components/auth/AuthButton';
 import MigrationBanner from './components/migration/MigrationBanner';
 import FinancialDashboard from './components/dashboard/FinancialDashboard';
-import UserManagementPanel from './components/user/UserManagementPanel';
+import AdminPanel from './components/dashboard/AdminPanel';
 import SubscriptionStatus from './components/features/SubscriptionStatus';
 import SubscriptionPlans from './components/features/SubscriptionPlans';
 import ProfileCustomization from './components/features/ProfileCustomization';
@@ -6265,7 +6265,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
         {/* Sección de Administración (Solo para Admin) */}
         {activeTab === 'admin' && isAdmin && (
           <div>
-            <UserManagementPanel />
+            <AdminPanel />
           </div>
         )}
       </div>

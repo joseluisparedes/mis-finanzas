@@ -12,6 +12,9 @@ const AdminPanel = () => {
   const [actionLoading, setActionLoading] = useState('');
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced'
+  
+  // Debug
+  console.log('AdminPanel - activeTab:', activeTab, 'isAdmin:', isAdmin);
 
   const {
     isAdmin,
