@@ -187,77 +187,89 @@ const AdminPanel = () => {
           <>
             {/* Estadísticas */}
             {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              icon={Users}
-              title="Total Usuarios"
-              value={stats.total_users}
-              color="blue"
-            />
-            <StatCard
-              icon={TrendingUp}
-              title="Free"
-              value={stats.free_users}
-              color="gray"
-            />
-            <StatCard
-              icon={Crown}
-              title="Premium"
-              value={stats.premium_users}
-              color="yellow"
-            />
-            <StatCard
-              icon={Shield}
-              title="Admin"
-              value={stats.admin_users}
-              color="purple"
-            />
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <StatCard
+                  icon={Users}
+                  title="Total Usuarios"
+                  value={stats.total_users}
+                  color="blue"
+                />
+                <StatCard
+                  icon={TrendingUp}
+                  title="Free"
+                  value={stats.free_users}
+                  color="gray"
+                />
+                <StatCard
+                  icon={Crown}
+                  title="Premium"
+                  value={stats.premium_users}
+                  color="yellow"
+                />
+                <StatCard
+                  icon={Shield}
+                  title="Admin"
+                  value={stats.admin_users}
+                  color="purple"
+                />
+              </div>
+            )}
+
+            {/* Lista de usuarios */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Gestión de Usuarios
+                </h2>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Usuario
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Plan
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Fecha Registro
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {users.map((user) => (
+                      <UserRow
+                        key={user.user_id}
+                        user={user}
+                        onPromoteToPremium={handlePromoteToPremium}
+                        onDowngradeToFree={handleDowngradeToFree}
+                        actionLoading={actionLoading}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
 
-        {/* Lista de usuarios */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Gestión de Usuarios
-            </h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Usuario
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Plan
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Fecha Registro
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {users.map((user) => (
-                  <UserRow
-                    key={user.user_id}
-                    user={user}
-                    onPromoteToPremium={handlePromoteToPremium}
-                    onDowngradeToFree={handleDowngradeToFree}
-                    actionLoading={actionLoading}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Tab de Gestión Avanzada */}
+        {activeTab === 'advanced' && (
+          <AdvancedUserManagement />
+        )}
+
+        {/* Tab de Promociones */}
+        {activeTab === 'promotions' && (
+          <PromotionAdminPanel />
+        )}
       </div>
     </div>
   );
@@ -341,23 +353,6 @@ const UserRow = ({ user, onPromoteToPremium, onDowngradeToFree, actionLoading })
         )}
       </td>
     </tr>
-  );
-};
-
-          </>
-        )}
-
-        {/* Tab de Gestión Avanzada */}
-        {activeTab === 'advanced' && (
-          <AdvancedUserManagement />
-        )}
-
-        {/* Tab de Promociones */}
-        {activeTab === 'promotions' && (
-          <PromotionAdminPanel />
-        )}
-      </div>
-    </div>
   );
 };
 
