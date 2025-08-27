@@ -198,17 +198,19 @@ const AdvancedUserManagement = () => {
   const degradeUser = async (userId, userEmail) => {
     setActionLoading(true);
     try {
-      // La función RPC ya maneja todas las protecciones
-      const { error } = await supabaseClient.rpc('degrade_user_to_free', {
+      // Usar la función de debug que nos da más información
+      const { data, error } = await supabaseClient.rpc('simple_degrade_user', {
         target_user_id: userId
       });
       
       if (error) throw error;
 
+      // Mostrar resultado detallado
+      alert(`Resultado: ${data}`);
+
       await loadUsersData();
       await loadSystemStats();
       
-      alert(`Usuario ${userEmail} degradado a plan gratuito exitosamente`);
     } catch (error) {
       console.error('Error degrading user:', error);
       alert(`Error al degradar usuario: ${error.message}`);
