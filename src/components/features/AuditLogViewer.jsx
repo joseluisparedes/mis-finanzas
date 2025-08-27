@@ -3,8 +3,8 @@ import {
   History, Clock, User, Activity, Search, Filter, ChevronDown,
   AlertCircle, CheckCircle, Database, Shield
 } from 'lucide-react';
-import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
+import { supabase } from '../../lib/supabase';
 
 const AuditLogViewer = () => {
   const [auditLogs, setAuditLogs] = useState([]);
@@ -15,7 +15,6 @@ const AuditLogViewer = () => {
   const [dateFilter, setDateFilter] = useState('today');
   const [expandedLog, setExpandedLog] = useState(null);
 
-  const { supabaseClient } = useSupabaseData();
   const { isAdmin } = useUserSubscription();
   const { getAllSubscriptions } = useAdminFunctions();
 
@@ -48,7 +47,7 @@ const AuditLogViewer = () => {
       // Intentar cargar logs de auditoría, si falla simular algunos datos
       let logs = [];
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await supabase
           .from('audit_logs')
           .select('*')
           .order('created_at', { ascending: false })
