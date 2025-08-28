@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar, CreditCard } from 'lucide-react';
-import CulqiCheckout from './CulqiCheckout';
-// PaymentSelector removido - solo texto referencial
+import CulqiCheckout from '../payment/CulqiCheckout';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
+import { supabase } from '../../lib/supabase';
 
 const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpenses }) => {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
-  // Estado removido - sin PaymentSelector
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
@@ -24,7 +22,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       price: 0,
       currency: 'PEN',
       period: 'siempre',
-      icon: Zap,
+      icon: '⚡',
       color: 'blue',
       features: [
         '30 transacciones/mes',
@@ -49,7 +47,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       price: promotion.promo_price,
       currency: 'PEN',
       period: 'mes',
-      icon: Crown,
+      icon: '👑',
       color: 'purple',
       features: [
         `🔥 PRECIO FUNDADOR - Solo S/ ${promotion.promo_price}/mes`,
@@ -81,7 +79,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       price: 15,
       currency: 'PEN',
       period: 'mes',
-      icon: Crown,
+      icon: '👑',
       color: 'yellow',
       features: [
         'Transacciones ILIMITADAS',
@@ -106,7 +104,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       price: 150,
       currency: 'PEN',
       period: 'año',
-      icon: Crown,
+      icon: '👑',
       color: 'green',
       features: [
         'Todo lo de Premium Mensual',
@@ -156,6 +154,99 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       }
     };
     return colors[color];
+  };
+
+  function handleSubscribe(plan) {
+    if (!plan) {
+      console.error('No plan provided');
+      return;
+    }
+    
+    if (plan.id === 'free' || plan.current) {
+      return;
+    }
+    
+    const planPrice = Number(plan.price) || 0;
+    
+    if (planPrice > 0) {
+      setCheckoutPlan(plan);
+    } else {
+      alert('Este plan no requiere pago.');
+    }
+  }
+
+  const handleCardPayment = () => {
+    setShowCheckout(true);
+  };
+
+  const handleYapePayment = () => {
+    openYapeWhatsApp();
+  };
+
+  const openYapeWhatsApp = async () => {
+    try {
+      if (!checkoutPlan) {
+        throw new Error('No checkout plan');
+      }
+      
+      const planPrice = Number(checkoutPlan.price) || 0;
+      if (planPrice <= 0) {
+        throw new Error('Invalid plan price');
+      }
+      
+      // Obtener el email del usuario en sesión
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email || '[Tu email aquí]';
+      
+      const planName = String(checkoutPlan.name || 'Premium');
+      const amount = planPrice.toFixed(2);
+    
+    const message = `🚀 *PAGO REALIZADO - Mis Finanzas*
+
+📋 *Detalles del Pago:*
+• Plan: ${planName}
+• Monto: S/ ${amount}
+• Email: ${userEmail}
+• Fecha: ${new Date().toLocaleDateString('es-PE')}
+• Hora: ${new Date().toLocaleTimeString('es-PE')}
+
+💳 *He realizado la transferencia:*
+📱 YAPE/PLIN al número: 940144418
+👤 Titular: José Luis Paredes Herbozo
+
+📸 Adjunto captura de pantalla del comprobante.
+
+⏰ Por favor activar mi cuenta Premium.
+¡Gracias!`;
+
+      const whatsappUrl = `https://wa.me/51940144418?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      // Mostrar mensaje de espera (no éxito)
+      setPaymentResult({
+        method: 'yape',
+        status: 'pending_verification',
+        amount: planPrice,
+        plan: checkoutPlan,
+        userEmail: userEmail
+      });
+      setShowSuccessModal(true);
+      setCheckoutPlan(null);
+      
+    } catch (error) {
+      console.error('Error in openYapeWhatsApp:', error);
+      alert('Error al procesar el pago. Inténtalo de nuevo.');
+      setCheckoutPlan(null);
+    }
+  };
+
+  const handlePaymentComplete = (paymentResult) => {
+    setShowCheckout(false);
+    setCheckoutPlan(null);
+    setPaymentResult(paymentResult);
+    setShowSuccessModal(true);
+    refreshSubscription();
+    if (onSuccess) onSuccess(paymentResult);
   };
 
   return (
@@ -294,12 +385,10 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         <CulqiCheckout
           plan={checkoutPlan}
           onSuccess={(result) => {
-            console.log('Payment successful:', result);
             setShowCheckout(false);
             setCheckoutPlan(null);
             setPaymentResult(result);
             setShowSuccessModal(true);
-            // Actualizar el estado de suscripción
             refreshSubscription();
             if (onSuccess) onSuccess(result);
           }}
@@ -314,154 +403,96 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         />
       )}
 
-      {/* Modal de Confirmación de Pago Exitoso */}
+      {/* Modal de Confirmación */}
       {showSuccessModal && paymentResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
-            <div className="mb-4">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                ¡Pago Exitoso!
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Tu suscripción ha sido activada correctamente.
-              </p>
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <p className="text-sm font-medium text-gray-900">
-                  {paymentResult.plan?.name || 'Premium Plan'}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+            {paymentResult.method === 'yape' ? (
+              // Modal para Yape/Plin - Mensaje de espera
+              <div className="mb-4">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/50 mb-4">
+                  <span className="text-2xl">📱</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  ¡Solicitud Enviada!
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  Hemos recibido tu solicitud de pago vía Yape/Plin.
                 </p>
-                <p className="text-xs text-gray-500">
-                  Monto: S/ {paymentResult.amount}
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {paymentResult.plan?.name || 'Premium Plan'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Monto: S/ {paymentResult.amount}
+                  </p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                    Email: {paymentResult.userEmail}
+                  </p>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+                    ⏰ <strong>Tiempo de activación:</strong> Máximo 1 hora
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Si realizaste el pago, el administrador te dará acceso a la brevedad posible.
+                  </p>
+                </div>
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                  📱 WhatsApp enviado con los detalles del pago
                 </p>
               </div>
-              <p className="text-xs text-green-600 font-medium">
-                🎉 ¡Ahora tienes acceso a todas las funciones premium!
-              </p>
-            </div>
+            ) : (
+              // Modal para tarjeta - Pago exitoso
+              <div className="mb-4">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                  <span className="text-2xl text-green-600">✅</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  ¡Pago Exitoso!
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Tu suscripción ha sido activada correctamente.
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-medium text-gray-900">
+                    {paymentResult.plan?.name || 'Premium Plan'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Monto: S/ {paymentResult.amount}
+                  </p>
+                </div>
+                <p className="text-xs text-green-600 font-medium">
+                  🎉 ¡Ahora tienes acceso a todas las funciones premium!
+                </p>
+              </div>
+            )}
             <button
               onClick={() => {
                 setShowSuccessModal(false);
                 setPaymentResult(null);
-                // Navegar a la página de Gastos después del pago exitoso
-                if (onNavigateToExpenses) {
+                // Solo navegar para pagos exitosos de tarjeta
+                if (paymentResult.method !== 'yape' && onNavigateToExpenses) {
                   onNavigateToExpenses();
                 }
               }}
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className={`w-full px-4 py-2 rounded-lg transition-colors font-medium ${
+                paymentResult.method === 'yape'
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
             >
-              Continuar
+              {paymentResult.method === 'yape' ? 'Entendido' : 'Continuar'}
             </button>
           </div>
         </div>
       )}
     </>
   );
-
-  const handlePaymentComplete = (paymentResult) => {
-    console.log('Payment completed:', paymentResult);
-    setShowCheckout(false);
-    setCheckoutPlan(null);
-    setPaymentResult(paymentResult);
-    setShowSuccessModal(true);
-    // Actualizar el estado de suscripción
-    refreshSubscription();
-    if (onSuccess) onSuccess(paymentResult);
-  };
-
-  function handleSubscribe(plan) {
-    console.log('handleSubscribe called with plan:', plan);
-    
-    if (!plan) {
-      console.error('No plan provided');
-      return;
-    }
-    
-    if (plan.id === 'free' || plan.current) {
-      console.log('Skipping free or current plan');
-      return;
-    }
-    
-    // Validación simple y segura
-    const planPrice = Number(plan.price) || 0;
-    console.log('Plan price:', planPrice);
-    
-    if (planPrice > 0) {
-      console.log('Setting checkout plan');
-      setCheckoutPlan(plan);
-    } else {
-      console.log('Plan does not require payment');
-      alert('Este plan no requiere pago.');
-    }
-  }
-
-  const handleCardPayment = () => {
-    setShowCheckout(true);
-  };
-
-  const handleYapePayment = () => {
-    openYapeWhatsApp();
-  };
-
-  const openYapeWhatsApp = () => {
-    console.log('openYapeWhatsApp called with checkoutPlan:', checkoutPlan);
-    
-    try {
-      if (!checkoutPlan) {
-        throw new Error('No checkout plan');
-      }
-      
-      const planPrice = Number(checkoutPlan.price) || 0;
-      if (planPrice <= 0) {
-        throw new Error('Invalid plan price');
-      }
-      
-      const planName = String(checkoutPlan.name || 'Premium');
-      const amount = planPrice.toFixed(2);
-    
-    const message = `🚀 *PAGO REALIZADO - Mis Finanzas*
-
-📋 *Detalles del Pago:*
-• Plan: ${planName}
-• Monto: S/ ${amount}
-• Email: [Tu email aquí]
-• Fecha: ${new Date().toLocaleDateString('es-PE')}
-• Hora: ${new Date().toLocaleTimeString('es-PE')}
-
-💳 *He realizado la transferencia:*
-📱 YAPE/PLIN al número: 940144418
-👤 Titular: José Luis Paredes Herbozo
-
-📸 Adjunto captura de pantalla del comprobante.
-
-⏰ Por favor activar mi cuenta Premium.
-¡Gracias!`;
-
-      const whatsappUrl = `https://wa.me/51940144418?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      // Mostrar confirmación
-      setPaymentResult({
-        method: 'yape',
-        status: 'pending_verification',
-        amount: planPrice,
-        plan: checkoutPlan
-      });
-      setShowSuccessModal(true);
-      setCheckoutPlan(null);
-      
-    } catch (error) {
-      console.error('Error in openYapeWhatsApp:', error);
-      alert('Error al procesar el pago. Inténtalo de nuevo.');
-      setCheckoutPlan(null);
-    }
-  };
 };
 
 const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscribe }) => {
   const colors = getColorClasses(plan.color, selected, plan.current);
-  const Icon = plan.icon;
 
   return (
     <div
@@ -471,8 +502,7 @@ const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscr
       {plan.isEarlyBird && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-bold flex items-center space-x-1 animate-pulse">
-            <Star className="w-4 h-4" />
-            <span>🔥 EARLY BIRD</span>
+            <span>⭐ 🔥 EARLY BIRD</span>
           </div>
         </div>
       )}
@@ -480,8 +510,7 @@ const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscr
       {plan.popular && !plan.isEarlyBird && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 rounded-full text-sm font-bold flex items-center space-x-1">
-            <Star className="w-4 h-4" />
-            <span>MÁS POPULAR</span>
+            <span>⭐ MÁS POPULAR</span>
           </div>
         </div>
       )}
@@ -513,15 +542,14 @@ const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscr
       {plan.savings && !plan.limitedTime && (
         <div className="absolute -top-3 right-4">
           <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
-            <Gift className="w-3 h-3" />
-            <span>AHORRA S/ {plan.savings}</span>
+            <span>🎁 AHORRA S/ {plan.savings}</span>
           </div>
         </div>
       )}
 
       <div className="text-center mb-6">
         <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-gray-800 mb-4 ${colors.icon}`}>
-          <Icon className="w-8 h-8" />
+          <span className="text-3xl">{plan.icon}</span>
         </div>
         
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -564,7 +592,7 @@ const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscr
       <div className="space-y-3 mb-6">
         {plan.features.map((feature, index) => (
           <div key={index} className="flex items-start space-x-3">
-            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+            <span className="text-green-500 flex-shrink-0 mt-0.5">✅</span>
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {feature}
             </span>

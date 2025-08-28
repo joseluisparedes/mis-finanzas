@@ -3,9 +3,9 @@ import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Datab
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
 import databaseService from '../../services/databaseService';
-import PromotionAdminPanel from '../features/PromotionAdminPanel';
-import AdvancedUserManagement from '../features/AdvancedUserManagement';
-import AuditLogViewer from '../features/AuditLogViewer';
+import PromotionAdminPanel from '../admin/PromotionAdminPanel';
+import AdvancedUserManagement from '../admin/AdvancedUserManagement';
+import AuditLogViewer from '../admin/AuditLogViewer';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
