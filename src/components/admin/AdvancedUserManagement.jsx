@@ -135,7 +135,7 @@ const AdvancedUserManagement = () => {
       `Usuario: ${userEmail}\n\n` +
       `Esta acción:\n` +
       `• Eliminará TODOS los datos del usuario\n` +
-      `• Borrará transacciones, categorías, presupuestos\n` +
+      `• Borrará gastos, ingresos, categorías, presupuestos\n` +
       `• NO SE PUEDE DESHACER\n\n` +
       `¿Confirmar eliminación completa?`
     );
@@ -146,8 +146,9 @@ const AdvancedUserManagement = () => {
     try {
       // 1. Eliminar todos los datos relacionados del usuario en orden
       const tablesToDelete = [
-        'transactions',
-        'income', 
+        'expenses',
+        'incomes', 
+        'recurring_expenses',
         'budgets',
         'categories',
         'payment_methods',
