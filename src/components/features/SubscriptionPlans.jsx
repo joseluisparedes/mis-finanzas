@@ -194,7 +194,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       </div>
 
       {/* Modal de Selección de Método de Pago */}
-      {checkoutPlan && !showCheckout && (
+      {checkoutPlan && !showCheckout && checkoutPlan.price > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full">
             <div className="p-6">
@@ -373,8 +373,14 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   function handleSubscribe(plan) {
     if (plan.id === 'free' || plan.current) return;
     
-    // Mostrar selector de método de pago
-    setCheckoutPlan(plan);
+    // Solo mostrar selector para planes con precio > 0
+    if (plan.price && plan.price > 0) {
+      setCheckoutPlan(plan);
+    } else {
+      // Para planes gratuitos o sin precio, mostrar mensaje
+      console.log('Plan seleccionado:', plan);
+      alert('Este plan no requiere pago. Contacta con soporte para activación.');
+    }
   }
 
   const handleCardPayment = () => {
@@ -386,8 +392,15 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   };
 
   const openYapeWhatsApp = () => {
-    const planName = checkoutPlan?.name || 'Premium';
-    const amount = checkoutPlan?.price?.toFixed(2) || '15.00';
+    if (!checkoutPlan || !checkoutPlan.price || checkoutPlan.price <= 0) {
+      console.error('Plan inválido para pago:', checkoutPlan);
+      alert('Error: Plan no válido para pago');
+      setCheckoutPlan(null);
+      return;
+    }
+    
+    const planName = checkoutPlan.name || 'Premium';
+    const amount = checkoutPlan.price.toFixed(2);
     
     const message = `🚀 *PAGO REALIZADO - Mis Finanzas*
 
