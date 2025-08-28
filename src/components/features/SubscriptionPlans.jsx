@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar, CreditCard } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentMethodSelector from '../payment/PaymentMethodSelectorSafe';
+import PaymentSelector from '../payment/PaymentSelector';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 
@@ -219,7 +219,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
             </div>
 
             <div className="p-6">
-              <PaymentMethodSelector
+              <PaymentSelector
                 planType={checkoutPlan.id === 'premium_early_bird' ? 'premium' : checkoutPlan.id}
                 amount={checkoutPlan.price}
                 isEarlyBird={checkoutPlan.isEarlyBird || false}
@@ -309,7 +309,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
       setShowCheckout(true);
       setShowPaymentSelector(false);
     } else if (method === 'yape') {
-      // El método Yape se maneja dentro del PaymentMethodSelector
+      // El método Yape se maneja dentro del PaymentSelector
       // No necesitamos hacer nada especial aquí
     }
   };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentMethodSelector from '../payment/PaymentMethodSelectorSafe';
+import PaymentSelector from '../payment/PaymentSelector';
 
 const PaymentCheckout = ({ plan, onSuccess, onCancel, onError }) => {
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -66,7 +66,7 @@ const PaymentCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         <div className="p-6">
           {!selectedMethod ? (
             // Mostrar selector de método de pago
-            <PaymentMethodSelector
+            <PaymentSelector
               planType={plan.id === 'premium_early_bird' ? 'premium' : plan.id}
               amount={plan.price}
               isEarlyBird={plan.isEarlyBird || false}
@@ -100,7 +100,7 @@ const PaymentCheckout = ({ plan, onSuccess, onCancel, onError }) => {
                 <ArrowLeft className="w-4 h-4" />
                 <span>Volver a métodos de pago</span>
               </button>
-              <PaymentMethodSelector
+              <PaymentSelector
                 planType={plan.id === 'premium_early_bird' ? 'premium' : plan.id}
                 amount={plan.price}
                 isEarlyBird={plan.isEarlyBird || false}

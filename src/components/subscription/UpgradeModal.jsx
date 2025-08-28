@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Crown, Users, Star } from 'lucide-react';
-import PaymentMethodSelector from '../payment/PaymentMethodSelectorSafe';
+import PaymentSelector from '../payment/PaymentSelector';
 
 const UpgradeModal = ({ isOpen, onClose, currentUser }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -125,7 +125,7 @@ const UpgradeModal = ({ isOpen, onClose, currentUser }) => {
                 <span>← Volver a selección de planes</span>
               </button>
               
-              <PaymentMethodSelector
+              <PaymentSelector
                 planType={selectedPlan.type}
                 amount={selectedPlan.price}
                 isEarlyBird={selectedPlan.isEarlyBird}
