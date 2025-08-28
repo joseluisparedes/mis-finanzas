@@ -41,13 +41,27 @@ export const SubscriptionProvider = ({ children }) => {
           subscriptionInfo = await databaseService.getUserSubscription();
           console.log('📋 Subscription loaded:', subscriptionInfo);
         } catch (subscriptionError) {
-          console.log('⚠️ No subscription found, creating default subscription...');
+          console.log('⚠️ No subscription found...');
           
-          // Si no existe suscripción, crear una por defecto (usuario nuevo)
+          // Verificar si el usuario fue eliminado intencionalmente
           try {
-            await databaseService.createDefaultUserSubscription();
-            subscriptionInfo = await databaseService.getUserSubscription();
-            console.log('✅ Default subscription created:', subscriptionInfo);
+            const { data: deletedSub } = await supabase
+              .from('user_subscriptions')
+              .select('status')
+              .eq('user_id', user.id)
+              .eq('status', 'deleted')
+              .single();
+              
+            if (deletedSub) {
+              console.log('🚫 Usuario fue eliminado por admin, no crear suscripción');
+              subscriptionInfo = { subscription: { status: 'deleted', type: 'free' } };
+            } else {
+              console.log('👤 Usuario nuevo, creando suscripción por defecto...');
+              // Si no existe suscripción, crear una por defecto (usuario nuevo)
+              await databaseService.createDefaultUserSubscription();
+              subscriptionInfo = await databaseService.getUserSubscription();
+              console.log('✅ Default subscription created:', subscriptionInfo);
+            }
           } catch (createError) {
             console.error('❌ Error creating default subscription:', createError);
             // Continuar sin suscripción, se manejará como usuario sin plan
@@ -152,8 +166,8 @@ export const useUserSubscription = () => {
   const subscriptionStatus = subscription?.subscription?.status || 'inactive';
   const isActive = subscriptionStatus === 'active';
   
-  // Detectar si el usuario fue eliminado (está autenticado pero no tiene suscripción)
-  const isUserDeleted = !loading && subscription === null;
+  // Detectar si el usuario fue eliminado (está autenticado pero suscripción deleted)
+  const isUserDeleted = !loading && (subscription === null || subscriptionStatus === 'deleted');
 
   // Roles del usuario
   const isFree = subscriptionType === 'free' && isActive;

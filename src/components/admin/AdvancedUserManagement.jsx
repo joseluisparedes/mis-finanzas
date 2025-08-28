@@ -134,116 +134,110 @@ const AdvancedUserManagement = () => {
     setFilteredUsers(filtered);
   };
 
-  const deleteUserCompletely = async (userId, userEmail) => {
-    // Confirmación adicional para eliminación completa
+  const markUserAsDeleted = async (userId, userEmail) => {
+    // Confirmación para marcar como eliminado
     const confirmed = window.confirm(
-      `⚠️ ELIMINAR USUARIO COMPLETAMENTE\n\n` +
+      `⚠️ DESHABILITAR USUARIO\n\n` +
       `Usuario: ${userEmail}\n\n` +
       `Esta acción:\n` +
-      `• Eliminará TODOS los datos del usuario\n` +
-      `• Borrará gastos, ingresos, categorías, presupuestos\n` +
-      `• NO SE PUEDE DESHACER\n\n` +
-      `¿Confirmar eliminación completa?`
+      `• Deshabilitará el acceso del usuario\n` +
+      `• Mantendrá sus datos guardados\n` +
+      `• Se puede reactivar más adelante\n` +
+      `• Usuario no podrá usar la aplicación\n\n` +
+      `¿Confirmar deshabilitación?`
     );
     
     if (!confirmed) return;
     
     setActionLoading(true);
     try {
-      // 0. Verificar qué datos tiene el usuario antes de eliminar
-      console.log(`🔍 Verificando datos existentes para usuario ${userId}`);
-      for (const table of ['expenses', 'incomes', 'user_subscriptions']) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('id')
-          .eq('user_id', userId);
+      console.log(`🚫 Deshabilitando usuario ${userEmail} (${userId})`);
+      
+      // Marcar suscripción como eliminada (no eliminar físicamente)
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ 
+          status: 'deleted',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
         
-        if (!error) {
-          console.log(`📊 ${table}: ${data?.length || 0} registros encontrados`);
-        }
-      }
-      
-      // 1. Eliminar todos los datos relacionados del usuario en orden
-      const tablesToDelete = [
-        'expenses',
-        'incomes', 
-        'recurring_expenses',
-        'budgets',
-        'categories',
-        'payment_methods',
-        'income_types',
-        'user_subscriptions'
-      ];
-      
-      for (const table of tablesToDelete) {
-        console.log(`🗑️ Eliminando datos de ${table} para usuario ${userId}`);
-        const { data, error, count } = await supabase
-          .from(table)
-          .delete()
-          .eq('user_id', userId)
-          .select('*', { count: 'exact' });
-          
-        if (error) {
-          console.error(`❌ Error eliminando ${table}:`, error);
-          // Continuar con otras tablas aunque una falle
-        } else {
-          console.log(`✅ ${table}: Eliminados ${count || data?.length || 0} registros`);
-        }
-      }
-      
-      // 2. Finalmente eliminar el usuario de auth.users (esto puede fallar si no tenemos permisos)
-      try {
-        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-        if (authError) {
-          console.warn('No se pudo eliminar del sistema auth:', authError.message);
-        }
-      } catch (authError) {
-        console.warn('No se pudo eliminar del sistema auth:', authError);
+      if (error) {
+        throw error;
       }
 
+      console.log('✅ Usuario marcado como eliminado');
+      
       // Esperar un poco para que la BD se actualice
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       await loadUsersData();
       await loadSystemStats();
       
-      alert(`✅ Usuario ${userEmail} eliminado completamente`);
+      alert(`✅ Usuario ${userEmail} deshabilitado. Puede ser reactivado desde el panel admin.`);
     } catch (error) {
-      console.error('Error eliminando usuario:', error);
-      alert(`❌ Error al eliminar usuario: ${error.message}`);
+      console.error('Error deshabilitando usuario:', error);
+      alert(`❌ Error al deshabilitar usuario: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
-  const restoreUser = async (userId, userEmail) => {
+  const reactivateUser = async (userId, userEmail) => {
+    const confirmed = window.confirm(
+      `🔄 REACTIVAR USUARIO\n\n` +
+      `Usuario: ${userEmail}\n\n` +
+      `Esta acción:\n` +
+      `• Reactivará el acceso del usuario\n` +
+      `• Lo convertirá a plan FREE con datos limpios\n` +
+      `• Mantendrá sus datos antiguos guardados\n` +
+      `• Usuario podrá usar la aplicación nuevamente\n\n` +
+      `¿Confirmar reactivación?`
+    );
+    
+    if (!confirmed) return;
+    
     setActionLoading(true);
     try {
-      // Intentar usar la función RPC, si falla usar método directo
-      try {
-        const { error } = await supabase.rpc('restore_user_account', {
-          target_user_id: userId,
-          admin_reason: 'Restauración administrativa'
-        });
+      console.log(`🔄 Reactivando usuario ${userEmail} (${userId})`);
+      
+      // Reactivar suscripción como FREE (datos limpios)
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ 
+          status: 'active',
+          subscription_type: 'free',
+          updated_at: new Date().toISOString(),
+          started_at: new Date().toISOString(),
+          expires_at: null,
+          // Resetear a límites FREE
+          multi_currency_enabled: false,
+          excel_export_enabled: false,
+          excel_import_enabled: false,
+          advanced_reports_enabled: false,
+          monthly_transaction_limit: 30,
+          budget_limit: 2,
+          custom_category_limit: 3,
+          custom_payment_method_limit: 2,
+          custom_income_type_limit: 1,
+          recurring_transaction_limit: 5,
+          report_months_limit: 3
+        })
+        .eq('user_id', userId);
         
-        if (error) throw error;
-      } catch (rpcError) {
-        // Método alternativo
-        const { error } = await supabase
-          .from('user_subscriptions')
-          .update({ status: 'active' })
-          .eq('user_id', userId);
-          
-        if (error) throw error;
+      if (error) {
+        throw error;
       }
 
+      console.log('✅ Usuario reactivado con plan FREE');
+      
       await loadUsersData();
       await loadSystemStats();
       
-      alert(`Usuario ${userEmail} restaurado exitosamente`);
+      alert(`✅ Usuario ${userEmail} reactivado con plan FREE. Puede usar la aplicación nuevamente.`);
     } catch (error) {
-      console.error('Error restoring user:', error);
-      alert(`Error al restaurar usuario: ${error.message}`);
+      console.error('Error reactivando usuario:', error);
+      alert(`❌ Error al reactivar usuario: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -628,8 +622,8 @@ const AdvancedUserManagement = () => {
                 <UserRowAdvanced
                   key={user.user_id}
                   user={user}
-                  onDelete={deleteUserCompletely}
-                  onRestore={restoreUser}
+                  onDelete={markUserAsDeleted}
+                  onReactivate={reactivateUser}
                   onExport={exportUserData}
                   onDegrade={degradeUser}
                   isLoading={actionLoading}
@@ -653,10 +647,11 @@ const AdvancedUserManagement = () => {
 };
 
 // Componente para cada fila de usuario avanzada
-const UserRowAdvanced = ({ user, onDelete, onRestore, onExport, onDegrade, isLoading }) => {
+const UserRowAdvanced = ({ user, onDelete, onReactivate, onExport, onDegrade, isLoading }) => {
   const userEmail = user.user_email || user.users?.email || 'N/A';
   const isActive = user.status === 'active';
   const isSuspended = user.status === 'suspended';
+  const isDeleted = user.status === 'deleted';
 
   const getSubscriptionBadge = () => {
     const config = {
@@ -737,19 +732,32 @@ const UserRowAdvanced = ({ user, onDelete, onRestore, onExport, onDegrade, isLoa
           </button>
         )}
 
-        {/* Botón de eliminar usuario */}
-        <button
-          onClick={() => onDelete(user.user_id, userEmail)}
-          disabled={isLoading}
-          className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-          title="Eliminar usuario completamente"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
+        {/* Botón de deshabilitar/reactivar usuario */}
+        {isActive && (
+          <button
+            onClick={() => onDelete(user.user_id, userEmail)}
+            disabled={isLoading}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            title="Deshabilitar usuario"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        )}
+
+        {isDeleted && (
+          <button
+            onClick={() => onReactivate(user.user_id, userEmail)}
+            disabled={isLoading}
+            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            title="Reactivar usuario"
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        )}
 
         {isSuspended && (
           <button
-            onClick={() => onRestore(user.user_id, userEmail)}
+            onClick={() => onReactivate(user.user_id, userEmail)}
             disabled={isLoading}
             className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
             title="Restaurar usuario"
