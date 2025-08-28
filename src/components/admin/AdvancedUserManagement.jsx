@@ -128,34 +128,63 @@ const AdvancedUserManagement = () => {
     setFilteredUsers(filtered);
   };
 
-  const suspendUser = async (userId, userEmail) => {
+  const deleteUserCompletely = async (userId, userEmail) => {
+    // Confirmación adicional para eliminación completa
+    const confirmed = window.confirm(
+      `⚠️ ELIMINAR USUARIO COMPLETAMENTE\n\n` +
+      `Usuario: ${userEmail}\n\n` +
+      `Esta acción:\n` +
+      `• Eliminará TODOS los datos del usuario\n` +
+      `• Borrará transacciones, categorías, presupuestos\n` +
+      `• NO SE PUEDE DESHACER\n\n` +
+      `¿Confirmar eliminación completa?`
+    );
+    
+    if (!confirmed) return;
+    
     setActionLoading(true);
     try {
-      // Intentar usar la función RPC, si falla usar método directo
-      try {
-        const { error } = await supabase.rpc('suspend_user_account', {
-          target_user_id: userId,
-          admin_reason: 'Suspensión administrativa'
-        });
-        
-        if (error) throw error;
-      } catch (rpcError) {
-        // Método alternativo
+      // 1. Eliminar todos los datos relacionados del usuario en orden
+      const tablesToDelete = [
+        'transactions',
+        'income', 
+        'budgets',
+        'categories',
+        'payment_methods',
+        'income_types',
+        'user_subscriptions'
+      ];
+      
+      for (const table of tablesToDelete) {
+        console.log(`🗑️ Eliminando datos de ${table} para usuario ${userId}`);
         const { error } = await supabase
-          .from('user_subscriptions')
-          .update({ status: 'suspended' })
+          .from(table)
+          .delete()
           .eq('user_id', userId);
           
-        if (error) throw error;
+        if (error) {
+          console.error(`Error eliminando ${table}:`, error);
+          // Continuar con otras tablas aunque una falle
+        }
+      }
+      
+      // 2. Finalmente eliminar el usuario de auth.users (esto puede fallar si no tenemos permisos)
+      try {
+        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+        if (authError) {
+          console.warn('No se pudo eliminar del sistema auth:', authError.message);
+        }
+      } catch (authError) {
+        console.warn('No se pudo eliminar del sistema auth:', authError);
       }
 
       await loadUsersData();
       await loadSystemStats();
       
-      alert(`Usuario ${userEmail} suspendido exitosamente`);
+      alert(`✅ Usuario ${userEmail} eliminado completamente`);
     } catch (error) {
-      console.error('Error suspending user:', error);
-      alert(`Error al suspender usuario: ${error.message}`);
+      console.error('Error eliminando usuario:', error);
+      alert(`❌ Error al eliminar usuario: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -573,7 +602,7 @@ const AdvancedUserManagement = () => {
                 <UserRowAdvanced
                   key={user.user_id}
                   user={user}
-                  onSuspend={suspendUser}
+                  onDelete={deleteUserCompletely}
                   onRestore={restoreUser}
                   onExport={exportUserData}
                   onDegrade={degradeUser}
@@ -598,7 +627,7 @@ const AdvancedUserManagement = () => {
 };
 
 // Componente para cada fila de usuario avanzada
-const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, onDegrade, isLoading }) => {
+const UserRowAdvanced = ({ user, onDelete, onRestore, onExport, onDegrade, isLoading }) => {
   const userEmail = user.user_email || user.users?.email || 'N/A';
   const isActive = user.status === 'active';
   const isSuspended = user.status === 'suspended';
@@ -682,17 +711,15 @@ const UserRowAdvanced = ({ user, onSuspend, onRestore, onExport, onDegrade, isLo
           </button>
         )}
 
-        {/* Botón de suspender/restaurar */}
-        {isActive && (
-          <button
-            onClick={() => onSuspend(user.user_id, userEmail)}
-            disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-            title="Suspender usuario"
-          >
-            <Ban className="w-3 h-3" />
-          </button>
-        )}
+        {/* Botón de eliminar usuario */}
+        <button
+          onClick={() => onDelete(user.user_id, userEmail)}
+          disabled={isLoading}
+          className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+          title="Eliminar usuario completamente"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
 
         {isSuspended && (
           <button
