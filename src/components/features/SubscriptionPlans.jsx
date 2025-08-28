@@ -218,7 +218,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
               <div className="space-y-4">
                 {/* Método Yape/Plin */}
                 <div
-                  onClick={() => handlePaymentMethod('yape')}
+                  onClick={handleYapePayment}
                   className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-800 dark:hover:border-purple-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg relative"
                 >
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -255,7 +255,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
 
                 {/* Método Tarjeta */}
                 <div
-                  onClick={() => handlePaymentMethod('card')}
+                  onClick={handleCardPayment}
                   className="border-2 border-blue-200 hover:border-blue-400 dark:border-blue-800 dark:hover:border-blue-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg"
                 >
                   <div className="flex items-center space-x-4">
@@ -377,14 +377,12 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
     setCheckoutPlan(plan);
   }
 
-  const handlePaymentMethod = (method) => {
-    if (method === 'card') {
-      // Abrir CulqiCheckout para tarjeta
-      setShowCheckout(true);
-    } else if (method === 'yape') {
-      // Generar link de WhatsApp para Yape/Plin
-      openYapeWhatsApp();
-    }
+  const handleCardPayment = () => {
+    setShowCheckout(true);
+  };
+
+  const handleYapePayment = () => {
+    openYapeWhatsApp();
   };
 
   const openYapeWhatsApp = () => {
