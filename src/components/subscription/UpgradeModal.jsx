@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Crown, Users, Star } from 'lucide-react';
-import PaymentSelector from '../payment/PaymentSelector';
+// PaymentSelector removido - solo texto referencial
 
 const UpgradeModal = ({ isOpen, onClose, currentUser }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -125,13 +125,18 @@ const UpgradeModal = ({ isOpen, onClose, currentUser }) => {
                 <span>← Volver a selección de planes</span>
               </button>
               
-              <PaymentSelector
-                planType={selectedPlan.type}
-                amount={selectedPlan.price}
-                isEarlyBird={selectedPlan.isEarlyBird}
-                userEmail={currentUser?.email}
-                onPaymentComplete={handlePaymentComplete}
-              />
+              {/* Información simple de pago */}
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                <p className="text-purple-800 dark:text-purple-200 font-semibold mb-2">
+                  📱 Para pagar con Yape:
+                </p>
+                <p className="text-purple-700 dark:text-purple-300 text-sm">
+                  Transfiere S/ {selectedPlan?.price?.toFixed(2)} al número <strong>940144418</strong> (José Luis)
+                </p>
+                <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
+                  Envía tu comprobante por WhatsApp al mismo número
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-3">

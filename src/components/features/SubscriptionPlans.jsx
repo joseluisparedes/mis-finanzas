@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar, CreditCard } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentSelector from '../payment/PaymentSelector';
+// PaymentSelector removido - solo texto referencial
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 
@@ -9,7 +9,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  // Estado removido - sin PaymentSelector
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
@@ -193,40 +193,39 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         </div>
       </div>
 
-      {/* Modal de Selector de Método de Pago */}
-      {showPaymentSelector && checkoutPlan && (
+      {/* Información de Pago Simple - Solo Texto */}
+      {checkoutPlan && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Seleccionar Método de Pago
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {checkoutPlan?.name} - S/ {checkoutPlan?.price?.toFixed(2)}
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Información de Pago
+              </h2>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4">
+                <p className="text-purple-800 dark:text-purple-200 font-semibold">
+                  📱 Para pagar con Yape:
+                </p>
+                <p className="text-purple-700 dark:text-purple-300 text-sm mt-2">
+                  Transfiere S/ {checkoutPlan?.price?.toFixed(2)} al número <strong>940144418</strong> (José Luis)
+                </p>
+                <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
+                  Envía tu comprobante por WhatsApp al mismo número para activación manual
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  setShowPaymentSelector(false);
-                  setCheckoutPlan(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6">
-              <PaymentSelector
-                planType={checkoutPlan.id === 'premium_early_bird' ? 'premium' : checkoutPlan.id}
-                amount={checkoutPlan.price}
-                isEarlyBird={checkoutPlan.isEarlyBird || false}
-                userEmail="usuario@ejemplo.com" // TODO: Obtener del contexto de usuario
-                onPaymentComplete={handlePaymentComplete}
-                onMethodSelect={(method) => handleMethodSelect(method, checkoutPlan)}
-              />
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleMethodSelect('culqi', checkoutPlan)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
+                >
+                  💳 Pagar con Tarjeta (Inmediato)
+                </button>
+                <button
+                  onClick={() => setCheckoutPlan(null)}
+                  className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -305,18 +304,14 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   const handleMethodSelect = (method, plan) => {
     if (method === 'culqi') {
       // Usar el checkout tradicional de Culqi
+      setCheckoutPlan(null); // Cerrar modal actual
+      setShowCheckout(true); // Abrir checkout de Culqi
       setCheckoutPlan(plan);
-      setShowCheckout(true);
-      setShowPaymentSelector(false);
-    } else if (method === 'yape') {
-      // El método Yape se maneja dentro del PaymentSelector
-      // No necesitamos hacer nada especial aquí
     }
   };
 
   const handlePaymentComplete = (paymentResult) => {
     console.log('Payment completed:', paymentResult);
-    setShowPaymentSelector(false);
     setCheckoutPlan(null);
     setPaymentResult(paymentResult);
     setShowSuccessModal(true);
@@ -328,9 +323,8 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   function handleSubscribe(plan) {
     if (plan.id === 'free' || plan.current) return;
     
-    // Mostrar selector de método de pago
+    // Mostrar información de pago simple
     setCheckoutPlan(plan);
-    setShowPaymentSelector(true);
   }
 };
 
