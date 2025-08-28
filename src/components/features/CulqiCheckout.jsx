@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Shield, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
@@ -235,7 +235,7 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
         {/* Seguridad Badge */}
         <div className="px-6 pt-4">
           <div className="flex items-center space-x-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-            <Shield className="w-5 h-5" />
+            <span className="text-xl">🛡️</span>
             <span className="text-sm font-medium">
               Pago seguro procesado por Culqi
             </span>
@@ -298,7 +298,7 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
           {/* Información de tarjeta */}
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-              <CreditCard className="w-5 h-5" />
+              <span className="text-xl">💳</span>
               <span>Información de Tarjeta</span>
             </h4>
 
@@ -413,7 +413,7 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-4 h-4" />
+                  <span className="text-base">💳</span>
                   <span>Pagar S/ {plan.price}</span>
                 </>
               )}
