@@ -150,6 +150,19 @@ const AdvancedUserManagement = () => {
     
     setActionLoading(true);
     try {
+      // 0. Verificar qué datos tiene el usuario antes de eliminar
+      console.log(`🔍 Verificando datos existentes para usuario ${userId}`);
+      for (const table of ['expenses', 'incomes', 'user_subscriptions']) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('id')
+          .eq('user_id', userId);
+        
+        if (!error) {
+          console.log(`📊 ${table}: ${data?.length || 0} registros encontrados`);
+        }
+      }
+      
       // 1. Eliminar todos los datos relacionados del usuario en orden
       const tablesToDelete = [
         'expenses',
@@ -164,14 +177,17 @@ const AdvancedUserManagement = () => {
       
       for (const table of tablesToDelete) {
         console.log(`🗑️ Eliminando datos de ${table} para usuario ${userId}`);
-        const { error } = await supabase
+        const { data, error, count } = await supabase
           .from(table)
           .delete()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .select('*', { count: 'exact' });
           
         if (error) {
-          console.error(`Error eliminando ${table}:`, error);
+          console.error(`❌ Error eliminando ${table}:`, error);
           // Continuar con otras tablas aunque una falle
+        } else {
+          console.log(`✅ ${table}: Eliminados ${count || data?.length || 0} registros`);
         }
       }
       
