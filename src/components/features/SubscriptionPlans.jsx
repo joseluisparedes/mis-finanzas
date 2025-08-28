@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
+import PaymentMethodSelector from '../payment/PaymentMethodSelector';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 
@@ -8,6 +9,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
@@ -191,7 +193,46 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         </div>
       </div>
 
-      {/* Modal de Checkout */}
+      {/* Modal de Selector de Método de Pago */}
+      {showPaymentSelector && checkoutPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Seleccionar Método de Pago
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {checkoutPlan?.name} - S/ {checkoutPlan?.price?.toFixed(2)}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentSelector(false);
+                  setCheckoutPlan(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              <PaymentMethodSelector
+                planType={checkoutPlan.id === 'premium_early_bird' ? 'premium' : checkoutPlan.id}
+                amount={checkoutPlan.price}
+                isEarlyBird={checkoutPlan.isEarlyBird || false}
+                userEmail="usuario@ejemplo.com" // TODO: Obtener del contexto de usuario
+                onPaymentComplete={handlePaymentComplete}
+                onMethodSelect={(method) => handleMethodSelect(method, checkoutPlan)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Checkout tradicional (Culqi) */}
       {showCheckout && checkoutPlan && (
         <CulqiCheckout
           plan={checkoutPlan}
@@ -261,12 +302,35 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
     </>
   );
 
+  const handleMethodSelect = (method, plan) => {
+    if (method === 'culqi') {
+      // Usar el checkout tradicional de Culqi
+      setCheckoutPlan(plan);
+      setShowCheckout(true);
+      setShowPaymentSelector(false);
+    } else if (method === 'yape') {
+      // El método Yape se maneja dentro del PaymentMethodSelector
+      // No necesitamos hacer nada especial aquí
+    }
+  };
+
+  const handlePaymentComplete = (paymentResult) => {
+    console.log('Payment completed:', paymentResult);
+    setShowPaymentSelector(false);
+    setCheckoutPlan(null);
+    setPaymentResult(paymentResult);
+    setShowSuccessModal(true);
+    // Actualizar el estado de suscripción
+    refreshSubscription();
+    if (onSuccess) onSuccess(paymentResult);
+  };
+
   function handleSubscribe(plan) {
     if (plan.id === 'free' || plan.current) return;
     
-    // Mostrar el checkout modal
+    // Mostrar selector de método de pago
     setCheckoutPlan(plan);
-    setShowCheckout(true);
+    setShowPaymentSelector(true);
   }
 };
 
