@@ -151,6 +151,9 @@ export const useUserSubscription = () => {
   const subscriptionType = subscription?.subscription?.type || 'free';
   const subscriptionStatus = subscription?.subscription?.status || 'inactive';
   const isActive = subscriptionStatus === 'active';
+  
+  // Detectar si el usuario fue eliminado (está autenticado pero no tiene suscripción)
+  const isUserDeleted = !loading && subscription === null;
 
   // Roles del usuario
   const isFree = subscriptionType === 'free' && isActive;
@@ -271,6 +274,7 @@ export const useUserSubscription = () => {
     subscriptionType,
     subscriptionStatus,
     isActive,
+    isUserDeleted,
 
     // Roles
     isFree,

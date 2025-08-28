@@ -156,6 +156,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
     subscriptionType, 
     loading: subscriptionLoading, 
     subscription,
+    isUserDeleted,
     // Funciones de verificación de límites
     canCreateTransaction,
     canCreateBudget,
@@ -1892,6 +1893,19 @@ const AppSupabase = ({ onNavigateToLanding }) => {
           )}
         </div>
       </header>
+
+      {/* Banner de usuario eliminado */}
+      {isAuthenticated && isUserDeleted && (
+        <div className="bg-red-600 text-white px-4 py-3 text-center font-medium">
+          <div className="flex items-center justify-center space-x-2">
+            <AlertCircle className="w-5 h-5" />
+            <span>
+              ⚠️ Tu cuenta ha sido eliminada por un administrador. Ya no puedes navegar en la aplicación. 
+              Por favor, contacta al soporte si crees que esto es un error.
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 xl:py-8">
         {successMessage && <MessageAlert message={successMessage} type="success" />}
