@@ -193,43 +193,15 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         </div>
       </div>
 
-      {/* Información de Pago Simple - Solo Texto */}
-      {checkoutPlan && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Información de Pago
-              </h2>
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4">
-                <p className="text-purple-800 dark:text-purple-200 font-semibold">
-                  📱 Para pagar con Yape:
-                </p>
-                <p className="text-purple-700 dark:text-purple-300 text-sm mt-2">
-                  Transfiere S/ {checkoutPlan?.price?.toFixed(2)} al número <strong>940144418</strong> (José Luis)
-                </p>
-                <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
-                  Envía tu comprobante por WhatsApp al mismo número para activación manual
-                </p>
-              </div>
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleMethodSelect('culqi', checkoutPlan)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
-                >
-                  Pagar con Tarjeta (Inmediato)
-                </button>
-                <button
-                  onClick={() => setCheckoutPlan(null)}
-                  className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Información de Yape - Solo informativa */}
+      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-6">
+        <p className="text-purple-800 dark:text-purple-200 font-semibold mb-2">
+          📱 También puedes pagar con Yape:
+        </p>
+        <p className="text-purple-700 dark:text-purple-300 text-sm">
+          Transfiere al número <strong>940144418</strong> (José Luis) y envía tu comprobante por WhatsApp para activación manual.
+        </p>
+      </div>
 
       {/* Modal de Checkout tradicional (Culqi) */}
       {showCheckout && checkoutPlan && (
@@ -301,17 +273,9 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
     </>
   );
 
-  const handleMethodSelect = (method, plan) => {
-    if (method === 'culqi') {
-      // Usar el checkout tradicional de Culqi
-      setCheckoutPlan(null); // Cerrar modal actual
-      setShowCheckout(true); // Abrir checkout de Culqi
-      setCheckoutPlan(plan);
-    }
-  };
-
   const handlePaymentComplete = (paymentResult) => {
     console.log('Payment completed:', paymentResult);
+    setShowCheckout(false);
     setCheckoutPlan(null);
     setPaymentResult(paymentResult);
     setShowSuccessModal(true);
@@ -323,8 +287,9 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   function handleSubscribe(plan) {
     if (plan.id === 'free' || plan.current) return;
     
-    // Mostrar información de pago simple
+    // Abrir directamente CulqiCheckout (comportamiento original)
     setCheckoutPlan(plan);
+    setShowCheckout(true);
   }
 };
 
