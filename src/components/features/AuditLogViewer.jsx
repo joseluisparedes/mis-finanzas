@@ -335,9 +335,11 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
             </div>
 
             {log.changes_summary && (
-              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 truncate">
-                {log.changes_summary}
-              </p>
+              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600/30 rounded text-sm">
+                <p className="text-gray-700 dark:text-gray-300 line-clamp-2">
+                  {log.changes_summary}
+                </p>
+              </div>
             )}
           </div>
 
@@ -351,34 +353,116 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
         </div>
       </div>
 
-      {/* Detalles expandidos */}
+      {/* Detalles expandidos - Mejorados */}
       {expanded && (
-        <div className="mt-4 ml-12 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-semibold text-gray-700 dark:text-gray-300">ID del Log:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{log.id}</span>
+        <div className="mt-4 ml-12 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="p-4">
+            {/* Header del detalle */}
+            <div className="flex items-center space-x-2 mb-4">
+              <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Detalles de la Operación
+              </h4>
             </div>
-            <div>
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Origen:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{log.operation_source || 'N/A'}</span>
+            
+            {/* Información técnica en tarjetas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID del Log</span>
+                </div>
+                <p className="mt-1 text-sm font-mono text-gray-900 dark:text-white">{log.id}</p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Origen</span>
+                </div>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">{log.operation_source || 'Sistema'}</p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rol del Usuario</span>
+                </div>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                    log.user_role === 'admin' 
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200'
+                      : log.user_role === 'premium'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    {log.user_role || 'free'}
+                  </span>
+                </p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tabla Afectada</span>
+                </div>
+                <p className="mt-1 text-sm font-mono text-gray-900 dark:text-white">{log.table_name}</p>
+              </div>
             </div>
-            <div>
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Rol de Usuario:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{log.user_role || 'N/A'}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Tabla Afectada:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{log.table_name}</span>
+            
+            {/* IP Address si está disponible */}
+            {log.ip_address && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección IP</span>
+                </div>
+                <p className="mt-1 text-sm font-mono text-gray-900 dark:text-white">{log.ip_address}</p>
+              </div>
+            )}
+            
+            {/* Resumen de cambios mejorado */}
+            {log.changes_summary && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500">
+                <div className="flex items-start space-x-2">
+                  <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h5 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                      Resumen de Cambios
+                    </h5>
+                    <div className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                      {log.changes_summary.split('\n').map((line, index) => (
+                        <p key={index} className={index > 0 ? 'mt-1' : ''}>
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Timestamp preciso */}
+            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Timestamp completo:</span>
+                </div>
+                <span className="font-mono">
+                  {new Date(log.created_at).toLocaleString('es-ES', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                  })}
+                </span>
+              </div>
             </div>
           </div>
-          
-          {log.changes_summary && (
-            <div className="mt-3">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Detalles:</span>
-              <p className="mt-1 text-gray-600 dark:text-gray-400">{log.changes_summary}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

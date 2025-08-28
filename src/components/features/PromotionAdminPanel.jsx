@@ -188,9 +188,14 @@ const PromotionAdminPanel = () => {
       {/* Promotions List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
         <div className="p-6 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Promociones Configuradas
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Promociones Configuradas
+            </h3>
+            <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-sm font-medium">
+              {promotionStats?.promotions?.length || 0} total
+            </span>
+          </div>
         </div>
 
         <div className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -591,7 +596,7 @@ const PromotionDetailsModal = ({ promotion, onClose }) => {
                 Usuarios en la Promoción ({promotion.users_list.length})
               </h4>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {promotion.users_list.map((user, index) => (
+                {promotion.users_list.map((user) => (
                   <div key={user.user_id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
