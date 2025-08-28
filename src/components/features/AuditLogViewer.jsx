@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   History, Clock, User, Activity, Search, Filter, ChevronDown,
-  AlertCircle, CheckCircle, Database, Shield
+  AlertCircle, CheckCircle, HardDrive, Shield
 } from 'lucide-react';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
@@ -162,7 +162,7 @@ const AuditLogViewer = () => {
       'ACCOUNT_SUSPENDED': AlertCircle,
       'ACCOUNT_RESTORED': CheckCircle,
       'ADMIN_ACTION': Shield,
-      'EXPORT_DATA': Database
+      'EXPORT_DATA': HardDrive
     };
     
     const Icon = icons[actionType] || Activity;
@@ -359,7 +359,7 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
           <div className="p-4">
             {/* Header del detalle */}
             <div className="flex items-center space-x-2 mb-4">
-              <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <HardDrive className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Detalles de la Operación
               </h4>
