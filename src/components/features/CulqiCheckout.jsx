@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+// Iconos removidos completamente para evitar errores
 import { supabase } from '../../lib/supabase';
 
 const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
@@ -226,9 +226,9 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
           </div>
           <button
             onClick={onCancel}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl"
           >
-            <X className="w-5 h-5" />
+            ✕
           </button>
         </div>
 
