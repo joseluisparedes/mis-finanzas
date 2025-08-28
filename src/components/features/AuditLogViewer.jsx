@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  History, Clock, User, Activity, Search, Filter, ChevronDown,
-  AlertCircle, CheckCircle, HardDrive, Shield
-} from 'lucide-react';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
 
@@ -23,7 +19,7 @@ const AuditLogViewer = () => {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
         <div className="flex items-center space-x-3">
-          <AlertCircle className="w-8 h-8 text-red-600" />
+          <span className="text-6xl">🚨</span>
           <div>
             <h3 className="text-lg font-bold text-red-800 dark:text-red-200">Acceso Denegado</h3>
             <p className="text-red-600 dark:text-red-400">Solo administradores pueden ver los logs de auditoría.</p>
@@ -155,18 +151,18 @@ const AuditLogViewer = () => {
 
   const getActionIcon = (actionType) => {
     const icons = {
-      'USER_LOGIN': CheckCircle,
-      'USER_LOGOUT': AlertCircle,
-      'SUBSCRIPTION_CHANGED': Shield,
-      'PAYMENT_SUCCESS': CheckCircle,
-      'ACCOUNT_SUSPENDED': AlertCircle,
-      'ACCOUNT_RESTORED': CheckCircle,
-      'ADMIN_ACTION': Shield,
-      'EXPORT_DATA': HardDrive
+      'USER_LOGIN': '✅',
+      'USER_LOGOUT': '🚪',
+      'SUBSCRIPTION_CHANGED': '🛡️',
+      'PAYMENT_SUCCESS': '💰',
+      'ACCOUNT_SUSPENDED': '⚠️',
+      'ACCOUNT_RESTORED': '✅',
+      'ADMIN_ACTION': '🛡️',
+      'EXPORT_DATA': '💾'
     };
     
-    const Icon = icons[actionType] || Activity;
-    return <Icon className="w-4 h-4" />;
+    const iconEmoji = icons[actionType] || '📊';
+    return <span className="text-base">{iconEmoji}</span>;
   };
 
   const getActionColor = (actionType) => {
@@ -197,7 +193,7 @@ const AuditLogViewer = () => {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center space-x-3 mb-4">
-          <History className="w-8 h-8 text-purple-600" />
+          <span className="text-6xl">📜</span>
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Historial de Auditoría
@@ -213,7 +209,7 @@ const AuditLogViewer = () => {
           {/* Búsqueda */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
               <input
                 type="text"
                 placeholder="Buscar en logs..."
@@ -277,7 +273,7 @@ const AuditLogViewer = () => {
 
         {filteredLogs.length === 0 && (
           <div className="text-center py-8">
-            <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <span className="text-6xl text-gray-400 mx-auto mb-4 block">📜</span>
             <p className="text-gray-500 dark:text-gray-400">
               No se encontraron registros con los filtros aplicados
             </p>
@@ -322,11 +318,11 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
             
             <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center space-x-1">
-                <User className="w-3 h-3" />
+                <span className="text-xs">👤</span>
                 <span>{log.user_email || 'Sistema'}</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Clock className="w-3 h-3" />
+                <span className="text-xs">⏰</span>
                 <span>{date} {time}</span>
               </div>
               {log.ip_address && (
@@ -348,7 +344,7 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
             onClick={onToggleExpand}
             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
           >
-            <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <span className={`text-base transition-transform ${expanded ? 'rotate-180' : ''}`}>⬇️</span>
           </button>
         </div>
       </div>
@@ -359,7 +355,7 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
           <div className="p-4">
             {/* Header del detalle */}
             <div className="flex items-center space-x-2 mb-4">
-              <HardDrive className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-base">💾</span>
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Detalles de la Operación
               </h4>
@@ -425,7 +421,7 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
             {log.changes_summary && (
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500">
                 <div className="flex items-start space-x-2">
-                  <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-base mt-0.5 flex-shrink-0">📊</span>
                   <div className="flex-1">
                     <h5 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
                       Resumen de Cambios
@@ -446,7 +442,7 @@ const AuditLogItem = ({ log, expanded, onToggleExpand, getActionIcon, getActionC
             <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                 <div className="flex items-center space-x-1">
-                  <Clock className="w-3 h-3" />
+                  <span className="text-xs">⏰</span>
                   <span>Timestamp completo:</span>
                 </div>
                 <span className="font-mono">
