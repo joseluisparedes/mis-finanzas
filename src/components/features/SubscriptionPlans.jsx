@@ -193,15 +193,101 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         </div>
       </div>
 
-      {/* Información de Yape - Solo informativa */}
-      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-6">
-        <p className="text-purple-800 dark:text-purple-200 font-semibold mb-2">
-          📱 También puedes pagar con Yape:
-        </p>
-        <p className="text-purple-700 dark:text-purple-300 text-sm">
-          Transfiere al número <strong>940144418</strong> (José Luis) y envía tu comprobante por WhatsApp para activación manual.
-        </p>
-      </div>
+      {/* Modal de Selección de Método de Pago */}
+      {checkoutPlan && !showCheckout && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Selecciona método de pago
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {checkoutPlan.name} - S/ {checkoutPlan.price?.toFixed(2)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCheckoutPlan(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Método Yape/Plin */}
+                <div
+                  onClick={() => handlePaymentMethod('yape')}
+                  className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-800 dark:hover:border-purple-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg relative"
+                >
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      🔥 MÁS POPULAR
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-purple-100 dark:bg-purple-900/50 p-3 rounded-lg">
+                      <span className="text-2xl">📱</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yape / Plin</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Transferencia + WhatsApp</p>
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <span>⏰ Activación: máximo 1 hora</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        S/ {checkoutPlan.price?.toFixed(2)}
+                      </div>
+                      <span className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium px-2 py-1 rounded">
+                        Sin comisiones
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 text-sm text-purple-700 dark:text-purple-300">
+                    <p><strong>940144418</strong> - José Luis Paredes Herbozo</p>
+                  </div>
+                </div>
+
+                {/* Método Tarjeta */}
+                <div
+                  onClick={() => handlePaymentMethod('card')}
+                  className="border-2 border-blue-200 hover:border-blue-400 dark:border-blue-800 dark:hover:border-blue-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-lg">
+                      <span className="text-2xl">💳</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tarjeta de Crédito/Débito</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Pago inmediato y seguro</p>
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <span>⚡ Activación: Inmediata</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        S/ {checkoutPlan.price?.toFixed(2)}
+                      </div>
+                      <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium px-2 py-1 rounded">
+                        Instantáneo
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                <p>🛡️ Todos los métodos de pago son seguros y protegidos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Checkout tradicional (Culqi) */}
       {showCheckout && checkoutPlan && (
@@ -287,10 +373,55 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   function handleSubscribe(plan) {
     if (plan.id === 'free' || plan.current) return;
     
-    // Abrir directamente CulqiCheckout (comportamiento original)
+    // Mostrar selector de método de pago
     setCheckoutPlan(plan);
-    setShowCheckout(true);
   }
+
+  const handlePaymentMethod = (method) => {
+    if (method === 'card') {
+      // Abrir CulqiCheckout para tarjeta
+      setShowCheckout(true);
+    } else if (method === 'yape') {
+      // Generar link de WhatsApp para Yape/Plin
+      openYapeWhatsApp();
+    }
+  };
+
+  const openYapeWhatsApp = () => {
+    const planName = checkoutPlan?.name || 'Premium';
+    const amount = checkoutPlan?.price?.toFixed(2) || '15.00';
+    
+    const message = `🚀 *PAGO REALIZADO - Mis Finanzas*
+
+📋 *Detalles del Pago:*
+• Plan: ${planName}
+• Monto: S/ ${amount}
+• Email: [Tu email aquí]
+• Fecha: ${new Date().toLocaleDateString('es-PE')}
+• Hora: ${new Date().toLocaleTimeString('es-PE')}
+
+💳 *He realizado la transferencia:*
+📱 YAPE/PLIN al número: 940144418
+👤 Titular: José Luis Paredes Herbozo
+
+📸 Adjunto captura de pantalla del comprobante.
+
+⏰ Por favor activar mi cuenta Premium.
+¡Gracias!`;
+
+    const whatsappUrl = `https://wa.me/51940144418?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    // Mostrar confirmación
+    setPaymentResult({
+      method: 'yape',
+      status: 'pending_verification',
+      amount: checkoutPlan?.price,
+      plan: checkoutPlan
+    });
+    setShowSuccessModal(true);
+    setCheckoutPlan(null);
+  };
 };
 
 const PlanCard = ({ plan, selected, onSelect, getColorClasses, loading, onSubscribe }) => {
