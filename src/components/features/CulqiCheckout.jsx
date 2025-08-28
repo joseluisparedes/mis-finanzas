@@ -297,9 +297,8 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
 
           {/* Información de tarjeta */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-              <span className="text-xl">💳</span>
-              <span>Información de Tarjeta</span>
+            <h4 className="font-semibold text-gray-900 dark:text-white">
+              Información de Tarjeta
             </h4>
 
             <div>
@@ -412,10 +411,7 @@ const CulqiCheckout = ({ plan, onSuccess, onCancel, onError }) => {
                   <span>Procesando...</span>
                 </>
               ) : (
-                <>
-                  <span className="text-base">💳</span>
-                  <span>Pagar S/ {plan.price}</span>
-                </>
+                <span>Pagar S/ {plan.price}</span>
               )}
             </button>
           </div>
