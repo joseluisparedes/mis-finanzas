@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings, History } from 'lucide-react';
+import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
 import databaseService from '../../services/databaseService';
@@ -254,7 +254,7 @@ const AdminPanel = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                <History className="w-4 h-4 inline mr-2" />
+                <span className="inline mr-2">📜</span>
                 Auditoría
               </button>
             </nav>

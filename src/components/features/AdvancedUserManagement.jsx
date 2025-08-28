@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Download, Eye, Ban, Trash2, RotateCcw, 
   AlertTriangle, CheckCircle, Clock, Shield, Activity, Calendar,
-  FileDown, MoreVertical, UserX, UserCheck, Database, History, ArrowDown
+  FileDown, MoreVertical, UserX, UserCheck, Database, ArrowDown
 } from 'lucide-react';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Crown, Shield, Users, Heart, TrendingUp, 
+  Crown, Shield, Users, TrendingUp, 
   AlertCircle, CheckCircle, Search, Filter,
   UserPlus, Edit3, Trash2, Mail, Calendar
 } from 'lucide-react';
@@ -191,7 +191,7 @@ const UserManagementPanel = () => {
               color="yellow"
             />
             <StatCard
-              icon={Heart}
+              icon={'❤️'}
               title="Familia"
               value={stats.family_users || 0}
               color="pink"
@@ -314,7 +314,7 @@ const UserRow = ({ user, onChangeSubscription, onEditUser, actionLoading }) => {
     const configs = {
       free: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: 'Free', icon: null },
       premium: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', text: 'Premium', icon: Crown },
-      family: { color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200', text: 'Familia', icon: Heart },
+      family: { color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200', text: 'Familia', icon: '❤️' },
       admin: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200', text: 'Admin', icon: Shield }
     };
     
@@ -436,7 +436,7 @@ const PromoteModal = ({ user, onClose, onConfirm, loading }) => {
       name: 'Plan Familia',
       description: 'Acceso Premium GRATIS para familiares',
       price: 0,
-      icon: Heart,
+      icon: '❤️',
       color: 'text-pink-600'
     },
     {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, Shield, Zap, Heart, Clock, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { Crown, Shield, Zap, Clock, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { useUserSubscription, useLimitDisplay } from '../../hooks/useUserSubscription';
 import SubscriptionPlans from './SubscriptionPlans';
 
@@ -56,7 +56,7 @@ const SubscriptionStatus = ({ compact = false, onNavigateToExpenses }) => {
     }
     if (isFamily) {
       return {
-        icon: Heart,
+        icon: '❤️',
         color: 'text-pink-600 dark:text-pink-400',
         bgColor: 'bg-pink-50 dark:bg-pink-900/20',
         label: 'Familia Premium',
