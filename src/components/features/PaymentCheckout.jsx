@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentMethodSelector from '../payment/PaymentMethodSelector';
+import PaymentMethodSelector from '../payment/PaymentMethodSelectorFixed';
 
 const PaymentCheckout = ({ plan, onSuccess, onCancel, onError }) => {
   const [selectedMethod, setSelectedMethod] = useState(null);
