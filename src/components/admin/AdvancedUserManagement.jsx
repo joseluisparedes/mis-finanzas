@@ -60,11 +60,17 @@ const AdvancedUserManagement = () => {
       console.log('✅ Users data loaded:', data);
       console.log('📊 Number of users found:', data?.length || 0);
       
-      if (data && data.length > 0) {
-        console.log('👤 First user sample:', data[0]);
+      // Filtrar usuarios que realmente tienen suscripción (no eliminados)
+      const validUsers = (data || []).filter(user => 
+        user && user.user_id && user.subscription_type
+      );
+      console.log('📊 Valid users after filtering:', validUsers.length);
+      
+      if (validUsers.length > 0) {
+        console.log('👤 First user sample:', validUsers[0]);
       }
       
-      setUsers(data || []);
+      setUsers(validUsers);
     } catch (error) {
       console.error('❌ Error loading users in AdvancedUserManagement:', error);
       setUsers([]);
@@ -179,6 +185,9 @@ const AdvancedUserManagement = () => {
         console.warn('No se pudo eliminar del sistema auth:', authError);
       }
 
+      // Esperar un poco para que la BD se actualice
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       await loadUsersData();
       await loadSystemStats();
       
