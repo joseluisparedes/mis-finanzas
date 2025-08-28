@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar } from 'lucide-react';
+import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar, CreditCard } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentMethodSelector from '../payment/PaymentMethodSelector';
+// import PaymentMethodSelector from '../payment/PaymentMethodSelector';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 
@@ -193,7 +193,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
         </div>
       </div>
 
-      {/* Modal de Selector de Método de Pago */}
+      {/* Modal de Selector de Método de Pago - TEMPORALMENTE DESHABILITADO */}
       {showPaymentSelector && checkoutPlan && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -201,7 +201,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Seleccionar Método de Pago
+                  Sistema de Pagos
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
                   {checkoutPlan?.name} - S/ {checkoutPlan?.price?.toFixed(2)}
@@ -218,15 +218,42 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
               </button>
             </div>
 
-            <div className="p-6">
-              <PaymentMethodSelector
-                planType={checkoutPlan.id === 'premium_early_bird' ? 'premium' : checkoutPlan.id}
-                amount={checkoutPlan.price}
-                isEarlyBird={checkoutPlan.isEarlyBird || false}
-                userEmail="usuario@ejemplo.com" // TODO: Obtener del contexto de usuario
-                onPaymentComplete={handlePaymentComplete}
-                onMethodSelect={(method) => handleMethodSelect(method, checkoutPlan)}
-              />
+            <div className="p-6 text-center">
+              <div className="mb-4">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CreditCard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Sistema de Pagos en Desarrollo
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Estamos agregando nuevos métodos de pago. Por ahora, usar el método tradicional.
+                </p>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowPaymentSelector(false);
+                    setShowCheckout(true);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg"
+                >
+                  💳 Continuar con Tarjeta
+                </button>
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                  <h4 className="font-bold text-purple-900 dark:text-purple-200 mb-2">
+                    🚧 Próximamente: Pago con Yape
+                  </h4>
+                  <p className="text-purple-800 dark:text-purple-300 text-sm mb-3">
+                    Podrás pagar con Yape al número <strong>940144418</strong> y confirmar por WhatsApp.
+                  </p>
+                  <div className="text-xs text-purple-700 dark:text-purple-400">
+                    • Sin comisiones adicionales<br/>
+                    • Verificación manual en 2-6 horas<br/>
+                    • Titular: José Luis
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
