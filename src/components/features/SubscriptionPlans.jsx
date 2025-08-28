@@ -371,15 +371,28 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   };
 
   function handleSubscribe(plan) {
-    if (plan.id === 'free' || plan.current) return;
+    console.log('handleSubscribe called with plan:', plan);
     
-    // Solo mostrar selector para planes con precio > 0
-    if (plan.price && plan.price > 0) {
+    if (!plan) {
+      console.error('No plan provided');
+      return;
+    }
+    
+    if (plan.id === 'free' || plan.current) {
+      console.log('Skipping free or current plan');
+      return;
+    }
+    
+    // Validación simple y segura
+    const planPrice = Number(plan.price) || 0;
+    console.log('Plan price:', planPrice);
+    
+    if (planPrice > 0) {
+      console.log('Setting checkout plan');
       setCheckoutPlan(plan);
     } else {
-      // Para planes gratuitos o sin precio, mostrar mensaje
-      console.log('Plan seleccionado:', plan);
-      alert('Este plan no requiere pago. Contacta con soporte para activación.');
+      console.log('Plan does not require payment');
+      alert('Este plan no requiere pago.');
     }
   }
 
@@ -392,15 +405,20 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   };
 
   const openYapeWhatsApp = () => {
-    if (!checkoutPlan || !checkoutPlan.price || checkoutPlan.price <= 0) {
-      console.error('Plan inválido para pago:', checkoutPlan);
-      alert('Error: Plan no válido para pago');
-      setCheckoutPlan(null);
-      return;
-    }
+    console.log('openYapeWhatsApp called with checkoutPlan:', checkoutPlan);
     
-    const planName = checkoutPlan.name || 'Premium';
-    const amount = checkoutPlan.price.toFixed(2);
+    try {
+      if (!checkoutPlan) {
+        throw new Error('No checkout plan');
+      }
+      
+      const planPrice = Number(checkoutPlan.price) || 0;
+      if (planPrice <= 0) {
+        throw new Error('Invalid plan price');
+      }
+      
+      const planName = String(checkoutPlan.name || 'Premium');
+      const amount = planPrice.toFixed(2);
     
     const message = `🚀 *PAGO REALIZADO - Mis Finanzas*
 
@@ -420,18 +438,24 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
 ⏰ Por favor activar mi cuenta Premium.
 ¡Gracias!`;
 
-    const whatsappUrl = `https://wa.me/51940144418?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    
-    // Mostrar confirmación
-    setPaymentResult({
-      method: 'yape',
-      status: 'pending_verification',
-      amount: checkoutPlan?.price,
-      plan: checkoutPlan
-    });
-    setShowSuccessModal(true);
-    setCheckoutPlan(null);
+      const whatsappUrl = `https://wa.me/51940144418?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      // Mostrar confirmación
+      setPaymentResult({
+        method: 'yape',
+        status: 'pending_verification',
+        amount: planPrice,
+        plan: checkoutPlan
+      });
+      setShowSuccessModal(true);
+      setCheckoutPlan(null);
+      
+    } catch (error) {
+      console.error('Error in openYapeWhatsApp:', error);
+      alert('Error al procesar el pago. Inténtalo de nuevo.');
+      setCheckoutPlan(null);
+    }
   };
 };
 
