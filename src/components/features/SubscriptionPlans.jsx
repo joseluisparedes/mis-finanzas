@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Zap, Shield, CheckCircle, Star, Gift, Calendar, CreditCard } from 'lucide-react';
 import CulqiCheckout from './CulqiCheckout';
-import PaymentMethodSelector from '../payment/PaymentMethodSelectorFixed';
+import PaymentMethodSelector from '../payment/PaymentMethodSelectorSafe';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
 

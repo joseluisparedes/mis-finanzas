@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  CreditCard, 
-  Smartphone, 
-  Shield, 
-  CheckCircle,
-  Clock,
-  MessageCircle,
-  Zap,
-  Copy,
-  ExternalLink,
-  AlertTriangle,
-  User,
-  ArrowLeft
-} from 'lucide-react';
 
-const PaymentMethodSelectorFixed = ({ 
+const PaymentMethodSelectorSafe = ({ 
   planType = 'premium', 
   amount = 15.00, 
   isEarlyBird = true,
@@ -36,7 +22,7 @@ const PaymentMethodSelectorFixed = ({
       id: 'culqi',
       name: 'Tarjeta de Crédito/Débito',
       description: 'Pago inmediato con tarjeta',
-      icon: CreditCard,
+      icon: '💳',
       color: 'blue',
       features: ['Activación inmediata', 'Seguro y encriptado', 'Todos los bancos'],
       processingTime: 'Inmediato',
@@ -46,7 +32,7 @@ const PaymentMethodSelectorFixed = ({
       id: 'yape',
       name: 'Yape + WhatsApp',
       description: 'Transfiere por Yape y envía comprobante',
-      icon: Smartphone,
+      icon: '📱',
       color: 'purple',
       features: ['Pago con Yape', 'Verificación por WhatsApp', 'Sin comisiones adicionales'],
       processingTime: '2-6 horas',
@@ -97,7 +83,6 @@ const PaymentMethodSelectorFixed = ({
     window.open(whatsappUrl, '_blank');
     setPaymentStep(3);
     
-    // Notificar que el pago fue iniciado
     if (onPaymentComplete) {
       onPaymentComplete({
         method: 'yape',
@@ -131,13 +116,12 @@ const PaymentMethodSelectorFixed = ({
             onClick={() => setSelectedMethod(null)}
             className="text-purple-600 hover:text-purple-800 text-sm flex items-center space-x-1"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver a métodos de pago</span>
+            <span>← Volver a métodos de pago</span>
           </button>
           
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
             <div className="flex items-center space-x-3 mb-4">
-              <Clock className="w-8 h-8 text-yellow-600" />
+              <span className="text-2xl">⏰</span>
               <div>
                 <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
                   Pago en Proceso de Verificación
@@ -170,15 +154,14 @@ const PaymentMethodSelectorFixed = ({
           onClick={() => setSelectedMethod(null)}
           className="text-purple-600 hover:text-purple-800 text-sm flex items-center space-x-1"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver a métodos de pago</span>
+          <span>← Volver a métodos de pago</span>
         </button>
         
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
           {/* Header */}
           <div className="bg-purple-600 text-white p-4">
             <div className="flex items-center space-x-3">
-              <Smartphone className="w-6 h-6" />
+              <span className="text-2xl">📱</span>
               <div>
                 <h3 className="text-lg font-bold">Pago con Yape + WhatsApp</h3>
                 <p className="text-purple-100 text-sm">Rápido, seguro y verificado manualmente</p>
@@ -231,7 +214,7 @@ const PaymentMethodSelectorFixed = ({
                         className="p-1 text-purple-600 hover:text-purple-800 transition-colors"
                         title="Copiar número"
                       >
-                        <Copy className="w-4 h-4" />
+                        📋
                       </button>
                       {hasCopiedNumber && (
                         <span className="text-green-600 text-xs">¡Copiado!</span>
@@ -242,7 +225,7 @@ const PaymentMethodSelectorFixed = ({
 
                 {/* Recipient Info */}
                 <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                  <User className="w-4 h-4" />
+                  <span>👤</span>
                   <span>Titular: {adminName}</span>
                 </div>
               </div>
@@ -250,7 +233,7 @@ const PaymentMethodSelectorFixed = ({
               {/* Amount to Transfer */}
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="flex items-center space-x-2">
-                  <CreditCard className="w-5 h-5 text-green-600" />
+                  <span className="text-xl">💳</span>
                   <p className="text-green-800 dark:text-green-200 font-medium">
                     Transfiere exactamente: <span className="text-xl font-bold">S/ {amount.toFixed(2)}</span>
                   </p>
@@ -278,9 +261,9 @@ const PaymentMethodSelectorFixed = ({
                   onClick={openWhatsApp}
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <span>💬</span>
                   <span>Enviar Comprobante por WhatsApp</span>
-                  <ExternalLink className="w-4 h-4" />
+                  <span>🔗</span>
                 </button>
               </div>
             </div>
@@ -288,7 +271,7 @@ const PaymentMethodSelectorFixed = ({
             {/* Important Notes */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span className="text-xl">⚠️</span>
                 <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                   <p className="font-medium">Instrucciones importantes:</p>
                   <ul className="space-y-1 text-xs">
@@ -320,13 +303,12 @@ const PaymentMethodSelectorFixed = ({
           onClick={() => setSelectedMethod(null)}
           className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver a métodos de pago</span>
+          <span>← Volver a métodos de pago</span>
         </button>
         
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-6">
           <div className="text-center">
-            <CreditCard className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <span className="text-4xl mb-4 block">💳</span>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               Pago con Tarjeta
             </h3>
@@ -363,7 +345,6 @@ const PaymentMethodSelectorFixed = ({
 
       <div className="grid gap-4">
         {paymentMethods.map((method) => {
-          const IconComponent = method.icon;
           const colorClasses = {
             blue: 'border-blue-200 hover:border-blue-400 dark:border-blue-800 dark:hover:border-blue-600',
             purple: 'border-purple-200 hover:border-purple-400 dark:border-purple-800 dark:hover:border-purple-600'
@@ -391,9 +372,7 @@ const PaymentMethodSelectorFixed = ({
                         ? 'bg-blue-100 dark:bg-blue-900/50' 
                         : 'bg-purple-100 dark:bg-purple-900/50'
                     }`}>
-                      <IconComponent className={`w-6 h-6 ${
-                        method.color === 'blue' ? 'text-blue-600' : 'text-purple-600'
-                      }`} />
+                      <span className="text-2xl">{method.icon}</span>
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -407,7 +386,7 @@ const PaymentMethodSelectorFixed = ({
                   
                   <div className="text-right">
                     <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400">
-                      <Clock className="w-4 h-4" />
+                      <span>⏰</span>
                       <span>{method.processingTime}</span>
                     </div>
                   </div>
@@ -416,7 +395,7 @@ const PaymentMethodSelectorFixed = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
                   {method.features.map((feature, index) => (
                     <div key={index} className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-green-500">✓</span>
                       <span>{feature}</span>
                     </div>
                   ))}
@@ -437,12 +416,10 @@ const PaymentMethodSelectorFixed = ({
                     {method.id === 'culqi' && (
                       <>
                         <span className="bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-xs font-medium px-2 py-1 rounded">
-                          <Zap className="w-3 h-3 inline mr-1" />
-                          Instantáneo
+                          ⚡ Instantáneo
                         </span>
                         <span className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium px-2 py-1 rounded">
-                          <Shield className="w-3 h-3 inline mr-1" />
-                          Seguro
+                          🛡️ Seguro
                         </span>
                       </>
                     )}
@@ -463,7 +440,7 @@ const PaymentMethodSelectorFixed = ({
       {/* Additional Info */}
       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
         <div className="flex items-start space-x-2">
-          <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <span className="text-xl">🛡️</span>
           <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
             <p className="font-medium text-gray-900 dark:text-white">Pagos seguros y protegidos</p>
             <p>Todos los métodos de pago son seguros y están protegidos. Tu información está encriptada y no se almacena en nuestros servidores.</p>
@@ -474,4 +451,4 @@ const PaymentMethodSelectorFixed = ({
   );
 };
 
-export default PaymentMethodSelectorFixed;
+export default PaymentMethodSelectorSafe;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Crown, Users, Star } from 'lucide-react';
-import PaymentMethodSelector from '../payment/PaymentMethodSelectorFixed';
+import PaymentMethodSelector from '../payment/PaymentMethodSelectorSafe';
 
 const UpgradeModal = ({ isOpen, onClose, currentUser }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
