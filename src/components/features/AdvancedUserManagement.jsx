@@ -209,7 +209,7 @@ const AdvancedUserManagement = () => {
       console.log('✅ Resultado de degradación:', data);
       
       // Verificar estado admin después de la operación
-      const { data: adminStatus } = await supabaseClient.rpc('verify_admin_status');
+      const { data: adminStatus } = await supabase.rpc('verify_admin_status');
       console.log('👤 Estado admin después:', adminStatus);
 
       // Mostrar resultado detallado
@@ -229,26 +229,56 @@ const AdvancedUserManagement = () => {
   const exportUserData = async (userId, userEmail) => {
     setActionLoading(true);
     try {
-      // Obtener datos completos del usuario
-      const { data: userData, error } = await supabase
+      // Obtener datos de suscripción del usuario
+      const { data: userData, error: subError } = await supabase
         .from('user_subscriptions')
-        .select(`
-          *,
-          users:user_id (*)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
+      if (subError) throw subError;
 
-      // Obtener transacciones del usuario
+      // Los datos de auth.users no son accesibles directamente desde el cliente
+      // Usaremos solo los datos disponibles en user_subscriptions y las tablas relacionadas
+
+      // Obtener transacciones del usuario con información relacionada
       const { data: expenses } = await supabase
         .from('expenses')
-        .select('*')
-        .eq('user_id', userId);
+        .select(`
+          id, amount, description, date, notes, created_at,
+          categories (name, color),
+          payment_methods (name, color)
+        `)
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
 
       const { data: income } = await supabase
         .from('income')
+        .select(`
+          id, amount, description, date, notes, created_at,
+          income_types (name, color)
+        `)
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+
+      // Obtener categorías, métodos de pago e ingresos del usuario
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', userId);
+
+      const { data: paymentMethods } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('user_id', userId);
+
+      const { data: incomeTypes } = await supabase
+        .from('income_types')
+        .select('*')
+        .eq('user_id', userId);
+
+      const { data: budgets } = await supabase
+        .from('budgets')
         .select('*')
         .eq('user_id', userId);
 
@@ -259,26 +289,74 @@ const AdvancedUserManagement = () => {
       const userInfo = [
         ['Campo', 'Valor'],
         ['ID de Usuario', userData.user_id],
-        ['Email', userData.user_email || userData.users?.email || 'N/A'],
+        ['Email', userEmail || 'N/A'],
         ['Tipo de Suscripción', userData.subscription_type],
         ['Estado', userData.status],
-        ['Fecha de Registro', userData.created_at],
-        ['Última Actualización', userData.updated_at]
+        ['Fecha de Suscripción', userData.created_at],
+        ['Última Actualización', userData.updated_at],
+        ['Precio Pagado', userData.price_paid || 'N/A'],
+        ['Método de Pago', userData.payment_method || 'N/A'],
+        ['Es Early Bird', userData.is_early_bird ? 'Sí' : 'No'],
+        ['Límite Transacciones', userData.monthly_transaction_limit || 'N/A'],
+        ['Límite Presupuestos', userData.budget_limit || 'N/A']
       ];
       
       const wsUser = XLSX.utils.aoa_to_sheet(userInfo);
       XLSX.utils.book_append_sheet(wb, wsUser, 'Información Usuario');
 
-      // Hoja de gastos
+      // Hoja de gastos con formato mejorado
       if (expenses && expenses.length > 0) {
-        const wsExpenses = XLSX.utils.json_to_sheet(expenses);
+        const expensesFormatted = expenses.map(expense => ({
+          'ID': expense.id,
+          'Monto': expense.amount,
+          'Descripción': expense.description,
+          'Fecha': expense.date,
+          'Categoría': expense.categories?.name || 'N/A',
+          'Método de Pago': expense.payment_methods?.name || 'N/A',
+          'Notas': expense.notes || '',
+          'Creado': expense.created_at
+        }));
+        const wsExpenses = XLSX.utils.json_to_sheet(expensesFormatted);
         XLSX.utils.book_append_sheet(wb, wsExpenses, 'Gastos');
       }
 
-      // Hoja de ingresos
+      // Hoja de ingresos con formato mejorado
       if (income && income.length > 0) {
-        const wsIncome = XLSX.utils.json_to_sheet(income);
+        const incomeFormatted = income.map(inc => ({
+          'ID': inc.id,
+          'Monto': inc.amount,
+          'Descripción': inc.description,
+          'Fecha': inc.date,
+          'Tipo de Ingreso': inc.income_types?.name || 'N/A',
+          'Notas': inc.notes || '',
+          'Creado': inc.created_at
+        }));
+        const wsIncome = XLSX.utils.json_to_sheet(incomeFormatted);
         XLSX.utils.book_append_sheet(wb, wsIncome, 'Ingresos');
+      }
+
+      // Hoja de categorías
+      if (categories && categories.length > 0) {
+        const wsCategories = XLSX.utils.json_to_sheet(categories);
+        XLSX.utils.book_append_sheet(wb, wsCategories, 'Categorías');
+      }
+
+      // Hoja de métodos de pago
+      if (paymentMethods && paymentMethods.length > 0) {
+        const wsPaymentMethods = XLSX.utils.json_to_sheet(paymentMethods);
+        XLSX.utils.book_append_sheet(wb, wsPaymentMethods, 'Métodos de Pago');
+      }
+
+      // Hoja de tipos de ingreso
+      if (incomeTypes && incomeTypes.length > 0) {
+        const wsIncomeTypes = XLSX.utils.json_to_sheet(incomeTypes);
+        XLSX.utils.book_append_sheet(wb, wsIncomeTypes, 'Tipos de Ingreso');
+      }
+
+      // Hoja de presupuestos
+      if (budgets && budgets.length > 0) {
+        const wsBudgets = XLSX.utils.json_to_sheet(budgets);
+        XLSX.utils.book_append_sheet(wb, wsBudgets, 'Presupuestos');
       }
 
       // Descargar archivo
