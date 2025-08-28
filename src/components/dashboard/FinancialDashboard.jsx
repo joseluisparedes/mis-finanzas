@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   AlertTriangle, 
   CheckCircle, 
   DollarSign,
@@ -189,7 +187,7 @@ const FinancialDashboard = ({
           </div>
           {trend && (
             <div className={`flex items-center mt-1 text-xs ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {trend > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+              {trend > 0 ? <span className="text-sm mr-1">📈</span> : <span className="text-sm mr-1">📉</span>}
               <span>{Math.abs(trend).toFixed(1)}%</span>
             </div>
           )}
@@ -265,7 +263,7 @@ const FinancialDashboard = ({
           title="Balance Actual"
           value={financialData.balance}
           subtitle={`${financialData.balance >= 0 ? 'Superávit' : 'Déficit'}`}
-          icon={financialData.balance >= 0 ? TrendingUp : TrendingDown}
+          icon={financialData.balance >= 0 ? () => <span className="text-base">📈</span> : () => <span className="text-base">📉</span>}
           color={financialData.balance >= 0 ? '#10B981' : '#EF4444'}
         />
         
@@ -289,7 +287,7 @@ const FinancialDashboard = ({
           title="Ingresos Totales"
           value={financialData.totalIncomes}
           subtitle={`${financialData.incomeCount} fuentes`}
-          icon={TrendingUp}
+          icon={() => <span className="text-base">📈</span>}
           color="#10B981"
         />
       </div>
