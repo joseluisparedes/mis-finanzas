@@ -153,28 +153,25 @@ const AdvancedUserManagement = () => {
     try {
       console.log(`🚫 Deshabilitando usuario ${userEmail} (${userId})`);
       
-      // Marcar suscripción como eliminada (no eliminar físicamente)
-      const { error } = await supabase
-        .from('user_subscriptions')
-        .update({ 
-          status: 'deleted',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+      // Usar función RPC para deshabilitar usuario de forma segura
+      const { data, error } = await supabase.rpc('disable_user_admin', {
+        target_user_id: userId
+      });
         
       if (error) {
         throw error;
       }
 
-      console.log('✅ Usuario marcado como eliminado');
-      
-      // Esperar un poco para que la BD se actualice
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!data.success) {
+        throw new Error(data.error || 'Error desconocido al deshabilitar usuario');
+      }
+
+      console.log('✅ Usuario deshabilitado:', data.message);
       
       await loadUsersData();
       await loadSystemStats();
       
-      alert(`✅ Usuario ${userEmail} deshabilitado. Puede ser reactivado desde el panel admin.`);
+      alert(`✅ ${data.message}`);
     } catch (error) {
       console.error('Error deshabilitando usuario:', error);
       alert(`❌ Error al deshabilitar usuario: ${error.message}`);
@@ -201,35 +198,20 @@ const AdvancedUserManagement = () => {
     try {
       console.log(`🔄 Reactivando usuario ${userEmail} (${userId})`);
       
-      // Reactivar suscripción como FREE (datos limpios)
-      const { error } = await supabase
-        .from('user_subscriptions')
-        .update({ 
-          status: 'active',
-          subscription_type: 'free',
-          updated_at: new Date().toISOString(),
-          started_at: new Date().toISOString(),
-          expires_at: null,
-          // Resetear a límites FREE
-          multi_currency_enabled: false,
-          excel_export_enabled: false,
-          excel_import_enabled: false,
-          advanced_reports_enabled: false,
-          monthly_transaction_limit: 30,
-          budget_limit: 2,
-          custom_category_limit: 3,
-          custom_payment_method_limit: 2,
-          custom_income_type_limit: 1,
-          recurring_transaction_limit: 5,
-          report_months_limit: 3
-        })
-        .eq('user_id', userId);
+      // Usar función RPC para reactivar usuario de forma segura
+      const { data, error } = await supabase.rpc('reactivate_user_admin', {
+        target_user_id: userId
+      });
         
       if (error) {
         throw error;
       }
 
-      console.log('✅ Usuario reactivado con plan FREE');
+      if (!data.success) {
+        throw new Error(data.error || 'Error desconocido al reactivar usuario');
+      }
+
+      console.log('✅ Usuario reactivado con plan FREE:', data.message);
       
       await loadUsersData();
       await loadSystemStats();

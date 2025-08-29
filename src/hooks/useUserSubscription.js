@@ -185,55 +185,85 @@ export const useUserSubscription = () => {
 
   // Funciones de verificación de límites
   const canCreateTransaction = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.monthly_transactions?.available;
     return available === -1 || available > 0;
   };
 
   const canCreateBudget = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.budgets?.available;
     return available === -1 || available > 0;
   };
 
   const canCreateCategory = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.categories?.available;
     return available === -1 || available > 0;
   };
 
   const canCreatePaymentMethod = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.payment_methods?.available;
     return available === -1 || available > 0;
   };
 
   const canCreateIncomeType = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.income_types?.available;
     return available === -1 || available > 0;
   };
 
   const canCreateRecurringTransaction = () => {
-    if (!isActive || isPremium || isFamily || isAdmin) return true;
+    // BLOQUEO: Usuarios eliminados NO pueden hacer nada
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
+    if (isPremium || isFamily || isAdmin) return true;
     const available = limits.recurring_transactions?.available;
     return available === -1 || available > 0;
   };
 
   // Funciones de verificación de características
   const canUseMultiCurrency = () => {
+    // BLOQUEO: Usuarios eliminados NO pueden usar features
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
     return isPremium || isFamily || isAdmin || features.multi_currency_enabled;
   };
 
   const canExportExcel = () => {
+    // BLOQUEO: Usuarios eliminados NO pueden usar features
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
     return isPremium || isFamily || isAdmin || features.excel_export_enabled;
   };
 
   const canImportExcel = () => {
+    // BLOQUEO: Usuarios eliminados NO pueden usar features
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
     return isPremium || isFamily || isAdmin || features.excel_import_enabled;
   };
 
   const canUseAdvancedReports = () => {
+    // BLOQUEO: Usuarios eliminados NO pueden usar features
+    if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    if (!isActive) return false;
     return isPremium || isFamily || isAdmin || features.advanced_reports_enabled;
   };
 

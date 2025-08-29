@@ -14,6 +14,7 @@ import ProfileCustomization from './components/profile/ProfileCustomization';
 import Avatar from './components/common/Avatar';
 import ErrorMessage from './components/common/ErrorMessage';
 import InstallPWAButton from './components/pwa/InstallPWAButton';
+import DeletedUserBlock from './components/common/DeletedUserBlock';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
@@ -1513,7 +1514,8 @@ const AppSupabase = ({ onNavigateToLanding }) => {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${surfaceClasses}`}>
+    <DeletedUserBlock>
+      <div className={`min-h-screen transition-colors duration-300 ${surfaceClasses}`}>
       <header className={`${cardClasses} shadow-lg border-b-2 border-gray-100 dark:border-dark-border rounded-none`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* FILA 1: Título (izquierda) ↔ Usuario + Cerrar sesión (derecha) */}
@@ -6319,6 +6321,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
         />
       )}
     </div>
+    </DeletedUserBlock>
   );
 };
 
