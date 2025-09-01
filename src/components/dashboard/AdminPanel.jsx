@@ -358,31 +358,95 @@ const AdminPanel = () => {
   const generateWhatsAppMessage = (user) => {
     const userEmail = user.user_email || user.users?.email || 'Usuario';
     
-    // Si es free o family, no hay vencimiento
+    // Si es free o family, ofrecer planes Premium
     if (['free', 'family'].includes(user.subscription_type)) {
-      return `Hola! Te contactamos desde Mis Finanzas. ¿Cómo podemos ayudarte hoy?`;
+      return `¡Hola! Te contactamos desde Mis Finanzas.
+
+¿Te gustaría conocer nuestros planes Premium?
+
+💎 Premium mensual: S/ 15.00
+🎯 Premium anual: S/ 150.00 (2 meses gratis)
+
+¿En qué podemos ayudarte?`;
     }
 
-    // Si tiene suscripción con fecha de vencimiento
+    // Si tiene suscripción Premium con fecha de vencimiento
     if (user.subscription_end_date) {
       const endDate = new Date(user.subscription_end_date);
       const today = new Date();
       const timeDiff = endDate.getTime() - today.getTime();
       const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      // Determinar si es Early Bird (Fundador) o Premium Regular
+      const isEarlyBird = user.is_early_bird || user.subscription_type === 'early_bird';
 
       if (daysLeft < 0) {
         // Ya venció
-        return `Hola! Tu suscripción Premium venció hace ${Math.abs(daysLeft)} días. ¿Te gustaría renovarla para seguir disfrutando de todas las funciones? ¡Tenemos ofertas especiales!`;
-      } else if (daysLeft <= 3) {
-        // Próximo a vencer
-        return `¡Hola! Tu suscripción Premium ${daysLeft === 0 ? 'vence hoy' : `vence en ${daysLeft} día${daysLeft > 1 ? 's' : ''}`}. ¿Quieres renovarla para no perder el acceso? Te ayudo con el proceso.`;
+        const daysExpired = Math.abs(daysLeft);
+        if (isEarlyBird) {
+          return `¡Hola! Tu plan Premium Early Bird venció hace ${daysExpired} día${daysExpired > 1 ? 's' : ''}.
+
+¿Te gustaría renovarlo para recuperar todas las funciones?
+
+💰 Plan mensual disponible: S/ 5.00
+📅 Duración: 30 días
+
+¡Reactiva tu cuenta hoy!`;
+        } else {
+          return `¡Hola! Tu plan Premium venció hace ${daysExpired} día${daysExpired > 1 ? 's' : ''}.
+
+¿Te gustaría renovarlo para recuperar todas las funciones?
+
+💰 Opciones disponibles:
+• 1 mes: S/ 15.00
+• 1 año: S/ 150.00 (¡Ahorra S/ 30!)
+
+¡Reactiva tu cuenta hoy!`;
+        }
+      } else if (daysLeft <= 10) {
+        // Próximo a vencer o vence hoy
+        const dayText = daysLeft === 0 ? 'vence hoy' : `te quedan ${daysLeft} día${daysLeft > 1 ? 's' : ''} antes de que tu plan Premium ${isEarlyBird ? 'Early Bird ' : ''}venza`;
+        
+        if (isEarlyBird) {
+          return `¡Hola! ${dayText === 'vence hoy' ? 'Tu plan Premium Early Bird vence hoy' : `Te quedan ${daysLeft} día${daysLeft > 1 ? 's' : ''} antes de que tu plan Premium Early Bird venza`}.
+
+¿Deseas ampliar el periodo?
+
+💰 Plan mensual disponible: S/ 5.00
+📅 Duración: 30 días adicionales
+
+¿Te gustaría renovar?`;
+        } else {
+          return `¡Hola! ${dayText === 'vence hoy' ? 'Tu plan Premium vence hoy' : `Te quedan ${daysLeft} día${daysLeft > 1 ? 's' : ''} antes de que tu plan Premium venza`}.
+
+¿Deseas ampliar el periodo?
+
+💰 Opciones disponibles:
+• 1 mes más: S/ 15.00
+• 1 año completo: S/ 150.00 (equivale a S/12.50/mes)
+
+¿Cuál prefieres?`;
+        }
       } else {
-        // Contacto general
-        return `Hola! Te contactamos desde Mis Finanzas. Tu suscripción está activa hasta el ${endDate.toLocaleDateString('es-PE')}. ¿En qué podemos ayudarte?`;
+        // Contacto general para usuarios Premium activos
+        if (isEarlyBird) {
+          return `¡Hola! Te contactamos desde Mis Finanzas.
+
+Tu plan Premium Early Bird está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
+
+¿En qué podemos ayudarte hoy?`;
+        } else {
+          return `¡Hola! Te contactamos desde Mis Finanzas.
+
+Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
+
+¿En qué podemos ayudarte hoy?`;
+        }
       }
     }
 
-    return `Hola! Te contactamos desde Mis Finanzas. ¿Cómo podemos ayudarte hoy?`;
+    // Fallback general
+    return `¡Hola! Te contactamos desde Mis Finanzas. ¿En qué podemos ayudarte hoy?`;
   };
 
   // Handler para WhatsApp
