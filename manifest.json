@@ -1,0 +1,115 @@
+{
+  "name": "MisFinanzas - Control Financiero Personal",
+  "short_name": "MisFinanzas",
+  "description": "Tu centro de control financiero personal. Gestiona gastos, ingresos, presupuestos y más desde tu móvil.",
+  "start_url": "/mis-finanzas/",
+  "scope": "/mis-finanzas/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#8B5CF6",
+  "background_color": "#0f172a",
+  "lang": "es",
+  "categories": ["finance", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-72x72.svg",
+      "sizes": "72x72",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-96x96.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-128x128.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-144x144.svg",
+      "sizes": "144x144",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-152x152.svg",
+      "sizes": "152x152",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-384x384.svg",
+      "sizes": "384x384",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Agregar Gasto",
+      "short_name": "Gasto",
+      "description": "Registrar un nuevo gasto rápidamente",
+      "url": "/mis-finanzas/#gastos",
+      "icons": [
+        {
+          "src": "/mis-finanzas/icons/shortcut-gasto.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ver Balance",
+      "short_name": "Balance",
+      "description": "Ver el balance actual de tus finanzas",
+      "url": "/mis-finanzas/#balance",
+      "icons": [
+        {
+          "src": "/mis-finanzas/icons/shortcut-balance.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "short_name": "Reportes",
+      "description": "Consultar reportes y gráficos",
+      "url": "/mis-finanzas/#reportes",
+      "icons": [
+        {
+          "src": "/mis-finanzas/icons/shortcut-reportes.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/mis-finanzas/screenshots/mobile-home.png",
+      "type": "image/png",
+      "sizes": "375x812",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/mis-finanzas/screenshots/desktop-home.png",
+      "type": "image/png",
+      "sizes": "1920x1080",
+      "form_factor": "wide"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
+}
