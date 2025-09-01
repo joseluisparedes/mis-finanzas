@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CulqiCheckout from '../payment/CulqiCheckout';
 import { usePromotion } from '../../hooks/usePromotion';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 import { supabase } from '../../lib/supabase';
 
 const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpenses }) => {
@@ -14,6 +15,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
   
   const { promotion, loading: promotionLoading, error: promotionError } = usePromotion();
   const { refreshSubscription } = useUserSubscription();
+  const { isYapeEnabled, isCulqiEnabled, hasAnyMethodEnabled } = usePaymentMethods();
 
   const plans = [
     {
@@ -308,6 +310,7 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
 
               <div className="space-y-4">
                 {/* Método Yape/Plin */}
+                {isYapeEnabled() && (
                 <div
                   onClick={handleYapePayment}
                   className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-800 dark:hover:border-purple-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg relative"
@@ -343,8 +346,10 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
                     <p><strong>940144418</strong> - José Luis Paredes Herbozo</p>
                   </div>
                 </div>
+                )}
 
                 {/* Método Tarjeta */}
+                {isCulqiEnabled() && (
                 <div
                   onClick={handleCardPayment}
                   className="border-2 border-blue-200 hover:border-blue-400 dark:border-blue-800 dark:hover:border-blue-600 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg"
@@ -370,6 +375,23 @@ const SubscriptionPlans = ({ currentPlan = 'free', onSuccess, onNavigateToExpens
                     </div>
                   </div>
                 </div>
+                )}
+
+                {/* Mensaje si no hay métodos habilitados */}
+                {!hasAnyMethodEnabled() && (
+                  <div className="text-center p-8">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Sin métodos de pago disponibles
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Los métodos de pago están temporalmente deshabilitados.
+                      Por favor, contacta con soporte si necesitas realizar un pago.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">

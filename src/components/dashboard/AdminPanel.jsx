@@ -6,6 +6,7 @@ import databaseService from '../../services/databaseService';
 import PromotionAdminPanel from '../admin/PromotionAdminPanel';
 import AdvancedUserManagement from '../admin/AdvancedUserManagement';
 import AuditLogViewer from '../admin/AuditLogViewer';
+import PaymentMethodsConfig from '../admin/PaymentMethodsConfig';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
@@ -13,7 +14,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState('');
   const [message, setMessage] = useState(null);
-  const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced' | 'audit'
+  const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced' | 'audit' | 'payments'
   const [expiringSubscriptions, setExpiringSubscriptions] = useState([]);
 
   const {
@@ -659,6 +660,17 @@ Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
                 <span className="inline mr-2">📜</span>
                 Auditoría
               </button>
+              <button
+                onClick={() => setActiveTab('payments')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'payments'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Settings className="w-4 h-4 inline mr-2" />
+                Métodos de Pago
+              </button>
             </nav>
           </div>
         </div>
@@ -799,6 +811,10 @@ Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
         {/* Tab de Auditoría */}
         {activeTab === 'audit' && (
           <AuditLogViewer />
+        )}
+        {/* Tab de Métodos de Pago */}
+        {activeTab === 'payments' && (
+          <PaymentMethodsConfig />
         )}
       </div>
     </div>
