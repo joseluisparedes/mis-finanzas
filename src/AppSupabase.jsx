@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play, Users, LogOut } from 'lucide-react';
+import { PlusCircle, Settings, BarChart3, TrendingUp, TrendingDown, Calendar, CreditCard, Filter, Edit2, Trash2, Save, X, Download, Upload, AlertCircle, Activity, Wifi, WifiOff, User, Moon, Sun, Search, Target, Repeat, MoreHorizontal, TrendingDownIcon, Menu, ArrowUpDown, ArrowUp, ArrowDown, Pause, Play, Users, LogOut, Crown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useUserSubscription } from './hooks/useUserSubscription';
@@ -1725,6 +1725,23 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                   </button>
                   
                   <button
+                    onClick={() => setShowSubscriptionPlans(!showSubscriptionPlans)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      showSubscriptionPlans
+                        ? darkMode
+                          ? 'bg-purple-600/90 text-white shadow-lg'
+                          : 'bg-purple-500 text-white shadow-lg'
+                        : darkMode
+                          ? 'text-gray-300 hover:text-white hover:bg-gray-700/80'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    title="Ver planes de suscripción"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span className="hidden lg:inline">Planes</span>
+                  </button>
+                  
+                  <button
                     onClick={() => setShowConfig(!showConfig)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                       showConfig
@@ -1833,13 +1850,13 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                       <h3 className={`text-xs font-semibold uppercase tracking-wider px-3 ${textMutedClasses}`}>
                         Herramientas
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         <button
                           onClick={() => {
                             setShowBudgets(!showBudgets);
                             setShowMobileMenu(false);
                           }}
-                          className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
+                          className={`flex items-center justify-center space-x-1 px-2 py-3 rounded-lg transition-all duration-200 text-xs font-medium ${
                             showBudgets
                               ? darkMode
                                 ? 'bg-blue-600/90 text-white border border-blue-500'
@@ -1850,7 +1867,26 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                           }`}
                         >
                           <Target className="w-4 h-4" />
-                          <span>Presupuestos</span>
+                          <span>Presup.</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setShowSubscriptionPlans(!showSubscriptionPlans);
+                            setShowMobileMenu(false);
+                          }}
+                          className={`flex items-center justify-center space-x-1 px-2 py-3 rounded-lg transition-all duration-200 text-xs font-medium ${
+                            showSubscriptionPlans
+                              ? darkMode
+                                ? 'bg-purple-600/90 text-white border border-purple-500'
+                                : 'bg-purple-500 text-white border border-purple-400'
+                              : darkMode
+                                ? 'text-gray-300 hover:text-white hover:bg-gray-700/80 border border-gray-600'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          <Crown className="w-4 h-4" />
+                          <span>Planes</span>
                         </button>
                         
                         <button
@@ -1858,7 +1894,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                             setShowConfig(!showConfig);
                             setShowMobileMenu(false);
                           }}
-                          className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
+                          className={`flex items-center justify-center space-x-1 px-2 py-3 rounded-lg transition-all duration-200 text-xs font-medium ${
                             showConfig
                               ? darkMode
                                 ? 'bg-blue-600/90 text-white border border-blue-500'
@@ -1905,6 +1941,46 @@ const AppSupabase = ({ onNavigateToLanding }) => {
               ⚠️ Tu cuenta ha sido eliminada por un administrador. Ya no puedes navegar en la aplicación. 
               Por favor, contacta al soporte si crees que esto es un error.
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Tarjeta de Plan Actual - Solo Móviles */}
+      {isAuthenticated && (
+        <div className="sm:hidden bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Avatar
+                avatar={userProfile?.avatar}
+                avatarColor={userProfile?.avatar_color}
+                size="sm"
+              />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {userProfile?.display_name || user?.email?.split('@')[0] || 'Usuario'}
+                </h3>
+                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  subscriptionType === 'admin' 
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                    : subscriptionType === 'premium'
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                    : subscriptionType === 'family'
+                    ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                }`}>
+                  {subscriptionType === 'admin' ? '👑 Administrador' : 
+                   subscriptionType === 'premium' ? '⭐ Premium' : 
+                   subscriptionType === 'family' ? '❤️ Familia' : '🆓 Plan Free'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSubscriptionPlans(true)}
+              className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
+            >
+              <Crown className="w-3 h-3" />
+              <span>Ver Planes</span>
+            </button>
           </div>
         </div>
       )}
@@ -2011,6 +2087,35 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                 </div>
               </div>
             </div>
+          </div>
+        ) : showSubscriptionPlans ? (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className={`text-xl font-semibold ${textPrimaryClasses}`}>Planes de Suscripción</h2>
+              <button
+                onClick={() => setShowSubscriptionPlans(false)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  buttonPrimaryClasses
+                }`}
+              >
+                <ArrowUp className="w-4 h-4" />
+                <span>Volver al Dashboard</span>
+              </button>
+            </div>
+            
+            <SubscriptionPlans 
+              currentPlan={subscriptionType}
+              onSuccess={(result) => {
+                // Manejar éxito del pago
+                console.log('Payment successful:', result);
+                // Opcionalmente volver al dashboard después del pago
+                setShowSubscriptionPlans(false);
+              }}
+              onNavigateToExpenses={() => {
+                // Volver al dashboard después de un pago exitoso
+                setShowSubscriptionPlans(false);
+              }}
+            />
           </div>
         ) : showBudgets ? (
           <div>
