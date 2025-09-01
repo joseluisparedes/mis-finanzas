@@ -365,9 +365,7 @@ const AdminPanel = () => {
 ¿Te gustaría conocer nuestros planes Premium?
 
 💎 Premium mensual: S/ 15.00
-🎯 Premium anual: S/ 150.00 (2 meses gratis)
-
-¿En qué podemos ayudarte?`;
+🎯 Premium anual: S/ 150.00 (2 meses gratis)`;
     }
 
     // Si tiene suscripción Premium con fecha de vencimiento
@@ -434,19 +432,19 @@ const AdminPanel = () => {
 
 Tu plan Premium Early Bird está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
 
-¿En qué podemos ayudarte hoy?`;
+¡Disfruta de todas las funciones Premium!`;
         } else {
           return `¡Hola! Te contactamos desde Mis Finanzas.
 
 Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
 
-¿En qué podemos ayudarte hoy?`;
+¡Disfruta de todas las funciones Premium!`;
         }
       }
     }
 
     // Fallback general
-    return `¡Hola! Te contactamos desde Mis Finanzas. ¿En qué podemos ayudarte hoy?`;
+    return `¡Hola! Te contactamos desde Mis Finanzas. ¡Esperamos poder ayudarte!`;
   };
 
   // Handler para WhatsApp
