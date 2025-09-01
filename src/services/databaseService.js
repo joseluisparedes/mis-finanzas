@@ -1808,6 +1808,37 @@ class DatabaseService {
       throw error;
     }
   }
+
+  // Extender suscripción de usuario (solo admin)
+  async extendSubscription(userId, extensionPeriod, adminNotes = null) {
+    try {
+      const isAdmin = await this.isUserAdmin();
+      if (!isAdmin) {
+        throw new Error('No tienes permisos de administrador');
+      }
+
+      const { data, error } = await supabase
+        .rpc('admin_extend_subscription', {
+          target_user_id: userId,
+          extension_period: extensionPeriod,
+          admin_notes: adminNotes
+        });
+
+      if (error) {
+        console.error('❌ Error en RPC admin_extend_subscription:', error);
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Error desconocido al extender suscripción');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('❌ Error extendiendo suscripción:', error);
+      throw error;
+    }
+  }
 }
 
 // Instancia singleton

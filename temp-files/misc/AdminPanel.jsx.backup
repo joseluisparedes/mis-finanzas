@@ -142,7 +142,7 @@ const AdminPanel = () => {
         .from('subscription_change_log')
         .insert({
           user_id: userId,
-          admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+          admin_user_id: user.id,
           change_type: 'promotion',
           old_subscription_type: oldSubscription?.subscription_type || 'free',
           new_subscription_type: 'premium',
@@ -217,7 +217,7 @@ const AdminPanel = () => {
         .from('subscription_change_log')
         .insert({
           user_id: userId,
-          admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+          admin_user_id: user.id,
           change_type: 'promotion',
           old_subscription_type: oldSubscription?.subscription_type || 'free',
           new_subscription_type: 'family',
@@ -291,7 +291,7 @@ const AdminPanel = () => {
         .from('subscription_change_log')
         .insert({
           user_id: userId,
-          admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+          admin_user_id: user.id,
           change_type: 'demotion',
           old_subscription_type: oldSubscription?.subscription_type || 'premium',
           new_subscription_type: 'free',
@@ -330,22 +330,61 @@ const AdminPanel = () => {
       setActionLoading(`extend-${userId}-${extensionPeriod}`);
       console.log(`🔄 Extendiendo suscripción: ${userId}, período: ${extensionPeriod}`);
       
-      // Usar la función RPC del databaseService
-      const result = await databaseService.extendSubscription(
-        userId, 
-        extensionPeriod, 
-        `Extensión manual por administrador - ${periodText}`
-      );
+      // Función simple de extensión - por ahora actualizar directamente
+      const { data: currentUser, error: fetchError } = await supabase
+        .from('user_subscriptions')
+        .select('subscription_end_date, subscription_type')
+        .eq('user_id', userId)
+        .single();
 
-      if (result && result.success) {
-        setMessage({ 
-          type: 'success', 
-          text: result.message || `Suscripción de ${userEmail} extendida por ${periodText}`
-        });
-        await loadData();
-      } else {
-        throw new Error(result?.error || 'Error desconocido en la extensión');
+      if (fetchError) throw fetchError;
+
+      let newEndDate;
+      const currentEndDate = currentUser.subscription_end_date 
+        ? new Date(currentUser.subscription_end_date)
+        : new Date(); // Si no tiene fecha, empezar desde ahora
+
+      if (extensionPeriod === '30_days') {
+        newEndDate = new Date(currentEndDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+      } else if (extensionPeriod === '1_year') {
+        newEndDate = new Date(currentEndDate.getTime() + (365 * 24 * 60 * 60 * 1000));
       }
+
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({ 
+          subscription_end_date: newEndDate.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Registrar extensión en el log
+      const { error: logError } = await supabase
+        .from('subscription_change_log')
+        .insert({
+          user_id: userId,
+          admin_user_id: user.id,
+          change_type: 'extension',
+          old_subscription_type: currentUser.subscription_type,
+          new_subscription_type: currentUser.subscription_type,
+          old_end_date: currentUser.subscription_end_date,
+          new_end_date: newEndDate.toISOString(),
+          notes: `Extensión de suscripción por ${periodText}`,
+          payment_info: null
+        });
+
+      if (logError) {
+        console.warn('Error logging subscription extension:', logError);
+      }
+
+      setMessage({ 
+        type: 'success', 
+        text: `Suscripción de ${userEmail} extendida por ${periodText}. Nueva fecha: ${newEndDate.toLocaleDateString()}`
+      });
+      
+      await loadData();
     } catch (error) {
       console.error('❌ Error extendiendo suscripción:', error);
       setMessage({ type: 'error', text: `Error extendiendo suscripción: ${error.message}` });
@@ -405,7 +444,7 @@ const AdminPanel = () => {
         .from('admin_contact_log')
         .insert({
           target_user_id: user.user_id,
-          admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+          admin_user_id: user.id,
           contact_method: 'whatsapp',
           contact_reason: 'Contacto automático por estado de suscripción',
           contact_notes: message.substring(0, 200) + (message.length > 200 ? '...' : '')
@@ -449,7 +488,7 @@ const AdminPanel = () => {
         .from('admin_contact_log')
         .insert({
           target_user_id: user.user_id,
-          admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+          admin_user_id: user.id,
           contact_method: 'email',
           contact_reason: 'Contacto automático por estado de suscripción',
           contact_notes: message.substring(0, 200) + (message.length > 200 ? '...' : '')
@@ -1016,6 +1055,404 @@ const StatCard = ({ icon: Icon, title, value, color }) => {
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Componente AuditLogViewer para mostrar el historial de cambios y contactos
+const AuditLogViewer = () => {
+  const [changeLog, setChangeLog] = useState([]);
+  const [contactLog, setContactLog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [users, setUsers] = useState([]);
+  const [activeLogTab, setActiveLogTab] = useState('changes'); // 'changes' or 'contacts'
+
+  useEffect(() => {
+    loadChangeLog();
+    loadContactLog();
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          user_id,
+          auth.users!inner(email)
+        `);
+      
+      if (error) throw error;
+      
+      const uniqueUsers = data.reduce((acc, curr) => {
+        if (!acc.find(u => u.user_id === curr.user_id)) {
+          acc.push({
+            user_id: curr.user_id,
+            email: curr.auth?.users?.email || 'Unknown'
+          });
+        }
+        return acc;
+      }, []);
+      
+      setUsers(uniqueUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
+
+  const loadChangeLog = async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('subscription_change_log')
+        .select(`
+          *,
+          target_user:auth.users!subscription_change_log_user_id_fkey(email),
+          admin_user:auth.users!subscription_change_log_admin_user_id_fkey(email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (selectedUser) {
+        query = query.eq('user_id', selectedUser);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      setChangeLog(data || []);
+    } catch (error) {
+      console.error('Error loading change log:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadContactLog = async () => {
+    try {
+      let query = supabase
+        .from('admin_contact_log')
+        .select(`
+          *,
+          target_user:auth.users!admin_contact_log_target_user_id_fkey(email),
+          admin_user:auth.users!admin_contact_log_admin_user_id_fkey(email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (selectedUser) {
+        query = query.eq('target_user_id', selectedUser);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      setContactLog(data || []);
+    } catch (error) {
+      console.error('Error loading contact log:', error);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('es-PE', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getChangeTypeColor = (changeType) => {
+    const colors = {
+      promotion: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      demotion: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+      extension: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      activation: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      deactivation: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+    };
+    return colors[changeType] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+  };
+
+  const getChangeTypeText = (changeType) => {
+    const texts = {
+      promotion: 'Promoción',
+      demotion: 'Degradación',
+      extension: 'Extensión',
+      activation: 'Activación',
+      deactivation: 'Desactivación'
+    };
+    return texts[changeType] || changeType;
+  };
+
+  useEffect(() => {
+    loadChangeLog();
+    loadContactLog();
+  }, [selectedUser]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <span className="ml-2 text-gray-600 dark:text-gray-400">Cargando historial...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Historial Completo de Auditoría
+        </h2>
+        
+        {/* Filtro por usuario */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600 dark:text-gray-400">Filtrar por usuario:</label>
+          <select
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          >
+            <option value="">Todos los usuarios</option>
+            {users.map(user => (
+              <option key={user.user_id} value={user.user_id}>
+                {user.email}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Tabs para cambios y contactos */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveLogTab('changes')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeLogTab === 'changes'
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            📊 Cambios de Plan ({changeLog.length})
+          </button>
+          <button
+            onClick={() => setActiveLogTab('contacts')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeLogTab === 'contacts'
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            💬 Historial de Contactos ({contactLog.length})
+          </button>
+        </nav>
+      </div>
+
+      {/* Contenido según la tab activa */}
+      {activeLogTab === 'changes' ? (
+        changeLog.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              {selectedUser ? 'No hay cambios registrados para este usuario' : 'No hay cambios registrados'}
+            </p>
+          </div>
+        ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Usuario
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Tipo de Cambio
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Cambio
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Administrador
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Notas
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {changeLog.map((change) => (
+                  <tr key={change.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {formatDate(change.created_at)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {change.target_user?.email || 'Usuario eliminado'}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getChangeTypeColor(change.change_type)}`}>
+                        {getChangeTypeText(change.change_type)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-red-600 dark:text-red-400 font-medium">
+                            {change.old_subscription_type}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-green-600 dark:text-green-400 font-medium">
+                            {change.new_subscription_type}
+                          </span>
+                        </div>
+                        {(change.old_end_date || change.new_end_date) && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div>
+                              Fin anterior: {change.old_end_date ? formatDate(change.old_end_date) : 'Sin vencimiento'}
+                            </div>
+                            <div>
+                              Fin nuevo: {change.new_end_date ? formatDate(change.new_end_date) : 'Sin vencimiento'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {change.admin_user?.email || 'Sistema'}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <div className="max-w-xs">
+                        <p className="truncate" title={change.notes}>
+                          {change.notes}
+                        </p>
+                        {change.payment_info && (
+                          <div className="text-xs text-gray-400 mt-1">
+                            {change.payment_info.price && (
+                              <span>S/ {change.payment_info.price}</span>
+                            )}
+                            {change.payment_info.billing_period && (
+                              <span className="ml-2">({change.payment_info.billing_period})</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        )
+      ) : (
+        // Tab de Contactos
+        contactLog.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              {selectedUser ? 'No hay contactos registrados para este usuario' : 'No hay contactos registrados'}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Usuario Contactado
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Método
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Administrador
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Motivo
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Notas
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {contactLog.map((contact) => (
+                    <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {formatDate(contact.created_at)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {contact.target_user?.email || 'Usuario eliminado'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          contact.contact_method === 'whatsapp' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : contact.contact_method === 'email'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : contact.contact_method === 'phone'
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                        }`}>
+                          {contact.contact_method === 'whatsapp' && '📱 WhatsApp'}
+                          {contact.contact_method === 'email' && '✉️ Email'}
+                          {contact.contact_method === 'phone' && '📞 Teléfono'}
+                          {contact.contact_method === 'other' && '💬 Otro'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {contact.admin_user?.email || 'Sistema'}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="max-w-xs">
+                          <p className="truncate" title={contact.contact_reason}>
+                            {contact.contact_reason || 'No especificado'}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-block w-2 h-2 rounded-full ${
+                            contact.contact_successful 
+                              ? 'bg-green-500' 
+                              : 'bg-red-500'
+                          }`}></span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {contact.contact_successful ? 'Exitoso' : 'Fallido'}
+                          </span>
+                          {contact.response_received && (
+                            <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-1 py-0.5 rounded">
+                              Con respuesta
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="max-w-xs">
+                          <p className="truncate" title={contact.contact_notes}>
+                            {contact.contact_notes || '-'}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
 };

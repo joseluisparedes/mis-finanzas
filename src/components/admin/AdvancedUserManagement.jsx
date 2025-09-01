@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Download, Eye, Ban, Trash2, RotateCcw, 
   AlertTriangle, CheckCircle, Clock, Shield, Activity, Calendar,
-  FileDown, MoreVertical, UserX, UserCheck, Database, ArrowDown
+  FileDown, MoreVertical, UserX, UserCheck, Database, ArrowDown,
+  MessageCircle, Mail, Phone
 } from 'lucide-react';
 import { useUserSubscription, useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
@@ -55,27 +56,57 @@ const AdvancedUserManagement = () => {
     setLoading(true);
     try {
       console.log('🔄 Loading users data for AdvancedUserManagement...');
-      // Usar el mismo método que funciona en AdminPanel
-      const data = await getAllSubscriptions();
-      console.log('✅ Users data loaded:', data);
-      console.log('📊 Number of users found:', data?.length || 0);
+      
+      // Cargar datos de usuarios y estadísticas de contacto en paralelo
+      const [usersData, contactStats] = await Promise.all([
+        getAllSubscriptions(),
+        loadContactStats()
+      ]);
+      
+      console.log('✅ Users data loaded:', usersData);
+      console.log('📊 Contact stats loaded:', contactStats);
       
       // Filtrar usuarios que realmente tienen suscripción (no eliminados)
-      const validUsers = (data || []).filter(user => 
+      const validUsers = (usersData || []).filter(user => 
         user && user.user_id && user.subscription_type
       );
-      console.log('📊 Valid users after filtering:', validUsers.length);
       
-      if (validUsers.length > 0) {
-        console.log('👤 First user sample:', validUsers[0]);
-      }
+      // Combinar datos de usuarios con estadísticas de contacto
+      const usersWithContactStats = validUsers.map(user => {
+        const userStats = contactStats.find(stat => stat.user_id === user.user_id);
+        return {
+          ...user,
+          total_contacts: userStats?.total_contacts || 0,
+          email_contacts: userStats?.email_contacts || 0,
+          whatsapp_contacts: userStats?.whatsapp_contacts || 0,
+          phone_contacts: userStats?.phone_contacts || 0,
+          last_contact_date: userStats?.last_contact_date,
+          last_contact_method: userStats?.last_contact_method
+        };
+      });
       
-      setUsers(validUsers);
+      console.log('📊 Valid users with contact stats:', usersWithContactStats.length);
+      
+      setUsers(usersWithContactStats);
     } catch (error) {
       console.error('❌ Error loading users in AdvancedUserManagement:', error);
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadContactStats = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_all_users_contact_stats');
+      if (error) {
+        console.log('⚠️ No se pudieron cargar estadísticas de contacto:', error.message);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.log('⚠️ Error cargando estadísticas de contacto:', error);
+      return [];
     }
   };
 
@@ -592,7 +623,7 @@ const AdvancedUserManagement = () => {
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Registro
+                  Contacto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Acciones
@@ -634,6 +665,41 @@ const UserRowAdvanced = ({ user, onDelete, onReactivate, onExport, onDegrade, is
   const isActive = user.status === 'active';
   const isSuspended = user.status === 'suspended';
   const isDeleted = user.status === 'deleted';
+
+  const handlePhoneUpdate = async (userId, phoneNumber) => {
+    try {
+      console.log(`📱 Actualizando teléfono para usuario ${userId}:`, phoneNumber);
+      
+      const { data, error } = await supabase.rpc('admin_update_user_phone', {
+        target_user_id: userId,
+        new_phone_number: phoneNumber.trim() || null
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ Teléfono actualizado:', data.message);
+      // No necesitamos recargar toda la página, solo mostrar confirmación sutil
+    } catch (error) {
+      console.error('❌ Error actualizando teléfono:', error);
+      alert(`Error actualizando teléfono: ${error.message}`);
+    }
+  };
+
+  const handleContactLog = async (userId, method) => {
+    try {
+      const { data, error } = await supabase.rpc('log_admin_contact', {
+        target_user_id: userId,
+        contact_method: method,
+        contact_reason: `Contacto directo via ${method}`
+      });
+      
+      if (error) throw error;
+      
+      console.log(`📞 Contacto registrado: ${method} para usuario ${userId}`);
+    } catch (error) {
+      console.error('❌ Error registrando contacto:', error);
+    }
+  };
 
   const getSubscriptionBadge = () => {
     const config = {
@@ -689,7 +755,48 @@ const UserRowAdvanced = ({ user, onDelete, onReactivate, onExport, onDegrade, is
         {getStatusBadge()}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-        {new Date(user.created_at).toLocaleDateString('es-ES')}
+        <div className="space-y-1">
+          <div className="text-xs flex items-center">
+            <span className="font-medium">Email:</span> 
+            <span className="ml-1">{userEmail}</span>
+            <a
+              href={`mailto:${userEmail}`}
+              onClick={() => handleContactLog(user.user_id, 'email')}
+              className="ml-2 text-blue-600 hover:text-blue-700"
+              title="Enviar correo"
+            >
+              <Mail className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="text-xs flex items-center">
+            <span className="font-medium">Celular:</span> 
+            <input
+              type="text"
+              placeholder="Agregar número"
+              defaultValue={user.phone_number || ''}
+              onBlur={(e) => handlePhoneUpdate(user.user_id, e.target.value)}
+              className="ml-2 px-2 py-1 text-xs border border-gray-200 rounded w-24 focus:outline-none focus:border-purple-500"
+            />
+            {user.phone_number && (
+              <a
+                href={`https://wa.me/${user.phone_number.replace(/\D/g, '')}`}
+                onClick={() => handleContactLog(user.user_id, 'whatsapp')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 text-green-600 hover:text-green-700"
+                title="Contactar por WhatsApp"
+              >
+                <MessageCircle className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+          <div className="text-xs text-gray-400 flex items-center space-x-2">
+            <span>Registro: {new Date(user.created_at).toLocaleDateString('es-ES')}</span>
+            <span className="text-purple-600 font-medium" title="Contactos registrados">
+              📞 {user.total_contacts || 0}
+            </span>
+          </div>
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
         {/* Botón de exportar */}
