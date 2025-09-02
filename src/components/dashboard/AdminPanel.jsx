@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings } from 'lucide-react';
+import { Crown, Shield, Users, TrendingUp, AlertCircle, CheckCircle, Gift, Database, Settings, Filter, Search, ArrowUpDown, X } from 'lucide-react';
 import { useAdminFunctions } from '../../hooks/useUserSubscription';
 import { supabase } from '../../lib/supabase';
 import databaseService from '../../services/databaseService';
@@ -16,6 +16,13 @@ const AdminPanel = () => {
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('advanced'); // 'users' | 'promotions' | 'advanced' | 'audit' | 'payments'
   const [expiringSubscriptions, setExpiringSubscriptions] = useState([]);
+
+  // Estados para filtros de usuarios
+  const [userFilters, setUserFilters] = useState({
+    dateFilter: 'all', // 'today', 'yesterday', 'week', 'all'
+    emailSearch: '',
+    sortOrder: 'desc' // 'asc', 'desc'
+  });
 
   const {
     isAdmin,
@@ -562,6 +569,60 @@ Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
     }
   };
 
+  // Función para filtrar y ordenar usuarios
+  const getFilteredUsers = () => {
+    return users.filter(user => {
+      // Filtro por email
+      if (userFilters.emailSearch) {
+        const email = user.email || '';
+        if (!email.toLowerCase().includes(userFilters.emailSearch.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filtro por fecha de registro
+      if (userFilters.dateFilter !== 'all') {
+        const userDate = new Date(user.created_at || user.started_at);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() - 7);
+
+        // Normalizar fechas para comparación (sin horas)
+        const userDateOnly = new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate());
+        const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+        switch (userFilters.dateFilter) {
+          case 'today':
+            if (userDateOnly.getTime() !== todayOnly.getTime()) return false;
+            break;
+          case 'yesterday':
+            if (userDateOnly.getTime() !== yesterdayOnly.getTime()) return false;
+            break;
+          case 'week':
+            if (userDate < weekStart) return false;
+            break;
+          default:
+            break;
+        }
+      }
+
+      return true;
+    }).sort((a, b) => {
+      // Ordenar por fecha de registro
+      const dateA = new Date(a.created_at || a.started_at);
+      const dateB = new Date(b.created_at || b.started_at);
+      
+      if (userFilters.sortOrder === 'asc') {
+        return dateA - dateB;
+      } else {
+        return dateB - dateA;
+      }
+    });
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -750,6 +811,104 @@ Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
                   Gestión de Usuarios
                 </h2>
               </div>
+
+              {/* Filtros de Usuarios */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-end">
+                  
+                  {/* Búsqueda por Email */}
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Buscar por email
+                    </label>
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={userFilters.emailSearch}
+                        onChange={(e) => setUserFilters({...userFilters, emailSearch: e.target.value})}
+                        placeholder="Filtrar por correo electrónico..."
+                        className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Filtro por Fecha de Registro */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Fecha de registro
+                    </label>
+                    <select
+                      value={userFilters.dateFilter}
+                      onChange={(e) => setUserFilters({...userFilters, dateFilter: e.target.value})}
+                      className="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="all">Todos los usuarios</option>
+                      <option value="today">Hoy</option>
+                      <option value="yesterday">Ayer</option>
+                      <option value="week">Esta semana</option>
+                    </select>
+                  </div>
+
+                  {/* Ordenamiento */}
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Ordenar por fecha
+                    </label>
+                    <div className="flex">
+                      <button
+                        onClick={() => setUserFilters({...userFilters, sortOrder: userFilters.sortOrder === 'desc' ? 'asc' : 'desc'})}
+                        className="flex items-center space-x-2 py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-purple-500 text-gray-700 dark:text-gray-300"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                        <span className="text-sm">
+                          {userFilters.sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Botón Limpiar */}
+                  <div>
+                    <button
+                      onClick={() => setUserFilters({
+                        dateFilter: 'all',
+                        emailSearch: '',
+                        sortOrder: 'desc'
+                      })}
+                      className="flex items-center space-x-2 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-purple-500 text-gray-700 dark:text-gray-300"
+                    >
+                      <X className="w-4 h-4" />
+                      <span className="text-sm">Limpiar</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Información de filtros activos */}
+                {(userFilters.dateFilter !== 'all' || userFilters.emailSearch || userFilters.sortOrder !== 'desc') && (
+                  <div className="mt-3 flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                    <Filter className="w-4 h-4" />
+                    <span>Filtros activos:</span>
+                    {userFilters.emailSearch && (
+                      <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
+                        Email: {userFilters.emailSearch}
+                      </span>
+                    )}
+                    {userFilters.dateFilter !== 'all' && (
+                      <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                        {userFilters.dateFilter === 'today' && 'Hoy'}
+                        {userFilters.dateFilter === 'yesterday' && 'Ayer'}
+                        {userFilters.dateFilter === 'week' && 'Esta semana'}
+                      </span>
+                    )}
+                    {userFilters.sortOrder !== 'desc' && (
+                      <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                        Más antiguos primero
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -776,7 +935,7 @@ Tu plan Premium está activo hasta el ${endDate.toLocaleDateString('es-PE')}.
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {users.map((user) => (
+                    {getFilteredUsers().map((user) => (
                       <UserRow
                         key={user.user_id}
                         user={user}

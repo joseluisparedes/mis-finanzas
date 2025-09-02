@@ -173,7 +173,8 @@ export const useUserSubscription = () => {
   const isFree = subscriptionType === 'free' && isActive;
   const isPremium = subscriptionType === 'premium' && isActive;
   const isFamily = subscriptionType === 'family' && isActive;
-  const isAdmin = subscriptionType === 'admin' && isActive;
+  // Los administradores siempre tienen permisos completos, independientemente del status
+  const isAdmin = subscriptionType === 'admin';
 
   // Early Bird
   const isEarlyBird = subscription?.subscription?.is_early_bird || false;
@@ -187,8 +188,10 @@ export const useUserSubscription = () => {
   const canCreateTransaction = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.monthly_transactions?.available;
     return available === -1 || available > 0;
   };
@@ -196,8 +199,10 @@ export const useUserSubscription = () => {
   const canCreateBudget = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.budgets?.available;
     return available === -1 || available > 0;
   };
@@ -205,8 +210,10 @@ export const useUserSubscription = () => {
   const canCreateCategory = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.categories?.available;
     return available === -1 || available > 0;
   };
@@ -214,8 +221,10 @@ export const useUserSubscription = () => {
   const canCreatePaymentMethod = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.payment_methods?.available;
     return available === -1 || available > 0;
   };
@@ -223,8 +232,10 @@ export const useUserSubscription = () => {
   const canCreateIncomeType = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.income_types?.available;
     return available === -1 || available > 0;
   };
@@ -232,8 +243,10 @@ export const useUserSubscription = () => {
   const canCreateRecurringTransaction = () => {
     // BLOQUEO: Usuarios eliminados NO pueden hacer nada
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre pueden crear
+    if (isAdmin) return true;
     if (!isActive) return false;
-    if (isPremium || isFamily || isAdmin) return true;
+    if (isPremium || isFamily || isEarlyBird) return true;
     const available = limits.recurring_transactions?.available;
     return available === -1 || available > 0;
   };
@@ -242,33 +255,41 @@ export const useUserSubscription = () => {
   const canUseMultiCurrency = () => {
     // BLOQUEO: Usuarios eliminados NO pueden usar features
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre tienen acceso
+    if (isAdmin) return true;
     if (!isActive) return false;
-    return isPremium || isFamily || isAdmin || features.multi_currency_enabled;
+    return isPremium || isFamily || isEarlyBird || features.multi_currency_enabled;
   };
 
   const canExportExcel = () => {
     // BLOQUEO: Usuarios eliminados NO pueden usar features
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre tienen acceso
+    if (isAdmin) return true;
     if (!isActive) return false;
-    return isPremium || isFamily || isAdmin || features.excel_export_enabled;
+    return isPremium || isFamily || isEarlyBird || features.excel_export_enabled;
   };
 
   const canImportExcel = () => {
     // BLOQUEO: Usuarios eliminados NO pueden usar features
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre tienen acceso
+    if (isAdmin) return true;
     if (!isActive) return false;
-    return isPremium || isFamily || isAdmin || features.excel_import_enabled;
+    return isPremium || isFamily || isEarlyBird || features.excel_import_enabled;
   };
 
   const canUseAdvancedReports = () => {
     // BLOQUEO: Usuarios eliminados NO pueden usar features
     if (isUserDeleted || subscriptionStatus === 'deleted') return false;
+    // Administradores siempre tienen acceso
+    if (isAdmin) return true;
     if (!isActive) return false;
-    return isPremium || isFamily || isAdmin || features.advanced_reports_enabled;
+    return isPremium || isFamily || isEarlyBird || features.advanced_reports_enabled;
   };
 
   const getReportMonthsLimit = () => {
-    if (isPremium || isFamily || isAdmin) return -1; // Ilimitado
+    if (isPremium || isFamily || isAdmin || isEarlyBird) return -1; // Ilimitado
     return features.report_months_limit || 3;
   };
 
@@ -289,7 +310,7 @@ export const useUserSubscription = () => {
 
   // Función para verificar si se debe mostrar mensaje de upgrade
   const shouldShowUpgradeMessage = (limitType) => {
-    if (isPremium || isFamily || isAdmin) return false;
+    if (isPremium || isFamily || isAdmin || isEarlyBird) return false;
     const status = getLimitStatus(limitType);
     return !status.unlimited && status.available <= 0;
   };

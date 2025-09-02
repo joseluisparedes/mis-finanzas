@@ -182,6 +182,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
   // Mostrar estado de carga mientras se verifica la suscripción
   const isSubscriptionReady = !subscriptionLoading && subscription !== undefined;
 
+
   // Variables derivadas
   const recurringIncomes = recurringExpenses.filter(r => r.transaction_type === 'income');
   const actualRecurringExpenses = recurringExpenses.filter(r => r.transaction_type === 'expense');
@@ -569,6 +570,16 @@ const AppSupabase = ({ onNavigateToLanding }) => {
     category: ''
   });
 
+  // Estados para filtros específicos de gastos
+  const [expenseFilters, setExpenseFilters] = useState({
+    dateFilter: 'all', // 'today', 'month', 'all'
+    selectedMonth: (() => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    })(),
+    sortOrder: 'desc' // 'asc', 'desc'
+  });
+
   // Estados para filtros de reportes (separados) - inicializar con mes actual
   const [reportFilters, setReportFilters] = useState(() => {
     const now = new Date();
@@ -943,9 +954,67 @@ const AppSupabase = ({ onNavigateToLanding }) => {
     });
   };
 
+  // Función con filtros avanzados para gastos
+  const getAdvancedFilteredExpenses = () => {
+    return expenses.filter(expense => {
+      const paymentMethod = paymentMethods.find(pm => pm.id === expense.payment_method_id);
+      const assignmentDate = getCreditCardAssignmentMonth(expense.date, paymentMethod);
+      const assignmentDateObj = new Date(assignmentDate);
+      const expenseDate = new Date(expense.date + 'T00:00:00');
+      
+      // Filtros originales
+      const startDate = filters.startDate ? new Date(filters.startDate) : null;
+      const endDate = filters.endDate ? new Date(filters.endDate) : null;
+      
+      if (startDate && assignmentDateObj < startDate) return false;
+      if (endDate && assignmentDateObj > endDate) return false;
+      if (filters.paymentMethod && expense.payment_method_id !== filters.paymentMethod) return false;
+      if (filters.category && expense.category_id !== filters.category) return false;
+
+      // Nuevos filtros específicos de gastos
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      switch (expenseFilters.dateFilter) {
+        case 'today':
+          const expenseDateOnly = new Date(expenseDate);
+          expenseDateOnly.setHours(0, 0, 0, 0);
+          if (expenseDateOnly.getTime() !== today.getTime()) return false;
+          break;
+          
+        case 'month':
+          const selectedMonthYear = expenseFilters.selectedMonth.split('-');
+          const selectedYear = parseInt(selectedMonthYear[0]);
+          const selectedMonth = parseInt(selectedMonthYear[1]) - 1;
+          
+          if (expenseDate.getFullYear() !== selectedYear || expenseDate.getMonth() !== selectedMonth) {
+            return false;
+          }
+          break;
+          
+        case 'all':
+        default:
+          // No filter
+          break;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      // Ordenamiento por monto
+      const amountA = parseFloat(a.amount) || 0;
+      const amountB = parseFloat(b.amount) || 0;
+      
+      if (expenseFilters.sortOrder === 'asc') {
+        return amountA - amountB;
+      } else {
+        return amountB - amountA;
+      }
+    });
+  };
+
   // Función simplificada para obtener gastos filtrados
   const getSearchedExpenses = () => {
-    return getFilteredExpenses();
+    return getAdvancedFilteredExpenses();
   };
 
   const getFilteredIncomes = () => {
@@ -3489,8 +3558,94 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                 {/* Lista de Gastos */}
                 <div className={cardClasses}>
                   <div className={`p-6 border-b transition-colors duration-200 ${'border-gray-200 dark:border-dark-border'}`}>
-                    <div className="flex justify-between items-center">
-                      <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Gastos</h3>
+                    <div className="flex flex-col space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className={`text-lg font-semibold ${textPrimaryClasses}`}>Gastos</h3>
+                      </div>
+                      
+                      {/* Filtros de Gastos */}
+                      <div className="flex flex-wrap gap-4 items-end">
+                        {/* Filtro por Fecha */}
+                        <div className="flex-1 min-w-[150px]">
+                          <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                            Filtrar por fecha
+                          </label>
+                          <select
+                            value={expenseFilters.dateFilter}
+                            onChange={(e) => setExpenseFilters({...expenseFilters, dateFilter: e.target.value})}
+                            className={selectClasses}
+                          >
+                            <option value="all">Históricos (todos)</option>
+                            <option value="today">Hoy</option>
+                            <option value="month">Por mes</option>
+                          </select>
+                        </div>
+                        
+                        {/* Selector de Mes (solo visible cuando dateFilter === 'month') */}
+                        {expenseFilters.dateFilter === 'month' && (
+                          <div className="flex-1 min-w-[150px]">
+                            <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                              Mes
+                            </label>
+                            <input
+                              type="month"
+                              value={expenseFilters.selectedMonth}
+                              onChange={(e) => setExpenseFilters({...expenseFilters, selectedMonth: e.target.value})}
+                              className={inputClasses}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Ordenar por Monto */}
+                        <div className="flex-1 min-w-[150px]">
+                          <label className={`block text-sm font-medium mb-1 ${textSecondaryClasses}`}>
+                            Ordenar por monto
+                          </label>
+                          <select
+                            value={expenseFilters.sortOrder}
+                            onChange={(e) => setExpenseFilters({...expenseFilters, sortOrder: e.target.value})}
+                            className={selectClasses}
+                          >
+                            <option value="desc">Mayor a menor</option>
+                            <option value="asc">Menor a mayor</option>
+                          </select>
+                        </div>
+                        
+                        {/* Botón para limpiar filtros */}
+                        <div>
+                          <button
+                            onClick={() => setExpenseFilters({
+                              dateFilter: 'all',
+                              selectedMonth: (() => {
+                                const now = new Date();
+                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                              })(),
+                              sortOrder: 'desc'
+                            })}
+                            className={`px-4 py-2 text-sm rounded-md border transition-colors ${
+                              darkMode 
+                                ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <X className="w-4 h-4 inline mr-1" />
+                            Limpiar
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Información de filtros activos */}
+                      {(expenseFilters.dateFilter !== 'all' || expenseFilters.sortOrder !== 'desc') && (
+                        <div className={`text-sm flex items-center space-x-2 ${textMutedClasses}`}>
+                          <Filter className="w-4 h-4" />
+                          <span>
+                            Filtros activos:
+                            {expenseFilters.dateFilter === 'today' && ' Hoy'}
+                            {expenseFilters.dateFilter === 'month' && ` ${expenseFilters.selectedMonth}`}
+                            {expenseFilters.sortOrder === 'asc' && ' • Menor a mayor'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   

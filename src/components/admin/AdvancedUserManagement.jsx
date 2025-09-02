@@ -596,6 +596,7 @@ const AdvancedUserManagement = () => {
             <option value="all">Todas las suscripciones</option>
             <option value="free">Free</option>
             <option value="premium">Premium</option>
+            <option value="family">Family</option>
             <option value="admin">Admin</option>
           </select>
         </div>
@@ -701,18 +702,33 @@ const UserRowAdvanced = ({ user, onDelete, onReactivate, onExport, onDegrade, is
     }
   };
 
-  const getSubscriptionBadge = () => {
+  const getSubscriptionBadge = (user) => {
+    // Debug temporal
+    console.log('🐛 User subscription data:', {
+      user_id: user.user_id,
+      subscription_type: user.subscription_type,
+      type: user.type,
+      is_early_bird: user.is_early_bird,
+      full_user: user
+    });
+    
     const config = {
       free: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', text: 'Free' },
       premium: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', text: 'Premium' },
+      family: { color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200', text: 'Family' },
       admin: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200', text: 'Admin' }
     };
     
-    const { color, text } = config[user.subscription_type] || config.free;
+    const subscriptionType = user.subscription_type || user.type || 'free';
+    const { color, text } = config[subscriptionType] || config.free;
+    
+    // Verificar si es Early Bird
+    const isEarlyBird = user.is_early_bird || false;
+    const displayText = subscriptionType === 'premium' && isEarlyBird ? 'Premium (Early Bird)' : text;
     
     return (
       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
-        {text}
+        {displayText}
       </span>
     );
   };
@@ -749,7 +765,7 @@ const UserRowAdvanced = ({ user, onDelete, onReactivate, onExport, onDegrade, is
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        {getSubscriptionBadge()}
+        {getSubscriptionBadge(user)}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         {getStatusBadge()}
