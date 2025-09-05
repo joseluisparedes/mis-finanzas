@@ -7,25 +7,25 @@ const DYNAMIC_CACHE_NAME = 'misfinanzas-dynamic-v1.0.0';
 
 // Recursos estáticos para cachear durante la instalación
 const STATIC_RESOURCES = [
-  '/mis-finanzas/',
-  '/mis-finanzas/index.html',
-  '/mis-finanzas/manifest.json',
-  '/mis-finanzas/icons/icon-192x192.svg',
-  '/mis-finanzas/icons/icon-512x512.svg',
-  '/mis-finanzas/icons/favicon.svg'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
+  '/icons/favicon.svg'
 ];
 
 // Recursos dinámicos importantes
 const IMPORTANT_ROUTES = [
-  '/mis-finanzas/#balance',
-  '/mis-finanzas/#gastos', 
-  '/mis-finanzas/#ingresos',
-  '/mis-finanzas/#reportes'
+  '/#balance',
+  '/#gastos', 
+  '/#ingresos',
+  '/#reportes'
 ];
 
 // URLs que NO deben cachearse
 const EXCLUDE_FROM_CACHE = [
-  '/mis-finanzas/health-check',
+  '/health-check',
   'chrome-extension://',
   'extension://',
   'analytics',
@@ -220,7 +220,7 @@ function isNavigation(request) {
 async function fallbackResponse(request) {
   if (isNavigation(request)) {
     // Fallback a página principal para navegación
-    const cachedIndex = await caches.match('/mis-finanzas/index.html');
+    const cachedIndex = await caches.match('/index.html');
     if (cachedIndex) {
       return cachedIndex;
     }
@@ -271,8 +271,8 @@ self.addEventListener('push', event => {
     event.waitUntil(
       self.registration.showNotification(notificationData.title, {
         body: notificationData.body,
-        icon: '/mis-finanzas/icons/icon-192x192.svg',
-        badge: '/mis-finanzas/icons/favicon.svg',
+        icon: '/icons/icon-192x192.svg',
+        badge: '/icons/favicon.svg',
         data: notificationData.data
       })
     );
@@ -288,7 +288,7 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   
   event.waitUntil(
-    self.clients.openWindow(event.notification.data?.url || '/mis-finanzas/')
+    self.clients.openWindow(event.notification.data?.url || '/')
   );
 });
 
