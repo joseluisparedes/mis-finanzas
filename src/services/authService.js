@@ -181,12 +181,15 @@ class AuthService {
       if (hostname === 'joseluisparedes.github.io') {
         // Producción en GitHub Pages
         redirectTo = 'https://joseluisparedes.github.io/mis-finanzas/';
+      } else if (hostname === 'appdemisfinanzas.com') {
+        // Producción en dominio personalizado
+        redirectTo = 'https://appdemisfinanzas.com/';
       } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // Desarrollo local - CORREGIDO: incluir /mis-finanzas/
-        redirectTo = currentOrigin + '/mis-finanzas/';
+        // Desarrollo local
+        redirectTo = currentOrigin + '/';
       } else if (hostname.includes('netlify') || hostname.includes('vercel')) {
         // Otros servicios de hosting
-        redirectTo = currentOrigin + '/mis-finanzas/';
+        redirectTo = currentOrigin + '/';
       } else {
         // Fallback: usar la URL actual sin parámetros
         const baseUrl = currentUrl.split('?')[0].split('#')[0];

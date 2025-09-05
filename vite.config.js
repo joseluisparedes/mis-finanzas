@@ -35,8 +35,8 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/mis-finanzas/',
-        start_url: '/mis-finanzas/',
+        scope: '/',
+        start_url: '/',
         categories: ['finance', 'productivity', 'lifestyle'],
         lang: 'es',
         icons: [
@@ -86,7 +86,7 @@ export default defineConfig({
       }
     })
   ],
-  base: '/mis-finanzas/',
+  base: '/',
   server: {
     port: 3000,
     open: true,

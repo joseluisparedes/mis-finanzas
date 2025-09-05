@@ -41,7 +41,7 @@ const App = () => {
 
   const handleNavigateToLanding = () => {
     setCurrentView('landing');
-    window.history.pushState({}, '', '/mis-finanzas/');
+    window.history.pushState({}, '', '/');
   };
 
   const handleOpenLoginModal = () => {
