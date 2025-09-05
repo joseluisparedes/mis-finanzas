@@ -230,20 +230,99 @@ class AuthService {
   // Cerrar sesión
   async signOut() {
     try {
+      // Intentar cerrar sesión normalmente
       const { error } = await supabase.auth.signOut();
       
-      if (error) {
+      // Si hay error pero es por sesión perdida, continuar con limpieza local
+      if (error && !error.message.includes('session missing') && !error.message.includes('Auth session missing')) {
         throw new Error(this.mapErrorMessage(error.message));
       }
 
+      // Limpiar estado local independientemente del resultado de Supabase
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      this.notifyListeners({ type: 'SIGNED_OUT' });
+
+      // Limpiar localStorage si existe algún dato de sesión
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('supabase.auth.token') || key.includes('auth-token'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      } catch (storageError) {
+        console.warn('Error limpiando localStorage:', storageError);
+      }
+
+      console.log('Session cleared successfully');
       return { success: true };
 
     } catch (error) {
       console.error('Sign out error:', error);
+      
+      // Incluso si hay error, limpiar estado local como fallback
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      this.notifyListeners({ type: 'SIGNED_OUT' });
+      
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        localCleanup: true // Indica que se hizo limpieza local
       };
+    }
+  }
+
+  // Limpieza forzada de sesión (método de emergencia)
+  forceSignOut() {
+    try {
+      // Limpiar estado local
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      this.notifyListeners({ type: 'SIGNED_OUT' });
+
+      // Limpiar todo localStorage relacionado con auth
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.startsWith('supabase.auth') || 
+            key.includes('auth-token') ||
+            key.includes('access_token') ||
+            key.includes('refresh_token')
+          )) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('Force logout: localStorage cleaned');
+      } catch (storageError) {
+        console.warn('Error en limpieza forzada de localStorage:', storageError);
+      }
+
+      // Limpiar cookies relacionadas con auth
+      try {
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        console.log('Force logout: cookies cleaned');
+      } catch (cookieError) {
+        console.warn('Error limpiando cookies:', cookieError);
+      }
+
+      // Recargar la página para asegurar limpieza completa
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+
+      return { success: true, forced: true };
+    } catch (error) {
+      console.error('Force sign out error:', error);
+      return { success: false, error: error.message };
     }
   }
 
