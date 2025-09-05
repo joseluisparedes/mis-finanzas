@@ -35,8 +35,14 @@ class AuthService {
           console.error('Error processing OAuth tokens:', sessionError);
         }
         
-        // Limpiar la URL de los tokens
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Limpiar la URL de los tokens OAuth completamente
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // También limpiar hash si quedó alguno
+        if (window.location.hash) {
+          window.location.hash = '';
+        }
       }
       
       // Obtener sesión actual

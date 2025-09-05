@@ -38,6 +38,8 @@ jobs:
           **/.git*/**
           **/node_modules/**
           **/.env*
+        dangerous-clean-slate: false
+        log-level: verbose
         
     - name: Verify deployment
       run: |
