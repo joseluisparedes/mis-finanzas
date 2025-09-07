@@ -1,5 +1,6 @@
 import React from 'react';
 import { useUserSubscription } from '../../hooks/useUserSubscription';
+import authService from '../../services/authService';
 
 const DeletedUserBlock = ({ children, showMessage = true }) => {
   const { isUserDeleted, subscriptionStatus, loading } = useUserSubscription();
@@ -43,9 +44,16 @@ const DeletedUserBlock = ({ children, showMessage = true }) => {
               </button>
               
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                    window.location.href = '/auth/logout';
+                    try {
+                      await authService.signOut();
+                      // La redirección la maneja authService
+                    } catch (error) {
+                      console.error('Error al cerrar sesión:', error);
+                      // Fallback: forzar recarga
+                      window.location.reload();
+                    }
                   }
                 }}
                 className="w-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors"
