@@ -15,7 +15,6 @@ import {
   Users,
   Zap,
   ArrowRight,
-  Play,
   PiggyBank,
   CreditCard,
   Globe,
@@ -327,10 +326,12 @@ const LandingPage = ({ onNavigateToApp, onNavigateToLogin, onOpenLoginModal, onC
                 </span>
               </button>
               
-              <button className="group border-2 border-white/30 text-white hover:bg-white/10 px-10 py-5 rounded-2xl text-xl font-bold transition-all backdrop-blur-sm hover:border-white/50">
+              <button 
+                onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                className="group border-2 border-white/30 text-white hover:bg-white/10 px-10 py-5 rounded-2xl text-xl font-bold transition-all backdrop-blur-sm hover:border-white/50">
                 <span className="flex items-center justify-center">
-                  <Play className="w-6 h-6 mr-3" />
-                  Ver Demo
+                  <BarChart3 className="w-6 h-6 mr-3" />
+                  Ver Características
                 </span>
               </button>
             </div>
