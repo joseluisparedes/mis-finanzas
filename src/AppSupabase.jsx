@@ -276,7 +276,6 @@ const AppSupabase = ({ onNavigateToLanding }) => {
   });
   
   // Estados para transacciones recurrentes
-  const [showRecurring, setShowRecurring] = useState(false);
   const [recurringTransactionType, setRecurringTransactionType] = useState('expense');
   const [newRecurringExpense, setNewRecurringExpense] = useState({
     description: '',
@@ -289,8 +288,6 @@ const AppSupabase = ({ onNavigateToLanding }) => {
     isActive: true
   });
   
-  // Estados para tipos de gráficos
-  const [chartType, setChartType] = useState('pie');
   
   // Estados para secciones expandibles en Detalle de Balance
   const [expandedSections, setExpandedSections] = useState({
@@ -602,6 +599,10 @@ const AppSupabase = ({ onNavigateToLanding }) => {
     field: 'date', // 'date', 'amount', 'description'
     direction: 'desc' // 'asc', 'desc'
   });
+  
+  // Estado para paginación de transacciones
+  const [transactionsToShow, setTransactionsToShow] = useState(20);
+  
   const [trendPeriod, setTrendPeriod] = useState('3');
 
   // Estados para configuración
@@ -653,6 +654,11 @@ const AppSupabase = ({ onNavigateToLanding }) => {
       localStorage.setItem('finanzas-theme', 'light');
     }
   }, [darkMode]);
+
+  // Resetear paginación cuando cambien los filtros
+  useEffect(() => {
+    setTransactionsToShow(20);
+  }, [reportFilters, transactionSort]);
 
   // Sistema de clases mejorado para dark mode
   const cardClasses = "bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg shadow-sm dark:shadow-lg transition-all duration-300";
@@ -4374,52 +4380,6 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                     </div>
                   </div>
                   
-                  {/* Selector de tipo de gráfico */}
-                  <div className="mt-4 border-t pt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Gráfico:</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <button
-                        onClick={() => setChartType('pie')}
-                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                          chartType === 'pie' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        🥧 Circular
-                      </button>
-                      <button
-                        onClick={() => setChartType('donut')}
-                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                          chartType === 'donut' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        🍩 Dona
-                      </button>
-                      <button
-                        onClick={() => setChartType('bar')}
-                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                          chartType === 'bar' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        📊 Barras
-                      </button>
-                      <button
-                        onClick={() => setChartType('area')}
-                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                          chartType === 'area' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        📈 Área
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Título del período */}
@@ -4516,8 +4476,10 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                     {(() => {
                       const filteredExpenses = getReportFilteredExpenses();
                       
-                      // Generar gastos recurrentes para el período filtrado
-                      const recurringExpensesInPeriod = generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate);
+                      // Generar gastos recurrentes para el período filtrado solo si showRecurring está activado
+                      const recurringExpensesInPeriod = reportFilters.showRecurring 
+                        ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
+                        : [];
                       
                       const categoryStats = categories.map(category => {
                         const categoryExpenses = filteredExpenses.filter(expense => expense.category_id === category.id);
@@ -4549,79 +4511,17 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                         <>
                           <div className="h-64 mb-4">
                             <ResponsiveContainer width="100%" height="100%">
-                              {chartType === 'pie' && (
-                                <PieChart>
-                                  <Pie
-                                    data={categoryStats}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                  >
-                                    {categoryStats.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
-                                </PieChart>
-                              )}
-                              
-                              {chartType === 'donut' && (
-                                <PieChart>
-                                  <Pie
-                                    data={categoryStats}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={40}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                  >
-                                    {categoryStats.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
-                                </PieChart>
-                              )}
-                              
-                              {chartType === 'bar' && (
-                                <BarChart data={categoryStats}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="name" />
-                                  <YAxis />
-                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
-                                  <Bar dataKey="value" fill="#3B82F6">
-                                    {categoryStats.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                  </Bar>
-                                </BarChart>
-                              )}
-                              
-                              {chartType === 'area' && (
-                                <AreaChart data={categoryStats}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="name" />
-                                  <YAxis />
-                                  <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
-                                  <Area 
-                                    type="monotone" 
-                                    dataKey="value" 
-                                    stroke="#3B82F6" 
-                                    fill="url(#colorGradient)" 
-                                  />
-                                  <defs>
-                                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                  </defs>
-                                </AreaChart>
-                              )}
+                              <BarChart data={categoryStats}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip formatter={(value) => [`S/. ${Number(value).toFixed(2)}`, 'Total']} />
+                                <Bar dataKey="value">
+                                  {categoryStats.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Bar>
+                              </BarChart>
                             </ResponsiveContainer>
                           </div>
                           
@@ -4654,8 +4554,10 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                     {(() => {
                       const filteredExpenses = getReportFilteredExpenses();
                       
-                      // Generar gastos recurrentes para el período filtrado
-                      const recurringExpensesInPeriod = generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate);
+                      // Generar gastos recurrentes para el período filtrado solo si showRecurring está activado
+                      const recurringExpensesInPeriod = reportFilters.showRecurring 
+                        ? generateRecurringExpenses(reportFilters.startDate, reportFilters.endDate)
+                        : [];
                       
                       // Combinar gastos normales y recurrentes
                       const allExpenses = [...filteredExpenses, ...recurringExpensesInPeriod];
@@ -4849,7 +4751,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                         );
                       }
 
-                      return sortedTransactions.slice(0, 20).map(transaction => (
+                      return sortedTransactions.slice(0, transactionsToShow).map(transaction => (
                         <div key={`${transaction.type}-${transaction.id}`} className="p-4 hover:bg-gray-50">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -4914,11 +4816,19 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                       : [];
                     const totalTransactions = filteredExpenses.length + filteredIncomes.length + recurringExpensesInPeriod.length + recurringIncomesInPeriod.length;
                     
-                    return totalTransactions > 20 && (
+                    return totalTransactions > transactionsToShow && (
                       <div className="p-4 text-center border-t border-gray-200">
-                        <p className="text-blue-600 text-sm font-medium">
-                          Mostrando 20 de {totalTransactions} transacciones
+                        <p className="text-blue-600 text-sm font-medium mb-3">
+                          Mostrando {transactionsToShow} de {totalTransactions} transacciones
                         </p>
+                        <button 
+                          onClick={() => {
+                            setTransactionsToShow(prev => prev + 20);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                        >
+                          Cargar 20 más
+                        </button>
                       </div>
                     );
                   })()}
