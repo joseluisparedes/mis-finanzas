@@ -103,9 +103,9 @@ const PDFExport = ({
           <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #16A34A; font-weight: 600; border-bottom: 1px solid #16A34A; padding-bottom: 3px;">
             💰 INGRESOS DEL MES (${incomes.length})
           </h3>
-          <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px; max-height: 200px; overflow: hidden;">
-            ${incomes.slice(0, 8).map((income, index) => `
-              <div style="padding: 6px 10px; border-bottom: ${index === incomes.slice(0, 8).length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center;">
+          <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
+            ${incomes.map((income, index) => `
+              <div style="padding: 6px 10px; border-bottom: ${index === incomes.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid;">
                 <div style="flex: 1;">
                   <p style="margin: 0; font-size: 10px; font-weight: 600; color: #333;">${(income.description || '').substring(0, 50)}${(income.description || '').length > 50 ? '...' : ''}</p>
                   <p style="margin: 1px 0 0 0; font-size: 8px; color: #666;">${new Date(income.date).toLocaleDateString('es-ES')}</p>
@@ -115,11 +115,6 @@ const PDFExport = ({
                 </div>
               </div>
             `).join('')}
-            ${incomes.length > 8 ? `
-              <div style="padding: 4px 10px; background: #f9fafb; text-align: center;">
-                <p style="margin: 0; font-size: 8px; color: #666; font-style: italic;">... y ${incomes.length - 8} ingresos más</p>
-              </div>
-            ` : ''}
           </div>
         </div>
         ` : `
@@ -138,9 +133,9 @@ const PDFExport = ({
           <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #dc2626; font-weight: 600; border-bottom: 1px solid #dc2626; padding-bottom: 3px;">
             🛒 GASTOS DEL MES (${expenses.length})
           </h3>
-          <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px; max-height: 300px; overflow: hidden;">
-            ${expenses.slice(0, 12).map((expense, index) => `
-              <div style="padding: 6px 10px; border-bottom: ${index === expenses.slice(0, 12).length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center;">
+          <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
+            ${expenses.map((expense, index) => `
+              <div style="padding: 6px 10px; border-bottom: ${index === expenses.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid;">
                 <div style="flex: 1;">
                   <p style="margin: 0; font-size: 10px; font-weight: 600; color: #333;">${(expense.description || '').substring(0, 45)}${(expense.description || '').length > 45 ? '...' : ''}</p>
                   <p style="margin: 1px 0 0 0; font-size: 8px; color: #666;">
@@ -152,11 +147,6 @@ const PDFExport = ({
                 </div>
               </div>
             `).join('')}
-            ${expenses.length > 12 ? `
-              <div style="padding: 4px 10px; background: #f9fafb; text-align: center;">
-                <p style="margin: 0; font-size: 8px; color: #666; font-style: italic;">... y ${expenses.length - 12} gastos más</p>
-              </div>
-            ` : ''}
           </div>
         </div>
         ` : `
@@ -177,7 +167,7 @@ const PDFExport = ({
             Para más información visite: <span style="color: #16A34A;">appdemisfinanzas.com</span>
           </p>
           <p style="margin: 3px 0 0 0; font-size: 7px; color: #d1d5db;">
-            Documento generado el ${generateDate} | Página 1 de 1
+            Documento generado el ${generateDate}
           </p>
         </div>
 
@@ -190,7 +180,7 @@ const PDFExport = ({
       // Esperar un momento para que el elemento se renderice
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Configurar html2canvas para mejor calidad y evitar PDF cortado
+      // Configurar html2canvas para mejor calidad
       const canvas = await html2canvas(element, {
         scale: 1.5,
         useCORS: true,
@@ -204,34 +194,59 @@ const PDFExport = ({
         windowHeight: element.scrollHeight
       });
 
-      // Crear PDF con dimensiones exactas
+      // Crear PDF con paginación automática
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      // Calcular dimensiones manteniendo aspect ratio
-      const canvasAspectRatio = canvas.height / canvas.width;
-      const pdfAspectRatio = pdfHeight / pdfWidth;
-      
-      let imgWidth, imgHeight;
-      
-      if (canvasAspectRatio > pdfAspectRatio) {
-        // Canvas es más alto que el PDF - ajustar por altura
-        imgHeight = pdfHeight;
-        imgWidth = pdfHeight / canvasAspectRatio;
-      } else {
-        // Canvas es más ancho que el PDF - ajustar por ancho
-        imgWidth = pdfWidth;
-        imgHeight = pdfWidth * canvasAspectRatio;
-      }
-      
-      // Centrar imagen en PDF
-      const xOffset = (pdfWidth - imgWidth) / 2;
-      const yOffset = (pdfHeight - imgHeight) / 2;
-
+      // Convertir canvas a imagen
       const imgData = canvas.toDataURL('image/png', 0.8);
-      pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+      
+      // Calcular dimensiones de la imagen para que ocupe todo el ancho de la página
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // Si la imagen es más alta que una página, dividir en múltiples páginas
+      if (imgHeight <= pdfHeight) {
+        // Cabe en una página
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        // Necesita múltiples páginas
+        let yPosition = 0;
+        let pageNumber = 1;
+        
+        while (yPosition < imgHeight) {
+          // Calcular cuánto de la imagen mostrar en esta página
+          const remainingHeight = imgHeight - yPosition;
+          const pageImageHeight = Math.min(pdfHeight, remainingHeight);
+          
+          // Calcular la proporción de la imagen original que corresponde a esta página
+          const cropY = (yPosition / imgHeight) * canvas.height;
+          const cropHeight = (pageImageHeight / imgHeight) * canvas.height;
+          
+          // Crear canvas temporal para esta página
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = cropHeight;
+          const pageCtx = pageCanvas.getContext('2d');
+          
+          // Dibujar la porción correspondiente de la imagen original
+          pageCtx.drawImage(canvas, 0, cropY, canvas.width, cropHeight, 0, 0, canvas.width, cropHeight);
+          
+          // Convertir a imagen y agregar al PDF
+          const pageImgData = pageCanvas.toDataURL('image/png', 0.8);
+          
+          if (pageNumber > 1) {
+            pdf.addPage();
+          }
+          
+          pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImageHeight);
+          
+          yPosition += pageImageHeight;
+          pageNumber++;
+        }
+      }
       
       // Descargar con nombre descriptivo
       const fileName = `Estado-Cuenta-${monthName.replace(/\s+/g, '-')}-MisFinanzas.pdf`;
