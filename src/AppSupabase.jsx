@@ -15,6 +15,7 @@ import Avatar from './components/common/Avatar';
 import ErrorMessage from './components/common/ErrorMessage';
 import InstallPWAButton from './components/pwa/InstallPWAButton';
 import DeletedUserBlock from './components/common/DeletedUserBlock';
+import PDFExport from './components/exports/PDFExport';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import migrationService from './services/migrationService';
 import supabaseExcelService from './services/supabaseExcelService';
@@ -1174,6 +1175,45 @@ const AppSupabase = ({ onNavigateToLanding }) => {
       regularExpenses: summary.regular_expenses,
       recurringExpenses: summary.recurring_expenses
     };
+  };
+
+  // Funciones auxiliares para exportación PDF
+  const getMonthExpenses = () => {
+    const { monthExpenses } = getMonthData();
+    
+    // Obtener gastos recurrentes del mes
+    const [year, month] = reportMonth.split('-');
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+    const recurringExpensesInMonth = generateRecurringExpenses(
+      formatDateToLocalString(startDate), 
+      formatDateToLocalString(endDate)
+    );
+    
+    // Combinar gastos regulares y recurrentes
+    const allExpenses = [...monthExpenses, ...recurringExpensesInMonth];
+    
+    // Ordenar por fecha descendente
+    return allExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  const getMonthIncomes = () => {
+    const { monthIncomes } = getMonthData();
+    
+    // Obtener ingresos recurrentes del mes
+    const [year, month] = reportMonth.split('-');
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+    const recurringIncomesInMonth = generateRecurringIncomes(
+      formatDateToLocalString(startDate), 
+      formatDateToLocalString(endDate)
+    );
+    
+    // Combinar ingresos regulares y recurrentes
+    const allIncomes = [...monthIncomes, ...recurringIncomesInMonth];
+    
+    // Ordenar por fecha descendente
+    return allIncomes.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
   // Función para ordenar transacciones
@@ -5748,6 +5788,16 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                 </div>
 
                 {/* Resumen del Mes Seleccionado */}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Resumen del Mes Seleccionado</h2>
+                  <PDFExport 
+                    monthData={getMonthData()}
+                    selectedMonth={reportMonth}
+                    expenses={getMonthExpenses()}
+                    incomes={getMonthIncomes()}
+                    userProfile={userProfile}
+                  />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   {(() => {
                     const { totalExpenses, totalIncomes, balance } = getMonthData();

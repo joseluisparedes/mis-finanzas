@@ -18,6 +18,8 @@
     "@supabase/supabase-js": "^2.55.0",
     "@tanstack/react-query": "^5.85.3",
     "@tanstack/react-query-devtools": "^5.85.3",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-culqi-next": "^0.1.2",
