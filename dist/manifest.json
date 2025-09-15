@@ -62,7 +62,7 @@
       "url": "/#gastos",
       "icons": [
         {
-          "src": "/icons/shortcut-gasto.png",
+          "src": "/icons/shortcut-gasto.svg",
           "sizes": "192x192"
         }
       ]
@@ -74,7 +74,7 @@
       "url": "/#balance",
       "icons": [
         {
-          "src": "/icons/shortcut-balance.png",
+          "src": "/icons/shortcut-balance.svg",
           "sizes": "192x192"
         }
       ]
@@ -86,7 +86,7 @@
       "url": "/#reportes",
       "icons": [
         {
-          "src": "/icons/shortcut-reportes.png",
+          "src": "/icons/shortcut-reportes.svg",
           "sizes": "192x192"
         }
       ]

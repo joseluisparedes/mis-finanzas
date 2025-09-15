@@ -33,16 +33,27 @@ const PDFExport = ({
     element.style.boxSizing = 'border-box';
     element.style.pageBreakInside = 'avoid'; // Evitar cortes de página
     
+    // Debug: verificar valores recibidos
+    console.log('🔍 DEBUG PDFExport:');
+    console.log('selectedMonth recibido:', selectedMonth);
+    console.log('Tipo de selectedMonth:', typeof selectedMonth);
+    console.log('Fecha actual para referencia:', new Date().toISOString().slice(0, 7));
+    
     // Asegurar que el mes esté en formato correcto YYYY-MM
     let monthForFormatting = selectedMonth;
     if (!selectedMonth || selectedMonth.length !== 7) {
+      console.log('⚠️ selectedMonth inválido, usando fecha actual');
       monthForFormatting = new Date().toISOString().slice(0, 7);
     }
+    
+    console.log('monthForFormatting final:', monthForFormatting);
     
     const monthName = new Date(monthForFormatting + '-01').toLocaleDateString('es-ES', { 
       month: 'long', 
       year: 'numeric' 
     });
+    
+    console.log('monthName generado:', monthName);
     
     const generateDate = new Date().toLocaleDateString('es-ES', {
       day: '2-digit',
