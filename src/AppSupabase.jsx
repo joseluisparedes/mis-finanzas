@@ -5792,10 +5792,7 @@ const AppSupabase = ({ onNavigateToLanding }) => {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Resumen del Mes Seleccionado</h2>
                   <PDFExport 
                     monthData={getMonthData()}
-                    selectedMonth={(() => {
-                      console.log('🔍 DEBUG AppSupabase - reportMonth al pasar a PDFExport:', reportMonth);
-                      return reportMonth;
-                    })()}
+                    selectedMonth={reportMonth}
                     expenses={getMonthExpenses()}
                     incomes={getMonthIncomes()}
                     userProfile={userProfile}
