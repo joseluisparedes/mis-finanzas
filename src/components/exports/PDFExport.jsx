@@ -27,12 +27,19 @@ const PDFExport = ({
     element.style.top = '0';
     element.style.width = '794px'; // A4 width en pixels (210mm a 96 DPI)
     element.style.minHeight = '1123px'; // A4 height en pixels (297mm a 96 DPI)
-    element.style.padding = '40px';
+    element.style.padding = '30px'; // Reducir padding para más espacio
     element.style.fontFamily = 'Arial, sans-serif';
     element.style.backgroundColor = 'white';
     element.style.boxSizing = 'border-box';
+    element.style.pageBreakInside = 'avoid'; // Evitar cortes de página
     
-    const monthName = new Date(selectedMonth + '-01').toLocaleDateString('es-ES', { 
+    // Asegurar que el mes esté en formato correcto YYYY-MM
+    let monthForFormatting = selectedMonth;
+    if (!selectedMonth || selectedMonth.length !== 7) {
+      monthForFormatting = new Date().toISOString().slice(0, 7);
+    }
+    
+    const monthName = new Date(monthForFormatting + '-01').toLocaleDateString('es-ES', { 
       month: 'long', 
       year: 'numeric' 
     });
@@ -105,7 +112,7 @@ const PDFExport = ({
           </h3>
           <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
             ${incomes.map((income, index) => `
-              <div style="padding: 6px 10px; border-bottom: ${index === incomes.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid;">
+              <div style="padding: 6px 10px; border-bottom: ${index === incomes.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid; margin-bottom: 2px;">
                 <div style="flex: 1;">
                   <p style="margin: 0; font-size: 10px; font-weight: 600; color: #333;">${(income.description || '').substring(0, 50)}${(income.description || '').length > 50 ? '...' : ''}</p>
                   <p style="margin: 1px 0 0 0; font-size: 8px; color: #666;">${new Date(income.date).toLocaleDateString('es-ES')}</p>
@@ -135,7 +142,7 @@ const PDFExport = ({
           </h3>
           <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
             ${expenses.map((expense, index) => `
-              <div style="padding: 6px 10px; border-bottom: ${index === expenses.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid;">
+              <div style="padding: 6px 10px; border-bottom: ${index === expenses.length - 1 ? 'none' : '1px solid #f3f4f6'}; display: flex; justify-content: space-between; align-items: center; page-break-inside: avoid; margin-bottom: 2px; min-height: 30px;">
                 <div style="flex: 1;">
                   <p style="margin: 0; font-size: 10px; font-weight: 600; color: #333;">${(expense.description || '').substring(0, 45)}${(expense.description || '').length > 45 ? '...' : ''}</p>
                   <p style="margin: 1px 0 0 0; font-size: 8px; color: #666;">
@@ -212,14 +219,16 @@ const PDFExport = ({
         // Cabe en una página
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       } else {
-        // Necesita múltiples páginas
+        // Necesita múltiples páginas con márgenes apropiados
+        const pageMargin = 10; // Margen entre páginas
         let yPosition = 0;
         let pageNumber = 1;
         
         while (yPosition < imgHeight) {
-          // Calcular cuánto de la imagen mostrar en esta página
+          // Calcular cuánto de la imagen mostrar en esta página (con margen)
           const remainingHeight = imgHeight - yPosition;
-          const pageImageHeight = Math.min(pdfHeight, remainingHeight);
+          const availableHeight = pdfHeight - (pageNumber > 1 ? pageMargin : 0);
+          const pageImageHeight = Math.min(availableHeight, remainingHeight);
           
           // Calcular la proporción de la imagen original que corresponde a esta página
           const cropY = (yPosition / imgHeight) * canvas.height;
@@ -230,18 +239,21 @@ const PDFExport = ({
           pageCanvas.width = canvas.width;
           pageCanvas.height = cropHeight;
           const pageCtx = pageCanvas.getContext('2d');
+          pageCtx.fillStyle = 'white';
+          pageCtx.fillRect(0, 0, canvas.width, cropHeight);
           
           // Dibujar la porción correspondiente de la imagen original
           pageCtx.drawImage(canvas, 0, cropY, canvas.width, cropHeight, 0, 0, canvas.width, cropHeight);
           
           // Convertir a imagen y agregar al PDF
-          const pageImgData = pageCanvas.toDataURL('image/png', 0.8);
+          const pageImgData = pageCanvas.toDataURL('image/png', 0.9);
           
           if (pageNumber > 1) {
             pdf.addPage();
           }
           
-          pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImageHeight);
+          const yOffset = pageNumber > 1 ? pageMargin / 2 : 0;
+          pdf.addImage(pageImgData, 'PNG', 0, yOffset, imgWidth, pageImageHeight);
           
           yPosition += pageImageHeight;
           pageNumber++;
