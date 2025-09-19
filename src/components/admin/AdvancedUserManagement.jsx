@@ -291,144 +291,325 @@ const AdvancedUserManagement = () => {
   const exportUserData = async (userId, userEmail) => {
     setActionLoading(true);
     try {
-      // Obtener datos de suscripción del usuario
-      const { data: userData, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      console.log(`📤 Iniciando exportación completa de datos para usuario: ${userEmail} (${userId})`);
 
-      if (subError) throw subError;
+      // Obtener TODOS los datos del usuario en paralelo
+      const [
+        userData,
+        userProfile,
+        userSettings,
+        expenses,
+        incomes,
+        categories,
+        paymentMethods,
+        incomeTypes,
+        budgets,
+        recurringExpenses,
+        userBackups
+      ] = await Promise.all([
+        // Datos de suscripción
+        supabase.from('user_subscriptions').select('*').eq('user_id', userId).single(),
 
-      // Los datos de auth.users no son accesibles directamente desde el cliente
-      // Usaremos solo los datos disponibles en user_subscriptions y las tablas relacionadas
+        // Datos del perfil (si existe)
+        supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
 
-      // Obtener transacciones del usuario con información relacionada
-      const { data: expenses } = await supabase
-        .from('expenses')
-        .select(`
-          id, amount, description, date, notes, created_at,
-          categories (name, color),
-          payment_methods (name, color)
-        `)
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
+        // Configuraciones del usuario
+        supabase.from('user_settings').select('*').eq('user_id', userId).single(),
 
-      const { data: income } = await supabase
-        .from('income')
-        .select(`
-          id, amount, description, date, notes, created_at,
-          income_types (name, color)
-        `)
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
+        // Transacciones del usuario con información relacionada
+        supabase.from('expenses').select(`
+          id, amount, description, date, notes, tags, is_recurring, recurring_frequency, created_at, updated_at,
+          categories (name, color, icon),
+          payment_methods (name, color, icon, payment_type)
+        `).eq('user_id', userId).order('date', { ascending: false }),
 
-      // Obtener categorías, métodos de pago e ingresos del usuario
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', userId);
+        supabase.from('incomes').select(`
+          id, amount, description, date, notes, tags, is_recurring, recurring_frequency, created_at, updated_at,
+          income_types (name, color, icon)
+        `).eq('user_id', userId).order('date', { ascending: false }),
 
-      const { data: paymentMethods } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('user_id', userId);
+        // Configuraciones personalizadas del usuario
+        supabase.from('categories').select('*').eq('user_id', userId).order('sort_order'),
+        supabase.from('payment_methods').select('*').eq('user_id', userId).order('sort_order'),
+        supabase.from('income_types').select('*').eq('user_id', userId).order('sort_order'),
 
-      const { data: incomeTypes } = await supabase
-        .from('income_types')
-        .select('*')
-        .eq('user_id', userId);
+        // Presupuestos
+        supabase.from('budgets').select(`
+          id, amount, period, is_active, created_at, updated_at,
+          categories (name, color)
+        `).eq('user_id', userId),
 
-      const { data: budgets } = await supabase
-        .from('budgets')
-        .select('*')
-        .eq('user_id', userId);
+        // Gastos recurrentes
+        supabase.from('recurring_expenses').select(`
+          id, description, amount, currency, frequency, next_date, is_active, created_at, updated_at,
+          categories (name, color)
+        `).eq('user_id', userId),
+
+        // Backups del usuario
+        supabase.from('user_backups').select('id, backup_type, file_size, created_at').eq('user_id', userId).order('created_at', { ascending: false })
+      ]);
+
+      console.log('✅ Datos obtenidos:', {
+        userData: userData.data || userData.error,
+        userProfile: userProfile.data || userProfile.error,
+        userSettings: userSettings.data || userSettings.error,
+        expenses: expenses.data?.length || 0,
+        incomes: incomes.data?.length || 0,
+        categories: categories.data?.length || 0,
+        paymentMethods: paymentMethods.data?.length || 0,
+        incomeTypes: incomeTypes.data?.length || 0,
+        budgets: budgets.data?.length || 0,
+        recurringExpenses: recurringExpenses.data?.length || 0,
+        userBackups: userBackups.data?.length || 0
+      });
+
+      // Verificar que al menos tenemos datos de suscripción
+      if (userData.error) throw userData.error;
 
       // Crear workbook de Excel
       const wb = XLSX.utils.book_new();
 
-      // Hoja de información del usuario
+      // Hoja de información completa del usuario
       const userInfo = [
-        ['Campo', 'Valor'],
-        ['ID de Usuario', userData.user_id],
+        ['CAMPO', 'VALOR'],
+        ['=== INFORMACIÓN BÁSICA ===', ''],
+        ['ID de Usuario', userData.data?.user_id || 'N/A'],
         ['Email', userEmail || 'N/A'],
-        ['Tipo de Suscripción', userData.subscription_type],
-        ['Estado', userData.status],
-        ['Fecha de Suscripción', userData.created_at],
-        ['Última Actualización', userData.updated_at],
-        ['Precio Pagado', userData.price_paid || 'N/A'],
-        ['Método de Pago', userData.payment_method || 'N/A'],
-        ['Es Early Bird', userData.is_early_bird ? 'Sí' : 'No'],
-        ['Límite Transacciones', userData.monthly_transaction_limit || 'N/A'],
-        ['Límite Presupuestos', userData.budget_limit || 'N/A']
+        ['Tipo de Suscripción', userData.data?.subscription_type || 'N/A'],
+        ['Estado de Suscripción', userData.data?.status || 'N/A'],
+        ['Fecha de Registro', userData.data?.created_at || 'N/A'],
+        ['Última Actualización', userData.data?.updated_at || 'N/A'],
+        ['', ''],
+        ['=== DATOS DE SUSCRIPCIÓN ===', ''],
+        ['Precio Pagado', userData.data?.price_paid || 'N/A'],
+        ['Método de Pago', userData.data?.payment_method || 'N/A'],
+        ['Es Early Bird', userData.data?.is_early_bird ? 'Sí' : 'No'],
+        ['Fecha Inicio Plan', userData.data?.subscription_start_date || 'N/A'],
+        ['Fecha Fin Plan', userData.data?.subscription_end_date || 'N/A'],
+        ['Límite Transacciones Mensuales', userData.data?.monthly_transaction_limit || 'N/A'],
+        ['Límite de Presupuestos', userData.data?.budget_limit || 'N/A'],
+        ['', ''],
+        ['=== PERFIL DE USUARIO ===', ''],
+        ['Número de Teléfono', userProfile.data?.phone_number || 'N/A'],
+        ['Nombre Completo', userProfile.data?.full_name || 'N/A'],
+        ['Avatar URL', userProfile.data?.avatar_url || 'N/A'],
+        ['', ''],
+        ['=== CONFIGURACIONES ===', ''],
+        ['Auto Backup', userSettings.data?.auto_backup ? 'Activado' : 'Desactivado'],
+        ['Frecuencia de Backup', userSettings.data?.backup_frequency || 'N/A'],
+        ['Moneda', userSettings.data?.currency || 'PEN'],
+        ['Formato de Fecha', userSettings.data?.date_format || 'YYYY-MM-DD'],
+        ['Mostrar Exportación JSON', userSettings.data?.show_json_export ? 'Sí' : 'No'],
+        ['Tema', userSettings.data?.theme || 'light'],
+        ['Idioma', userSettings.data?.language || 'es'],
+        ['', ''],
+        ['=== ESTADÍSTICAS ===', ''],
+        ['Total de Gastos', expenses.data?.length || 0],
+        ['Total de Ingresos', incomes.data?.length || 0],
+        ['Categorías Creadas', categories.data?.length || 0],
+        ['Métodos de Pago', paymentMethods.data?.length || 0],
+        ['Tipos de Ingreso', incomeTypes.data?.length || 0],
+        ['Presupuestos Activos', budgets.data?.length || 0],
+        ['Gastos Recurrentes', recurringExpenses.data?.length || 0],
+        ['Backups Realizados', userBackups.data?.length || 0]
       ];
-      
-      const wsUser = XLSX.utils.aoa_to_sheet(userInfo);
-      XLSX.utils.book_append_sheet(wb, wsUser, 'Información Usuario');
 
-      // Hoja de gastos con formato mejorado
-      if (expenses && expenses.length > 0) {
-        const expensesFormatted = expenses.map(expense => ({
+      const wsUser = XLSX.utils.aoa_to_sheet(userInfo);
+      XLSX.utils.book_append_sheet(wb, wsUser, '📋 Info Usuario');
+
+      // Hoja de gastos con formato completo
+      if (expenses.data && expenses.data.length > 0) {
+        const expensesFormatted = expenses.data.map(expense => ({
           'ID': expense.id,
-          'Monto': expense.amount,
+          'Monto (S/)': expense.amount,
           'Descripción': expense.description,
           'Fecha': expense.date,
-          'Categoría': expense.categories?.name || 'N/A',
-          'Método de Pago': expense.payment_methods?.name || 'N/A',
+          'Categoría': expense.categories?.name || 'Sin categoría',
+          'Color Categoría': expense.categories?.color || 'N/A',
+          'Método de Pago': expense.payment_methods?.name || 'Sin método',
+          'Tipo de Pago': expense.payment_methods?.payment_type || 'N/A',
+          'Es Recurrente': expense.is_recurring ? 'Sí' : 'No',
+          'Frecuencia': expense.recurring_frequency || 'N/A',
+          'Tags': expense.tags ? expense.tags.join(', ') : '',
           'Notas': expense.notes || '',
-          'Creado': expense.created_at
+          'Fecha Creación': expense.created_at,
+          'Última Modificación': expense.updated_at
         }));
         const wsExpenses = XLSX.utils.json_to_sheet(expensesFormatted);
-        XLSX.utils.book_append_sheet(wb, wsExpenses, 'Gastos');
+        XLSX.utils.book_append_sheet(wb, wsExpenses, '💰 Gastos');
       }
 
-      // Hoja de ingresos con formato mejorado
-      if (income && income.length > 0) {
-        const incomeFormatted = income.map(inc => ({
+      // Hoja de ingresos con formato completo
+      if (incomes.data && incomes.data.length > 0) {
+        const incomeFormatted = incomes.data.map(inc => ({
           'ID': inc.id,
-          'Monto': inc.amount,
+          'Monto (S/)': inc.amount,
           'Descripción': inc.description,
           'Fecha': inc.date,
-          'Tipo de Ingreso': inc.income_types?.name || 'N/A',
+          'Tipo de Ingreso': inc.income_types?.name || 'Sin tipo',
+          'Color Tipo': inc.income_types?.color || 'N/A',
+          'Es Recurrente': inc.is_recurring ? 'Sí' : 'No',
+          'Frecuencia': inc.recurring_frequency || 'N/A',
+          'Tags': inc.tags ? inc.tags.join(', ') : '',
           'Notas': inc.notes || '',
-          'Creado': inc.created_at
+          'Fecha Creación': inc.created_at,
+          'Última Modificación': inc.updated_at
         }));
         const wsIncome = XLSX.utils.json_to_sheet(incomeFormatted);
-        XLSX.utils.book_append_sheet(wb, wsIncome, 'Ingresos');
+        XLSX.utils.book_append_sheet(wb, wsIncome, '📈 Ingresos');
       }
 
-      // Hoja de categorías
-      if (categories && categories.length > 0) {
-        const wsCategories = XLSX.utils.json_to_sheet(categories);
-        XLSX.utils.book_append_sheet(wb, wsCategories, 'Categorías');
+      // Hoja de gastos recurrentes
+      if (recurringExpenses.data && recurringExpenses.data.length > 0) {
+        const recurringFormatted = recurringExpenses.data.map(rec => ({
+          'ID': rec.id,
+          'Descripción': rec.description,
+          'Monto': rec.amount,
+          'Moneda': rec.currency,
+          'Frecuencia': rec.frequency,
+          'Próxima Fecha': rec.next_date,
+          'Categoría': rec.categories?.name || 'Sin categoría',
+          'Estado': rec.is_active ? 'Activo' : 'Inactivo',
+          'Fecha Creación': rec.created_at,
+          'Última Modificación': rec.updated_at
+        }));
+        const wsRecurring = XLSX.utils.json_to_sheet(recurringFormatted);
+        XLSX.utils.book_append_sheet(wb, wsRecurring, '🔄 Gastos Recurrentes');
       }
 
-      // Hoja de métodos de pago
-      if (paymentMethods && paymentMethods.length > 0) {
-        const wsPaymentMethods = XLSX.utils.json_to_sheet(paymentMethods);
-        XLSX.utils.book_append_sheet(wb, wsPaymentMethods, 'Métodos de Pago');
+      // Hoja de presupuestos con información completa
+      if (budgets.data && budgets.data.length > 0) {
+        const budgetsFormatted = budgets.data.map(budget => ({
+          'ID': budget.id,
+          'Monto (S/)': budget.amount,
+          'Período': budget.period,
+          'Categoría': budget.categories?.name || 'Sin categoría',
+          'Color Categoría': budget.categories?.color || 'N/A',
+          'Estado': budget.is_active ? 'Activo' : 'Inactivo',
+          'Fecha Creación': budget.created_at,
+          'Última Modificación': budget.updated_at
+        }));
+        const wsBudgets = XLSX.utils.json_to_sheet(budgetsFormatted);
+        XLSX.utils.book_append_sheet(wb, wsBudgets, '🎯 Presupuestos');
       }
 
-      // Hoja de tipos de ingreso
-      if (incomeTypes && incomeTypes.length > 0) {
-        const wsIncomeTypes = XLSX.utils.json_to_sheet(incomeTypes);
-        XLSX.utils.book_append_sheet(wb, wsIncomeTypes, 'Tipos de Ingreso');
+      // Hoja de categorías personalizadas
+      if (categories.data && categories.data.length > 0) {
+        const categoriesFormatted = categories.data.map(cat => ({
+          'ID': cat.id,
+          'Nombre': cat.name,
+          'Color': cat.color,
+          'Ícono': cat.icon,
+          'Orden': cat.sort_order,
+          'Estado': cat.is_active ? 'Activa' : 'Inactiva',
+          'Fecha Creación': cat.created_at,
+          'Última Modificación': cat.updated_at
+        }));
+        const wsCategories = XLSX.utils.json_to_sheet(categoriesFormatted);
+        XLSX.utils.book_append_sheet(wb, wsCategories, '📂 Categorías');
       }
 
-      // Hoja de presupuestos
-      if (budgets && budgets.length > 0) {
-        const wsBudgets = XLSX.utils.json_to_sheet(budgets);
-        XLSX.utils.book_append_sheet(wb, wsBudgets, 'Presupuestos');
+      // Hoja de métodos de pago personalizados
+      if (paymentMethods.data && paymentMethods.data.length > 0) {
+        const paymentMethodsFormatted = paymentMethods.data.map(pm => ({
+          'ID': pm.id,
+          'Nombre': pm.name,
+          'Color': pm.color,
+          'Ícono': pm.icon,
+          'Tipo': pm.payment_type,
+          'Día Cierre (TC)': pm.cc_closing_day || 'N/A',
+          'Día Pago (TC)': pm.cc_payment_day || 'N/A',
+          'Orden': pm.sort_order,
+          'Estado': pm.is_active ? 'Activo' : 'Inactivo',
+          'Fecha Creación': pm.created_at,
+          'Última Modificación': pm.updated_at
+        }));
+        const wsPaymentMethods = XLSX.utils.json_to_sheet(paymentMethodsFormatted);
+        XLSX.utils.book_append_sheet(wb, wsPaymentMethods, '💳 Métodos de Pago');
       }
 
-      // Descargar archivo
-      const fileName = `usuario_${userEmail}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      // Hoja de tipos de ingreso personalizados
+      if (incomeTypes.data && incomeTypes.data.length > 0) {
+        const incomeTypesFormatted = incomeTypes.data.map(it => ({
+          'ID': it.id,
+          'Nombre': it.name,
+          'Color': it.color,
+          'Ícono': it.icon,
+          'Orden': it.sort_order,
+          'Estado': it.is_active ? 'Activo' : 'Inactivo',
+          'Fecha Creación': it.created_at,
+          'Última Modificación': it.updated_at
+        }));
+        const wsIncomeTypes = XLSX.utils.json_to_sheet(incomeTypesFormatted);
+        XLSX.utils.book_append_sheet(wb, wsIncomeTypes, '📊 Tipos de Ingreso');
+      }
+
+      // Hoja de configuraciones detalladas
+      if (userSettings.data) {
+        const settingsData = [
+          ['CONFIGURACIÓN', 'VALOR', 'DESCRIPCIÓN'],
+          ['Auto Backup', userSettings.data.auto_backup ? 'Activado' : 'Desactivado', 'Backup automático de datos'],
+          ['Frecuencia Backup', userSettings.data.backup_frequency, 'Con qué frecuencia se realiza backup'],
+          ['Moneda', userSettings.data.currency, 'Moneda principal del usuario'],
+          ['Formato Fecha', userSettings.data.date_format, 'Formato preferido para fechas'],
+          ['Exportación JSON', userSettings.data.show_json_export ? 'Habilitado' : 'Deshabilitado', 'Mostrar opción de exportar JSON'],
+          ['Tema', userSettings.data.theme, 'Tema visual de la aplicación'],
+          ['Idioma', userSettings.data.language, 'Idioma de la interfaz'],
+          ['Configurado el', userSettings.data.created_at, 'Fecha de configuración inicial'],
+          ['Última actualización', userSettings.data.updated_at, 'Última modificación de configuración']
+        ];
+        const wsSettings = XLSX.utils.aoa_to_sheet(settingsData);
+        XLSX.utils.book_append_sheet(wb, wsSettings, '⚙️ Configuraciones');
+      }
+
+      // Hoja de backups realizados
+      if (userBackups.data && userBackups.data.length > 0) {
+        const backupsFormatted = userBackups.data.map(backup => ({
+          'ID': backup.id,
+          'Tipo': backup.backup_type,
+          'Tamaño (bytes)': backup.file_size || 'N/A',
+          'Fecha Backup': backup.created_at
+        }));
+        const wsBackups = XLSX.utils.json_to_sheet(backupsFormatted);
+        XLSX.utils.book_append_sheet(wb, wsBackups, '💾 Historial Backups');
+      }
+
+      // Descargar archivo con nombre descriptivo
+      const timestamp = new Date().toISOString().split('T')[0];
+      const cleanEmail = userEmail.replace('@', '_').replace('.', '_');
+      const fileName = `MisFinanzas_ExportCompleto_${cleanEmail}_${timestamp}.xlsx`;
+
+      console.log(`💾 Descargando archivo: ${fileName}`);
       XLSX.writeFile(wb, fileName);
 
-      alert(`Datos de ${userEmail} exportados exitosamente`);
+      // Mostrar resumen de exportación
+      const exportSummary = `
+✅ EXPORTACIÓN COMPLETA REALIZADA
+
+👤 Usuario: ${userEmail}
+📅 Fecha: ${timestamp}
+📁 Archivo: ${fileName}
+
+📊 DATOS EXPORTADOS:
+• Información y configuración del usuario
+• ${expenses.data?.length || 0} gastos
+• ${incomes.data?.length || 0} ingresos
+• ${recurringExpenses.data?.length || 0} gastos recurrentes
+• ${budgets.data?.length || 0} presupuestos
+• ${categories.data?.length || 0} categorías personalizadas
+• ${paymentMethods.data?.length || 0} métodos de pago
+• ${incomeTypes.data?.length || 0} tipos de ingreso
+• ${userBackups.data?.length || 0} backups previos
+
+💡 El archivo contiene TODOS los datos del usuario organizados en hojas separadas.
+      `.trim();
+
+      alert(exportSummary);
+
+      console.log('✅ Exportación de datos completa finalizada para:', userEmail);
     } catch (error) {
-      console.error('Error exporting user data:', error);
-      alert(`Error al exportar datos: ${error.message}`);
+      console.error('❌ Error exportando datos del usuario:', error);
+      alert(`❌ Error al exportar datos: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
