@@ -2,8 +2,8 @@
   "name": "MisFinanzas - Control Financiero Personal",
   "short_name": "MisFinanzas",
   "description": "Tu centro de control financiero personal. Gestiona gastos, ingresos, presupuestos y más desde tu móvil.",
-  "start_url": "/mis-finanzas/",
-  "scope": "/mis-finanzas/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#8B5CF6",
@@ -59,10 +59,10 @@
       "name": "Agregar Gasto",
       "short_name": "Gasto",
       "description": "Registrar un nuevo gasto rápidamente",
-      "url": "/mis-finanzas/#gastos",
+      "url": "/#gastos",
       "icons": [
         {
-          "src": "/mis-finanzas/icons/shortcut-gasto.png",
+          "src": "/icons/shortcut-gasto.svg",
           "sizes": "192x192"
         }
       ]
@@ -71,10 +71,10 @@
       "name": "Ver Balance",
       "short_name": "Balance",
       "description": "Ver el balance actual de tus finanzas",
-      "url": "/mis-finanzas/#balance",
+      "url": "/#balance",
       "icons": [
         {
-          "src": "/mis-finanzas/icons/shortcut-balance.png",
+          "src": "/icons/shortcut-balance.svg",
           "sizes": "192x192"
         }
       ]
@@ -83,10 +83,10 @@
       "name": "Reportes",
       "short_name": "Reportes",
       "description": "Consultar reportes y gráficos",
-      "url": "/mis-finanzas/#reportes",
+      "url": "/#reportes",
       "icons": [
         {
-          "src": "/mis-finanzas/icons/shortcut-reportes.png",
+          "src": "/icons/shortcut-reportes.svg",
           "sizes": "192x192"
         }
       ]
@@ -94,13 +94,13 @@
   ],
   "screenshots": [
     {
-      "src": "/mis-finanzas/screenshots/mobile-home.png",
+      "src": "/screenshots/mobile-home.png",
       "type": "image/png",
       "sizes": "375x812",
       "form_factor": "narrow"
     },
     {
-      "src": "/mis-finanzas/screenshots/desktop-home.png",
+      "src": "/screenshots/desktop-home.png",
       "type": "image/png",
       "sizes": "1920x1080",
       "form_factor": "wide"
